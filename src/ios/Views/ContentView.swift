@@ -1,4 +1,8 @@
 import SwiftUI
+// [T-im-merge] IM（bitjarvis Flutter module）嵌入所需的 Flutter 引擎 API。
+// 该 import 由 src/ios/Podfile（podhelper.rb）提供 —— 需先 `pod install`
+// 并通过 Minis.xcworkspace 构建。
+import Flutter
 
 private let shareLog = AppLogger(category: "Share")
 private let draftLog = AppLogger(category: "DraftSession")
@@ -3504,6 +3508,21 @@ struct ContentView: View {
                     #endif
                 } label: {
                     Image("TerminalCircle")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                }
+            }
+        }
+        // [T-im-merge] IM 入口：工具栏最右侧。图标由 asset catalog 的
+        // IMEntry imageset 提供浅色（imq.png）/ 深色（ims.png）两套外观，
+        // 系统切换外观时自动切换。点击打开内嵌的 Flutter IM（贾维斯 IM）。
+        ToolbarItem(placement: .topBarTrailing) {
+            if !isSelecting {
+                Button {
+                    IMEmbed.shared.open()
+                } label: {
+                    Image("IMEntry")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 24, height: 24)
@@ -8156,6 +8175,88 @@ private struct ForceSyncToastBanner: View {
         .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
         .padding(.horizontal, 16)
         .frame(maxWidth: 480)
+    }
+}
+
+// MARK: - IM（bitjarvis Flutter module）嵌入
+
+/// [T-im-merge] IM 嵌入控制器 —— 从 Agent 一键进入贾维斯 IM。
+///
+/// Agent 是 App 的根界面；IM 以 Flutter module（add-to-app）形态由本类
+/// 按需挂载：
+///  - 引擎懒预热并常驻（缓存于 `engine`），Matrix 同步在两次进入 IM 之间
+///    保持热身状态，二次进入秒开；
+///  - `open()` 用 FlutterViewController 全屏 present IM；
+///  - IM 里的「贾维斯」入口（jarvis_entry_fab.dart）经
+///    `jarvis.im/agent_bridge` 通道调 `exitToAgent`，这里 dismiss 回到
+///    Agent —— 与 Android 侧 `ImFlutterActivity` 的行为一致。
+///
+/// 引擎与插件注册依赖 src/ios/Podfile 引入的 Flutter / FlutterPluginRegistrant
+/// pods（podhelper.rb）；首次集成需 `cd src/ios && pod install`。
+@MainActor
+final class IMEmbed {
+    static let shared = IMEmbed()
+
+    private static let channelName = "jarvis.im/agent_bridge"
+    private static let logger = AppLogger(category: "IMEmbed")
+
+    private var engine: FlutterEngine?
+    private weak var controller: FlutterViewController?
+
+    private init() {}
+
+    /// 打开 IM（全屏 present）。引擎未热身时现场创建（首次有 1~2s Dart
+    /// 启动开销；之后走缓存）。
+    func open() {
+        let engine = ensureEngine()
+        let vc = FlutterViewController(engine: engine, nibName: nil, bundle: nil)
+        controller = vc
+
+        // Present on the topmost controller so IM 覆盖当前一切 surface。
+        let root = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.keyWindow?.rootViewController }
+            .first
+        guard var top = root else {
+            Self.logger.warning("No root window controller; cannot present IM")
+            return
+        }
+        while let presented = top.presentedViewController {
+            top = presented
+        }
+        top.present(vc, animated: true)
+        Self.logger.info("IM presented (engine warm: \(self.engine != nil))")
+    }
+
+    /// IM 请求返回 Agent（通道 `exitToAgent`）。
+    private func exitToAgent() {
+        controller?.dismiss(animated: true)
+        controller = nil
+    }
+
+    /// 懒创建并缓存 Flutter 引擎，注册插件与 Agent 桥接通道。
+    private func ensureEngine() -> FlutterEngine {
+        if let engine { return engine }
+        let e = FlutterEngine(name: "jarvis_im_engine")
+        // 运行 module 默认 Dart 入口 main()。
+        e.run(withEntrypoint: nil, libraryURI: nil)
+        GeneratedPluginRegistrant.register(with: e)
+
+        let channel = FlutterMethodChannel(
+            name: Self.channelName,
+            binaryMessenger: e.binaryMessenger
+        )
+        channel.setMethodCallHandler { [weak self] call, result in
+            switch call.method {
+            case "exitToAgent":
+                result(nil)
+                Task { @MainActor in self?.exitToAgent() }
+            default:
+                result(FlutterMethodNotImplemented)
+            }
+        }
+
+        engine = e
+        return e
     }
 }
 

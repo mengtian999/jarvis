@@ -1,4 +1,4 @@
-{
+﻿{
     "@@last_modified": "2021-08-14 12:41:10.107750",
     "about": "Prio",
     "@about": {
@@ -2128,5 +2128,6 @@
     "changeAccountProvider": "Ŝanĝi kontan provizanton",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

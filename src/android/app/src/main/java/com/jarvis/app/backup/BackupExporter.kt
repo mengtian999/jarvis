@@ -321,38 +321,6 @@ class BackupExporter(
     }
 
     /**
-     * The session row as iOS writes it.
-     *
-     * Field names and date format follow iOS's `ChatSession` under the
-     * synthesized Codable encoder (camelCase, ISO-8601), plus the two extras
-     * iOS keeps alongside it in `SessionRecord`. Android-only columns with no
-     * iOS counterpart (`editCount`, `thinkingOverride`) are carried too: §2.2
-     * rule 4 says platform-specific data is preserved and ignored by the other
-     * side, which is strictly better than dropping a user's per-session
-     * thinking override on a same-platform restore.
-     *
-     * Device-local fields are deliberately absent — see [messageRecord].
-     */
-    private fun sessionRecord(s: ChatSessionEntity): JsonElement = buildJsonObject {
-        put("id", JsonPrimitive(s.id))
-        put("title", s.title?.let(::JsonPrimitive) ?: JsonNull)
-        put("category", s.category?.let(::JsonPrimitive) ?: JsonNull)
-        put("modelId", JsonPrimitive(s.modelId))
-        put("createdAt", JsonPrimitive(iso8601(s.createdAt)))
-        put("updatedAt", JsonPrimitive(iso8601(s.updatedAt)))
-        put("lastMessage", s.lastMessage?.let(::JsonPrimitive) ?: JsonNull)
-        put("source", s.source?.let(::JsonPrimitive) ?: JsonNull)
-        put("pinnedAt", s.pinnedAt?.let { JsonPrimitive(iso8601(it)) } ?: JsonNull)
-        put("folderId", s.folderId?.let(::JsonPrimitive) ?: JsonNull)
-        // iOS's SessionRecord wrapper fields.
-        put("memoryEnabled", JsonPrimitive(s.memoryEnabled != 0))
-        put("modelBinding", s.modelBinding?.let(::JsonPrimitive) ?: JsonNull)
-        // Android-only, preserved per §2.2 rule 4.
-        put("editCount", JsonPrimitive(s.editCount))
-        put("thinkingOverride", s.thinkingOverride?.let(::JsonPrimitive) ?: JsonNull)
-    }
-
-    /**
      * The message row as iOS writes it.
      *
      * `parts` is spliced in as pre-parsed JSON rather than re-encoded: the
@@ -886,5 +854,48 @@ class BackupExporter(
         fun iso8601(millis: Long): String = SimpleDateFormat(
             "yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US
         ).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(millis)
+
+        /**
+         * The session row as iOS writes it.
+         *
+         * Field names and date format follow iOS's `ChatSession` under the
+         * synthesized Codable encoder (camelCase, ISO-8601), plus the two extras
+         * iOS keeps alongside it in `SessionRecord`. Android-only columns with no
+         * iOS counterpart (`editCount`, `thinkingOverride`) are carried too: §2.2
+         * rule 4 says platform-specific data is preserved and ignored by the
+         * other side, which is strictly better than dropping a user's per-session
+         * thinking override on a same-platform restore.
+         *
+         * Device-local fields are deliberately absent — see [messageRecord].
+         *
+         * Lives in the companion (it touches no instance state) so the
+         * session↔role-binding round-trip is directly unit-testable —
+         * see SessionRoleBindingBackupTest.
+         */
+        fun sessionRecord(s: ChatSessionEntity): JsonElement = buildJsonObject {
+            put("id", JsonPrimitive(s.id))
+            put("title", s.title?.let(::JsonPrimitive) ?: JsonNull)
+            put("category", s.category?.let(::JsonPrimitive) ?: JsonNull)
+            put("modelId", JsonPrimitive(s.modelId))
+            put("createdAt", JsonPrimitive(iso8601(s.createdAt)))
+            put("updatedAt", JsonPrimitive(iso8601(s.updatedAt)))
+            put("lastMessage", s.lastMessage?.let(::JsonPrimitive) ?: JsonNull)
+            put("source", s.source?.let(::JsonPrimitive) ?: JsonNull)
+            put("pinnedAt", s.pinnedAt?.let { JsonPrimitive(iso8601(it)) } ?: JsonNull)
+            put("folderId", s.folderId?.let(::JsonPrimitive) ?: JsonNull)
+            // [T-role-session-bound] The persona bound to this session. iOS's
+            // ChatSession carries `roleId` in its synthesized Codable encoding,
+            // so the key must match exactly — cross-platform packages restore
+            // role bindings through it. Omitting it was the "restored history
+            // all shows as Jarvis" bug: the importer had nothing to read and
+            // every row fell back to the default role.
+            put("roleId", s.roleId?.let(::JsonPrimitive) ?: JsonNull)
+            // iOS's SessionRecord wrapper fields.
+            put("memoryEnabled", JsonPrimitive(s.memoryEnabled != 0))
+            put("modelBinding", s.modelBinding?.let(::JsonPrimitive) ?: JsonNull)
+            // Android-only, preserved per §2.2 rule 4.
+            put("editCount", JsonPrimitive(s.editCount))
+            put("thinkingOverride", s.thinkingOverride?.let(::JsonPrimitive) ?: JsonNull)
+        }
     }
 }

@@ -24,13 +24,13 @@ Future<List<XFile>> selectFiles(
             type: type,
             dialogTitle: title,
           );
-          return result?.xFiles;
+          return result.map((e) => e.xFile).toList();
         }
         final result = await FilePicker.pickFile(
           type: type,
           dialogTitle: title,
         );
-        return [?result?.xFile];
+        return result == null ? <XFile>[] : [result.xFile];
       },
     ),
   );

@@ -7,6 +7,7 @@ import 'package:bitjarvis/config/app_config.dart';
 import 'package:bitjarvis/config/setting_keys.dart';
 import 'package:bitjarvis/config/themes.dart';
 import 'package:bitjarvis/pages/chat_list/chat_list.dart';
+import 'package:bitjarvis/pages/chat_list/jarvis_entry_fab.dart';
 import 'package:bitjarvis/pages/chat_list/navigation_rail.dart';
 import 'package:bitjarvis/pages/chat_list/start_chat_fab.dart';
 import 'package:flutter/material.dart';
@@ -97,10 +98,25 @@ class ChatListView extends StatelessWidget {
                         !FluffyThemes.isColumnMode(context)
                     ? ValueListenableBuilder(
                         valueListenable: controller.scrolledToTop,
-                        builder: (context, scrolledToTop, _) => StartChatFab(
-                          extended:
-                              scrolledToTop &&
-                              !AppSettings.displayNavigationRail.value,
+                        builder: (context, scrolledToTop, _) => Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // 「贾维斯」入口：位于「新的对话」按钮正上方，
+                            // 与「新的对话」完全同步展开/收起文字
+                            // （列表滚到顶部时一起展开，下滑离开时一起收起）。
+                            JarvisEntryFab(
+                              extended:
+                                  scrolledToTop &&
+                                  !AppSettings.displayNavigationRail.value,
+                            ),
+                            const SizedBox(height: 12),
+                            StartChatFab(
+                              extended:
+                                  scrolledToTop &&
+                                  !AppSettings.displayNavigationRail.value,
+                            ),
+                          ],
                         ),
                       )
                     : const SizedBox.shrink(),

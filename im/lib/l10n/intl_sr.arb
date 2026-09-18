@@ -1,4 +1,4 @@
-{
+﻿{
     "@@last_modified": "2021-08-14 12:41:09.857024",
     "about": "О програму",
     "@about": {
@@ -2113,5 +2113,6 @@
     "changeAccountProvider": "Промени добављача налога",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

@@ -382,6 +382,15 @@ class BackupImporter(
                     editCount = s.int("editCount") ?: 0,
                     thinkingOverride = s.str("thinkingOverride"),
                     folderId = s.str("folderId"),
+                    // [T-role-session-bound] Keep the session↔persona binding
+                    // across a restore. Without this the row landed with
+                    // role_id = NULL and RoleStore fell back to the default
+                    // persona, so EVERY restored conversation rendered as
+                    // Jarvis (name + avatar) no matter which role it belonged
+                    // to — the reported bug. `?: existing?.roleId` also covers
+                    // the merge case: a package from a build that predates the
+                    // roleId export must not wipe a live row's binding.
+                    roleId = s.str("roleId") ?: existing?.roleId,
                 )
             )
             if (existing == null) report.imported += 1 else report.updated += 1

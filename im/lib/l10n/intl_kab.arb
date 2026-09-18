@@ -2361,5 +2361,6 @@
     "changeAccountProvider": "Beddel aseqdac n umiḍan",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

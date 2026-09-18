@@ -553,6 +553,8 @@
     <string name="sessionlist_duplicate">Duplicate</string>
     <string name="sessionlist_search_action">Search</string>
     <string name="sessionlist_dismiss">Dismiss</string>
+    <!-- [T-im-merge] IM entry on the home toolbar (embedded Flutter IM). -->
+    <string name="sessionlist_open_im">Open IM</string>
     <string name="sessionlist_delete_one_title">Delete conversation?</string>
     <string name="sessionlist_delete_n_title">Delete %1$d conversations?</string>
     <string name="sessionlist_delete_message">This cannot be undone.</string>

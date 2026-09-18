@@ -1,4 +1,4 @@
-{
+﻿{
     "alias": "მეტსახელი",
     "@alias": {
         "type": "String",
@@ -1963,5 +1963,6 @@
     "changeAccountProvider": "ანგარიშის პროვაიდერის შეცვლა",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

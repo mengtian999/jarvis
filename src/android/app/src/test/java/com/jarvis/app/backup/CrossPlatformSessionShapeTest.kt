@@ -48,6 +48,7 @@ class CrossPlatformSessionShapeTest {
             {"t":"SessionV2","v":1,"d":{"memoryEnabled":true,"session":{
             "category":"support","createdAt":"2026-07-22T08:15:58Z",
             "id":"0006B985-A43A-48C3-A489-4189F792ED0F","modelId":"claude-sonnet-5",
+            "roleId":"health",
             "title":"理想超充站充电流程","updatedAt":"2026-07-22T08:43:38Z"}}}
         """.trimIndent().replace("\n", "")
 
@@ -59,6 +60,11 @@ class CrossPlatformSessionShapeTest {
         assertEquals("0006B985-A43A-48C3-A489-4189F792ED0F", s.str("id"))
         assertEquals("理想超充站充电流程", s.str("title"))
         assertEquals("claude-sonnet-5", s.str("modelId"))
+        // [T-role-session-bound] iOS nests the binding with the rest of the
+        // ChatSession, so unwrapping must surface it — this is the value the
+        // importer binds to the restored row. Without it a cross-platform
+        // restore lands every conversation on the default persona.
+        assertEquals("health", s.str("roleId"))
         // The wrapper's sibling field survives the merge.
         assertEquals("true", s.str("memoryEnabled"))
     }
@@ -67,6 +73,7 @@ class CrossPlatformSessionShapeTest {
     fun `an Android session is unchanged by unwrapping`() {
         val android = """
             {"t":"SessionV2","v":1,"d":{"id":"A1","title":"local","modelId":"m",
+            "roleId":"work",
             "memoryEnabled":true,"createdAt":"2026-08-01T00:00:00Z",
             "updatedAt":"2026-08-01T00:00:00Z"}}
         """.trimIndent().replace("\n", "")
@@ -74,6 +81,7 @@ class CrossPlatformSessionShapeTest {
         val s = payload(android).unwrapNested("session")
         assertEquals("A1", s.str("id"))
         assertEquals("local", s.str("title"))
+        assertEquals("work", s.str("roleId"))
         assertEquals("true", s.str("memoryEnabled"))
     }
 

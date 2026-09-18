@@ -2408,5 +2408,6 @@
     "changeAccountProvider": "계정 제공자 변경",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "자비스"
 }

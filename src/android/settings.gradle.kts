@@ -7,7 +7,12 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    // [T-im-merge] 从 FAIL_ON_PROJECT_REPOS 放宽为 PREFER_PROJECT：
+    // Flutter 的 Gradle 插件（:flutter 工程）会向 project 级 repositories
+    // 添加 download.flutter.io 的 Maven 仓库以拉取引擎构件；
+    // FAIL_ON_PROJECT_REPOS 会在配置期直接报错。PREFER_PROJECT 下
+    // settings 仓库仍是兜底，项目级声明优先，行为安全。
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
@@ -28,4 +33,14 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Jarvis"
+
+// ── [T-im-merge] Flutter IM module（bitjarvis, add-to-app）─────────────────
+//
+// IM 位于仓库根 im/，其 pubspec.yaml 已声明 `flutter: module:`。
+// 首次集成或 IM 依赖变化后，需在 <repo>/im 下执行一次 `flutter pub get`
+// 生成 .android/ 临时工程。下面通过 include_flutter.groovy 把 :flutter
+// 与各插件工程纳入本构建；该脚本内部会识别 `apply from:` 上下文
+// （模板注释明确支持此用法），并为 flutter-gradle-plugin 注册 includeBuild。
+apply(from = File(settingsDir, "../../im/.android/include_flutter.groovy"))
+
 include(":app")

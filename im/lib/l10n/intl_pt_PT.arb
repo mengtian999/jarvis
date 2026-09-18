@@ -2211,5 +2211,6 @@
     "changeAccountProvider": "Alterar fornecedor da conta",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

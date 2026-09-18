@@ -44,6 +44,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+// [T-im-merge] IM entry (embedded Flutter IM) + theme-aware entry icon.
+import androidx.compose.ui.res.painterResource
+import com.jarvis.app.im.ImFlutterActivity
+import com.jarvis.app.im.ImFlutterEngine
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -469,6 +473,11 @@ fun SessionListScreen(
     // [T-android-scheduled-tasks-design] Entry to the scheduled-tasks list.
     onScheduledTasksClick: () -> Unit = {},
     /**
+     * [T-im-merge] IM（合并 App）入口：打开内嵌的 Flutter IM。
+     * 由导航层（ChatSplitScaffoldRoute）接线到 ImFlutterEngine/ImFlutterActivity。
+     */
+    onImClick: () -> Unit = {},
+    /**
      * [T-android-tablet-split] The session currently shown in the detail pane,
      * highlighted in the list. Non-null only in two-pane (tablet) mode — in
      * single-pane the list is never on screen next to a chat, so there is
@@ -891,6 +900,26 @@ fun SessionListScreen(
                                     },
                                 )
                             }
+                        }
+                        // [T-im-merge] IM 入口：工具栏最右侧的入口图标。
+                        // 图标按 **App 实际主题**（ChatPalette.isDark，支持应用内
+                        // 主题覆盖）选择：浅色 imq.png → im_entry_light，深色
+                        // ims.png → im_entry_dark。不能用 drawable-night 限定符：
+                        // 它只跟随系统 uiMode，与本 App 的 Compose 侧深色模式
+                        // 可能不一致。
+                        // tint = Unspecified：Icon 默认用 LocalContentColor 给
+                        // painter 整体着色，会把彩色 PNG（imq 黄 / ims 蓝）染成
+                        // 单色；显式关闭着色以保留图标本身的多彩配色。
+                        val imIconRes =
+                            if (ChatColors.isDark) R.drawable.im_entry_dark
+                            else R.drawable.im_entry_light
+                        IconButton(onClick = onImClick) {
+                            Icon(
+                                painter = painterResource(imIconRes),
+                                contentDescription = stringResource(R.string.sessionlist_open_im),
+                                modifier = Modifier.size(28.dp),
+                                tint = Color.Unspecified,
+                            )
                         }
                     }
                 },

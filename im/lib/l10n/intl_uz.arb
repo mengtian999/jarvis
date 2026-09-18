@@ -2478,5 +2478,6 @@
     "changeAccountProvider": "Hisob provayderini o'zgartirish",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

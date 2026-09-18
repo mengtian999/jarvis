@@ -1,6 +1,31 @@
 # Tink references errorprone annotations that aren't shipped at runtime
 -dontwarn com.google.errorprone.annotations.**
 
+# [T-im-merge] Keep Flutter embedding + all Flutter plugin classes.
+# Without this, R8 (proguard-android-optimize.txt) renames/removes classes
+# that GeneratedPluginRegistrant instantiates reflectively at runtime.
+# Seen symptom on first IM launch: shared_preferences channel 'getAll' fails
+# with PlatformException(channel-error) because the LegacySharedPreferencesPlugin
+# class was stripped, and IM's main() never reaches runApp().
+-keep class io.flutter.plugins.** { *; }
+-keep class io.flutter.embedding.** { *; }
+-keep class io.flutter.plugin.common.** { *; }
+-keep class io.flutter.view.** { *; }
+# Flutter plugins that ship Java classes used through MethodChannel/Pigeon:
+-keep class io.flutter.plugins.sharedpreferences.** { *; }
+-keep class dev.fluttercommunity.plus.** { *; }
+-keep class com.llfbandit.** { *; }
+-keep class com.mr.flutter.** { *; }
+-keep class com.ryanheise.** { *; }
+-keep class com.flungo.** { *; }
+-keep class com.fintasys.** { *; }
+-keep class one.mixin.** { *; }
+-keep class io.material.** { *; }
+-keep class com.bugsnag.** { *; }
+-dontwarn io.flutter.**
+-dontwarn dev.fluttercommunity.**
+-dontwarn com.llfbandit.**
+
 # [T-android-vad-jni-keep / GH#250] RealTimeCutVAD's C++ layer calls back into
 # VADWrapper BY NAME through JNI (GetMethodID "onVoiceStart" / "onVoiceEnd" /
 # "onVoiceDidContinue"). Those three are PRIVATE Java methods with no Java-side

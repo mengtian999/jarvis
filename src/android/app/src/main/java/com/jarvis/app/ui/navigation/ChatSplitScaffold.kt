@@ -67,6 +67,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import com.jarvis.app.R
+import com.jarvis.app.im.ImFlutterActivity
+import com.jarvis.app.im.ImFlutterEngine
 import java.util.UUID
 
 /**
@@ -879,6 +881,9 @@ fun ChatSplitScaffoldRoute(
     ChatSplitScaffold(
         initialSessionId = initialSessionId,
         listPane = { selectedSessionId, draftPlaceholderId, onSessionSelected ->
+            // [T-im-merge] IM 入口接线：懒预热缓存引擎后以 cached-engine 启动
+            // ImFlutterActivity（首次点击有 1~2s Dart 启动开销，之后秒开）。
+            val context = LocalContext.current
             com.jarvis.app.ui.sessions.SessionListScreen(
                 chatRepository = chatRepository,
                 providerRepository = providerRepository,
@@ -895,6 +900,10 @@ fun ChatSplitScaffoldRoute(
                 onTerminalClick = { navController.safeNavigate(Routes.terminal()) },
                 onRootfsClick = { navController.safeNavigate(Routes.ROOTFS_MANAGEMENT) },
                 onScheduledTasksClick = { navController.safeNavigate(Routes.SCHEDULED_TASKS) },
+                onImClick = {
+                    ImFlutterEngine.ensure(context)
+                    context.startActivity(ImFlutterActivity.buildIntent(context))
+                },
                 selectedSessionId = selectedSessionId,
                 // [T-android-draft-placeholder-row] Synthetic "New Chat" row,
                 // never persisted — see the listPane param docs.

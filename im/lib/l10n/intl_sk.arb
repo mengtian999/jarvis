@@ -1,4 +1,4 @@
-{
+﻿{
     "@@locale": "sk",
     "@@last_modified": "2021-08-14 12:41:09.879987",
     "about": "O aplikácii",
@@ -2039,5 +2039,6 @@
     "changeAccountProvider": "Zmeniť poskytovateľa účtu",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

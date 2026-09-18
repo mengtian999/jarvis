@@ -1,4 +1,4 @@
-{
+﻿{
     "@@last_modified": "2021-08-14 12:41:09.781172",
     "about": "Giới thiệu",
     "@about": {
@@ -1959,5 +1959,6 @@
     "changeAccountProvider": "Đổi nhà cung cấp tài khoản",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

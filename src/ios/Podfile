@@ -1,0 +1,21 @@
+# [T-im-merge] IM（bitjarvis Flutter module，add-to-app）的 CocoaPods 集成。
+#
+# 前置条件：在 <repo>/im 下执行过 `flutter pub get`（生成 .ios/ 临时工程）。
+# 首次集成：
+#   cd src/ios && pod install
+# 之后请通过 Minis.xcworkspace（而非 Minis.xcodeproj）打开工程。
+#
+# 平台版本与主工程 IPHONEOS_DEPLOYMENT_TARGET(26.2) 保持一致；
+# Flutter module 仅要求 >= 13，不会抬高此值。
+platform :ios, '26.2'
+
+flutter_application_path = '../../im'
+load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+
+target 'Minis' do
+  install_all_flutter_pods(flutter_application_path)
+
+  target 'MinisTests' do
+    inherit! :search_paths
+  end
+end

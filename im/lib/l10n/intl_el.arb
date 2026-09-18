@@ -1,4 +1,4 @@
-{
+﻿{
     "hugContent": "{senderName} σε αγκαλιάζει",
     "@hugContent": {
         "type": "String",
@@ -1881,5 +1881,6 @@
     "changeAccountProvider": "Αλλαγή παρόχου λογαριασμού",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

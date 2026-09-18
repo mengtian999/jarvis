@@ -78,32 +78,12 @@ void main(List<String> args) async {
 
   Logs().nativeColors = !PlatformInfos.isIOS;
 
-  // If the app starts in detached mode, we assume that it is in
-  // background fetch mode for processing push notifications. This is
-  // currently only supported on Android.
-  if (PlatformInfos.isAndroid &&
-      AppLifecycleState.detached == WidgetsBinding.instance.lifecycleState) {
-    await ForegroundServices.startService('background_push');
-
-    final clients = await ClientManager.getClients(store: store);
-
-    // Do not send online presences when app is in background fetch mode.
-    for (final client in clients) {
-      client.backgroundSync = false;
-      client.syncPresence = PresenceType.offline;
-    }
-
-    // In the background fetch mode we do not want to waste ressources with
-    // starting the Flutter engine but process incoming push notifications.
-    BackgroundPush.clientOnly(clients);
-    // To start the flutter engine afterwards we add an custom observer.
-    WidgetsBinding.instance.addObserver(AppStarter(clients, store));
-    Logs().i(
-      '${AppSettings.applicationName.value} started in background-fetch mode. No GUI will be created unless the app is no longer detached.',
-    );
-    return;
-  }
-
+  // [T-im-merge] Background-fetch branch removed for the Agent host.
+  // Cached-engine mode runs main() while the engine is still detached from
+  // any Activity; the original branch returned before runApp() and the IM
+  // screen never rendered. The host drives the lifecycle itself, so the
+  // background-push setup isn't needed here. Standalone IM APK behaviour is
+  // restored separately if/when that build target is revived.
   final clients = await ClientManager.getClients(store: store);
 
   // Started in foreground mode.

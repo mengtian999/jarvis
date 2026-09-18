@@ -545,5 +545,19 @@
                 android:resource="@xml/jarvis_accessibility_service" />
         </service>
 
+        <!-- [T-im-merge] IM（bitjarvis Flutter module）宿主 Activity。
+             引擎由 ImFlutterEngine 懒预热并缓存；launchMode=singleTask + 同一
+             taskAffinity 使 IM 压在 Agent 栈上，系统返回即可回到 Agent，
+             也不会在多任务里出现第二个 Jarvis 任务。
+             configChanges 覆盖与 MainActivity 相同的维度，避免旋转/分屏时
+             FlutterView 被销毁重建（cached engine 的 attach/detach 开销）。 -->
+        <activity
+            android:name=".im.ImFlutterActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden|keyboard|locale|layoutDirection|fontScale|density|uiMode"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.Jarvis"
+            android:windowSoftInputMode="adjustResize" />
+
     </application>
 </manifest>

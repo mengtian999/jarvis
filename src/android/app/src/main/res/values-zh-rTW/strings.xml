@@ -491,6 +491,8 @@
     <string name="sessionlist_duplicate">複製</string>
     <string name="sessionlist_search_action">搜尋</string>
     <string name="sessionlist_dismiss">關閉</string>
+    <!-- [T-im-merge] IM entry on the home toolbar (embedded Flutter IM). -->
+    <string name="sessionlist_open_im">開啟 IM</string>
     <string name="sessionlist_delete_one_title">刪除此對話？</string>
     <string name="sessionlist_delete_n_title">刪除 %1$d 個對話？</string>
     <string name="sessionlist_delete_message">此操作無法復原。</string>

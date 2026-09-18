@@ -22,6 +22,18 @@ val appCustomization = Properties().apply {
 fun customizationValue(key: String): String =
     (appCustomization.getProperty(key) ?: "").replace("\"", "\\\"")
 
+// Workaround for https://pub.dev/packages/unifiedpush#the-build-fails-because-of-duplicate-classes
+// Matrix SDK pulls in both `tink` (pure JVM) and `tink-android`; they share class names.
+val tinkForce = "com.google.crypto.tink:tink-android:1.23.0"
+configurations.all {
+    resolutionStrategy {
+        force(tinkForce)
+        dependencySubstitution {
+            substitute(module("com.google.crypto.tink:tink")).using(module(tinkForce))
+        }
+    }
+}
+
 android {
     namespace = "com.jarvis.app"
     // [T-android-dynamic-island] Bumped 35→36 so the Android 16 (Baklava)
@@ -86,6 +98,13 @@ android {
     }
 
     compileOptions {
+        // [T-im-merge] flutter_local_notifications 22.x 的 AAR 元数据声明
+        // coreLibraryDesugaring=true，所以 add-to-app 宿主必须显式开启，
+        // 否则 :app:checkDebugAarMetadata 直接失败：
+        //   "Dependency ':flutter_local_notifications' requires core library
+        //    desugaring to be enabled for :app."
+        // 独立 Flutter App 由 Flutter 模板自动配好；原生宿主（本工程）要自己加。
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -182,6 +201,18 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") && it
     .configureEach { dependsOn(stageDebugSkillAssets) }
 
 dependencies {
+    // [T-im-merge] IM（bitjarvis Flutter module，add-to-app）。
+    // :flutter 由 settings.gradle.kts 通过 include_flutter.groovy 引入
+    // （im/ 下的 Flutter module），提供 Flutter 引擎 AAR 与
+    // GeneratedPluginRegistrant；各 Flutter 插件工程由
+    // module_plugin_loader 在 settings 阶段引入并自动接线。
+    implementation(project(":flutter"))
+
+    // [T-im-merge] Core library desugaring，配套 compileOptions 里的
+    // coreLibraryDesugaringEnabled（原因见那里）：flutter_local_notifications
+    // 22.x 的 AAR 元数据要求宿主开启。2.1.4 是 AGP 8.11.1 时代的当前版本。
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
     // Compose BOM
     val composeBom = platform("androidx.compose:compose-bom:2025.09.00")
     implementation(composeBom)
@@ -223,9 +254,9 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.5")
 
     // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.1")
+    implementation("androidx.room:room-ktx:2.7.1")
+    ksp("androidx.room:room-compiler:2.7.1")
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
@@ -246,7 +277,7 @@ dependencies {
     // `deps/build_rclone_android.sh` — the .aar is a build artifact under
     // app/libs/, not a checked-in binary. Backends are decided by
     // deps/rclone-mobile/backends/backends.go, shared with the iOS build.
-    implementation(group = "", name = "rclone", ext = "aar")
+    implementation(files("libs/rclone.aar"))
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-sse:4.12.0")

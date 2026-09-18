@@ -1,4 +1,4 @@
-{
+﻿{
     "notAnImage": "ఇమేజ్ ఫైల్ కాదు.",
     "repeatPassword": "పాస్‌వర్డ్‌ను పునరావృతం చేయండి",
     "remove": "తొలగించు",
@@ -1978,5 +1978,6 @@
     "changeAccountProvider": "ఖాతా ప్రొవైడర్‌ను మార్చండి",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

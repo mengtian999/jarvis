@@ -1,4 +1,4 @@
-{
+﻿{
     "repeatPassword": "Repeter le contrasigno",
     "notAnImage": "Non es un file de imagine.",
     "remove": "Remover",
@@ -1993,5 +1993,6 @@
     "changeAccountProvider": "Cambiar fornitore de conto",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

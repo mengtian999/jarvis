@@ -1,4 +1,4 @@
-{
+﻿{
     "@@last_modified": "2021-08-14 12:41:10.036931",
     "about": "אודות",
     "@about": {
@@ -2054,5 +2054,6 @@
     "changeAccountProvider": "החלף ספק חשבון",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

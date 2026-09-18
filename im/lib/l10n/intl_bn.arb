@@ -1,4 +1,4 @@
-{
+﻿{
     "@@last_modified": "2021-08-14 12:41:10.154280",
     "about": "সম্পর্কে",
     "@about": {
@@ -1866,5 +1866,6 @@
     "changeAccountProvider": "অ্যাকাউন্ট প্রদানকারী পরিবর্তন করুন",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

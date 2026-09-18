@@ -1,4 +1,4 @@
-{
+﻿{
     "remove": "Tanggalin",
     "@remove": {
         "type": "String",
@@ -1998,5 +1998,6 @@
     "changeAccountProvider": "Palitan ang tagapagbigay ng account",
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
-    }
+    },
+    "jarvis": "Jarvis"
 }

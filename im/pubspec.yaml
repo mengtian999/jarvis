@@ -107,6 +107,15 @@ flutter:
     - assets/logo/mini/
     - assets/sounds/
     - assets/vodozemac/
+  # Add-to-app（贾维斯合并）：以 Flutter module 形式嵌入原生 Agent 宿主。
+  # `flutter pub get` 会生成 .android / .ios 临时工程供宿主的
+  # Gradle（settings.gradle.kts → include_flutter.groovy）与
+  # CocoaPods（Podfile → podhelper.rb）集成。独立出包流程
+  # （im/android、im/ios）不受影响。
+  module:
+    androidX: true
+    androidPackage: chat.bitjarvis.im
+    iosBundleIdentifier: chat.bitjarvis.im
 
 hooks:
   user_defines:
