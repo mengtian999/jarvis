@@ -38,9 +38,12 @@ object ImFlutterEngine {
         // background-fetch 分支。必须在 engine 构造 + executeDartEntrypoint
         // 之前写入，否则 main() 读到默认值 null，会走 background-fetch
         // 分支 return，IM 界面保持黑屏。Flutter SharedPreferences 用的
-        // Android 文件名是 flutter.shared_preferences。
+        // Android 文件名是 flutter.shared_preferences。注意 Dart 侧
+        // shared_preferences 插件读写时 key 会自动加 `flutter.` 前缀
+        // （AgentBridge.isEmbedded / voip_plugin.dart 均依赖此标志），
+        // 因此这里必须写入带前缀的 key。
         context.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-            .edit().putBoolean("jarvis.im.embedded", true).commit()
+            .edit().putBoolean("flutter.jarvis.im.embedded", true).commit()
         return runCatching {
             FlutterEngine(context.applicationContext).also { engine ->
                 engine.dartExecutor.executeDartEntrypoint(

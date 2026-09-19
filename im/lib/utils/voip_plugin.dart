@@ -6,6 +6,7 @@
 import 'dart:core';
 
 import 'package:bitjarvis/pages/dialer/dialer.dart';
+import 'package:bitjarvis/utils/agent_bridge.dart';
 import 'package:bitjarvis/utils/platform_infos.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -111,7 +112,13 @@ class VoipPlugin with WidgetsBindingObserver implements WebRTCDelegate {
         );
         FlutterForegroundTask.setOnLockScreenVisibility(true);
         FlutterForegroundTask.wakeUpScreen();
-        FlutterForegroundTask.launchApp();
+        // [T-im-merge] 嵌入 Agent 宿主时绝不调用 launchApp()：它会把宿主
+        // 启动 Activity（Agent 主界面）拉到前台，盖住 IM 里刚弹出的通话
+        // 覆盖层，表现为「发起/接听通话就跳回 Agent」。嵌入模式下通话
+        // 界面就是 IM 的覆盖层，留在原地即可。
+        if (!await AgentBridge.isEmbedded()) {
+          FlutterForegroundTask.launchApp();
+        }
       } catch (e) {
         Logs().e('VOIP foreground failed $e');
       }
@@ -131,7 +138,11 @@ class VoipPlugin with WidgetsBindingObserver implements WebRTCDelegate {
         FlutterForegroundTask.setOnLockScreenVisibility(false);
         FlutterForegroundTask.stopService();
         final wasForeground = matrix.store.getString('wasForeground');
-        if (wasForeground == 'false') FlutterForegroundTask.minimizeApp();
+        // [T-im-merge] 嵌入宿主时不做 minimizeApp()，避免挂断后把整个
+        // App（含 Agent 主界面）压到后台。
+        if (wasForeground == 'false' && !await AgentBridge.isEmbedded()) {
+          FlutterForegroundTask.minimizeApp();
+        }
       }
     }
   }

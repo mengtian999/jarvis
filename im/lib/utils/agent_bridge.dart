@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// IM ↔ Agent 桥接通道。
 ///
@@ -15,6 +16,35 @@ class AgentBridge {
 
   /// 与原生侧 `ImFlutterEngine`（Android）/ `IMEmbed`（iOS）约定的通道名。
   static const MethodChannel channel = MethodChannel('jarvis.im/agent_bridge');
+
+  /// 嵌入标志的 SharedPreferences key。
+  ///
+  /// Android 宿主（ImFlutterEngine）在启动引擎前会向 Flutter 的
+  /// SharedPreferences（文件 `FlutterSharedPreferences`，注意 Dart 插件读写
+  /// 时 key 带 `flutter.` 前缀，故宿主需写入 `flutter.jarvis.im.embedded`）
+  /// 写入 `true`；独立运行时该 key 不存在。
+  static const String embeddedPrefKey = 'jarvis.im.embedded';
+
+  static bool? _embeddedCache;
+
+  /// 当前 Flutter 引擎是否嵌入在 Agent 宿主内运行。
+  ///
+  /// 结果会在首次读取后缓存（宿主在引擎启动前写好标志，运行期不变）。
+  /// 任何异常（独立模式引擎刚启动等）一律按「未嵌入」处理，保证独立
+  /// 出包行为不受影响。
+  static Future<bool> isEmbedded() async {
+    final cached = _embeddedCache;
+    if (cached != null) return cached;
+    var embedded = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      embedded = prefs.getBool(embeddedPrefKey) ?? false;
+    } catch (e) {
+      debugPrint('[AgentBridge] isEmbedded read failed: $e');
+    }
+    _embeddedCache = embedded;
+    return embedded;
+  }
 
   /// 请求原生宿主收起 IM、返回 Agent 界面。
   static Future<void> exitToAgent() async {
