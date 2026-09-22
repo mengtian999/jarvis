@@ -14,6 +14,8 @@ import com.jarvis.app.sandbox.NativeOffloadRequest
 import com.jarvis.app.sandbox.NativeOffloadResult
 import com.jarvis.app.sandbox.PRootKernel
 import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -376,6 +378,19 @@ class ModelUseOffloadHandler(
         )
         if (imageRouted != null) return attachCallFeedback(imageRouted, callWarnings, appliedExtras)
 
+        val videoRouted = tryVideoGenerationRoute(
+            entry = entry,
+            instance = instance,
+            provider = provider,
+            inputJson = inputText,
+            fallbackPromptMessages = nonSystem,
+            outputPath = outputPath,
+            outputExt = outputExt,
+            sessionId = request.sessionId,
+            callWarnings = callWarnings,
+        )
+        if (videoRouted != null) return attachCallFeedback(videoRouted, callWarnings, appliedExtras)
+
         val response = try {
             runBlocking {
                 provider.sendMessage(
@@ -428,6 +443,28 @@ class ModelUseOffloadHandler(
                     put("path", outputPath)
                     put("size", firstMedia.data.size)
                 })
+            } else if (isVideoExt(outputExt) && provider is com.jarvis.app.provider.openai.OpenAIProvider) {
+                val videoUrl = provider.extractVideoUrl(response.text)
+                val downloaded = if (videoUrl != null) provider.downloadVideoAttachment(videoUrl) else null
+                if (downloaded != null) {
+                    hostFile.parentFile?.mkdirs()
+                    hostFile.writeBytes(downloaded.data)
+                    logModelUseWrite(outputPath, hostFile, sessionId)
+                    mediaFiles.put(JSONObject().apply {
+                        put("type", downloaded.type.value)
+                        put("mime_type", downloaded.mimeType)
+                        put("path", outputPath)
+                        put("size", downloaded.data.size)
+                    })
+                } else {
+                    Log.d(
+                        "ModelUseImage",
+                        "handler text fallback: path=$outputPath textLen=${response.text.length} " +
+                            "mediaAttachments=${response.mediaAttachments.size} outputIsMedia=$outputIsMedia",
+                    )
+                    hostFile.parentFile?.mkdirs()
+                    hostFile.writeText(response.text)
+                }
             } else {
                 Log.d(
                     "ModelUseImage",
@@ -533,6 +570,36 @@ class ModelUseOffloadHandler(
             else -> null
         }
         return ImageGenConfig(prompt, n, size, quality, endpoint)
+    }
+
+    private data class VideoGenConfig(
+        val prompt: String? = null,
+        val aspectRatio: String? = null,
+        val seconds: String? = null,
+    )
+
+    private fun parseVideoGenConfig(inputJson: String): VideoGenConfig {
+        val obj = try {
+            val t = inputJson.trim()
+            if (t.startsWith("{")) JSONObject(t) else null
+        } catch (_: Throwable) { null } ?: return VideoGenConfig()
+
+        var prompt: String? = null
+        var aspectRatio: String? = null
+        var seconds: String? = null
+
+        obj.optJSONObject("generation_config")?.let { gc ->
+            aspectRatio = gc.safeOptString("aspect_ratio", "").ifEmpty { gc.safeOptString("ratio", "").ifEmpty { null } }
+            seconds = gc.safeOptString("seconds", "").ifEmpty { gc.safeOptString("duration", "").ifEmpty { null } }
+        }
+
+        obj.safeOptString("prompt", "").takeIf { it.isNotEmpty() }?.let { prompt = it }
+        obj.safeOptString("aspect_ratio", "").takeIf { it.isNotEmpty() }?.let { aspectRatio = it }
+        obj.safeOptString("ratio", "").takeIf { it.isNotEmpty() }?.let { aspectRatio = it }
+        obj.safeOptString("seconds", "").takeIf { it.isNotEmpty() }?.let { seconds = it }
+        obj.safeOptString("duration", "").takeIf { it.isNotEmpty() }?.let { seconds = it }
+
+        return VideoGenConfig(prompt, aspectRatio, seconds)
     }
 
     /**
@@ -1179,6 +1246,59 @@ class ModelUseOffloadHandler(
         return writeImageResult(entry, response, outputPath, outputExt, "images_generations", sessionId)
     }
 
+    private fun tryVideoGenerationRoute(
+        entry: ModelEntry,
+        instance: com.jarvis.app.data.model.ProviderInstance,
+        provider: com.jarvis.app.provider.LLMProvider,
+        inputJson: String,
+        fallbackPromptMessages: List<ParsedMessage>,
+        outputPath: String?,
+        outputExt: String,
+        sessionId: String?,
+        callWarnings: MutableList<String> = mutableListOf(),
+    ): NativeOffloadResult? {
+        val outputs = entry.model.outputModalities.orEmpty()
+        val wantsVideoOutput = "video" in outputs
+        val openAI = provider as? com.jarvis.app.provider.openai.OpenAIProvider
+        // Only OpenAI-compatible API-key instances with a video-output model.
+        if (!wantsVideoOutput || openAI == null) return null
+        val pType = instance.providerType
+        if (pType != ProviderType.openAI && pType != ProviderType.openRouter && pType != ProviderType.xAI) return null
+        if (instance.credentialType == com.jarvis.app.data.model.ProviderCredential.oauth) return null
+
+        val cfg = parseVideoGenConfig(inputJson)
+        val prompt = cfg.prompt
+            ?: fallbackPromptMessages.lastOrNull { it.role == "user" }?.content
+            ?: ""
+
+        val response = try {
+            runBlocking {
+                openAI.generateVideo(
+                    prompt = prompt,
+                    aspectRatio = cfg.aspectRatio,
+                    seconds = cfg.seconds,
+                )
+            }
+        } catch (e: Throwable) {
+            val msg = e.message ?: ""
+            val routeMissing = (e is com.jarvis.app.data.model.LLMError.ProviderError ||
+                e is com.jarvis.app.data.model.LLMError.InvalidApiKey) && looksLikeEndpointMissing(msg)
+            if (routeMissing) {
+                Log.i(TAG, "[ModelUseRoute] videos/generations route missing (${msg.take(120)}) — falling back to chat completions")
+                return null // fall through to chat completions
+            }
+            Log.w(TAG, "[ModelUseRoute] video generation failed: ${e.message}", e)
+            val base = e.message ?: "video_generation_failed"
+            return NativeOffloadResult(
+                1,
+                JSONObject().put("error", "video_generation_failed")
+                    .put("message", base)
+                    .toString() + "\n",
+            )
+        }
+        return writeImageResult(entry, response, outputPath, outputExt, "videos_generations", sessionId)
+    }
+
     /**
      * [T-android-image-endpoint-mode] Write an image-generation [response] to
      * --output (media-first when the path is an image extension) and build the
@@ -1207,7 +1327,7 @@ class ModelUseOffloadHandler(
                     2,
                     "jarvis-model-use run: cannot resolve --output '$outputPath'\n",
                 )
-            val outputIsMedia = isImageExt(outputExt)
+            val outputIsMedia = isImageExt(outputExt) || isVideoExt(outputExt) || isAudioExt(outputExt)
             if (firstMedia != null && outputIsMedia) {
                 hostFile.parentFile?.mkdirs()
                 hostFile.writeBytes(firstMedia.data)
@@ -1249,9 +1369,10 @@ class ModelUseOffloadHandler(
             put("model", entry.model.id)
             put("text", response.text)
             put("image_endpoint", endpointUsed)
+            put("media_endpoint", endpointUsed)
             if (outputPath != null) put("output_file", outputPath)
             if (mediaFiles.length() > 0) put("media_files", mediaFiles)
-            if (firstMedia == null) put("warning", "Image endpoint returned no image data.")
+            if (firstMedia == null) put("warning", "$endpointUsed returned no media data.")
         }
         return NativeOffloadResult(0, body.toString(2) + "\n")
     }

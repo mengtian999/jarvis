@@ -1780,4 +1780,7 @@
     <string name="chat_input_placeholder_hint_5">Jarvis peut régler la touche ↩︎ sur envoyer ou saut de ligne</string>
     <string name="compact_progress">Compactage… %1$d s écoulées</string>
     <string name="compact_progress_split">Compactage… %1$d s · résumé par segments (%2$d/%3$d)</string>
+    <string name="provider_detail_managed_gateway_url">Routage intelligent Jarvis (chiffré)</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●● (Géré par le cloud système)</string>
+    <string name="provider_detail_managed_export_not_supported">Les fournisseurs intégrés ne peuvent pas être exportés.</string>
 </resources>

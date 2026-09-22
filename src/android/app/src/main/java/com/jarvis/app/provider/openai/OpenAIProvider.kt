@@ -1902,6 +1902,139 @@ class OpenAIProvider private constructor(
         return LLMResponse(text, "end_turn", null, attachments)
     }
 
+    /**
+     * Call `/videos/generations` (or fallback to chat completions) for video generation.
+     */
+    suspend fun generateVideo(
+        prompt: String,
+        aspectRatio: String? = null,
+        seconds: String? = null,
+    ): LLMResponse = withContext(Dispatchers.IO) {
+        val token = getToken()
+        val videoPath = "/videos/generations"
+        val url = "$basePath$videoPath"
+
+        val body = JSONObject()
+            .put("model", model.id)
+            .put("prompt", prompt)
+        if (aspectRatio != null) body.put("aspect_ratio", aspectRatio)
+        if (seconds != null) body.put("seconds", seconds)
+
+        val bodyStr = body.toString()
+        val jsonMediaType = "application/json".toMediaType()
+        val requestBody = bodyStr.toRequestBody(jsonMediaType)
+
+        val builder = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .applyKeyAuth(token)
+            .header("Content-Type", "application/json")
+        for ((key, value) in extraHeaders) {
+            builder.header(key, value)
+        }
+        builder.applyUserAgentOverride(customUserAgent)
+        val request = builder.build()
+
+        com.jarvis.app.logging.AppLogger.info(
+            "OpenAIProvider",
+            "[ModelUseRoute] → videos/generations url=$url model=${model.id} prompt=${prompt.take(50)}",
+        )
+
+        val response = client.newCall(request).execute()
+        val statusCode = response.code
+        val responseBody = response.body?.string() ?: ""
+        response.close()
+
+        if (statusCode == 404) {
+            com.jarvis.app.logging.AppLogger.info(
+                "OpenAIProvider",
+                "[ModelUseRoute] videos/generations 404, falling back to sendMessage",
+            )
+            val chatResp = sendMessage(
+                messages = listOf(LLMMessage(role = LLMMessage.Role.USER, content = prompt)),
+                systemPrompt = null,
+                maxTokens = 4096,
+            )
+            val videoUrl = extractVideoUrl(chatResp.text)
+            if (videoUrl != null) {
+                val downloaded = downloadVideoAttachment(videoUrl)
+                if (downloaded != null) {
+                    return@withContext LLMResponse(
+                        text = chatResp.text,
+                        stopReason = chatResp.stopReason,
+                        usage = chatResp.usage,
+                        mediaAttachments = listOf(downloaded),
+                    )
+                }
+            }
+            return@withContext chatResp
+        }
+
+        if (statusCode !in 200..299) {
+            com.jarvis.app.logging.AppLogger.warning(
+                "OpenAIProvider",
+                "[ModelUseRoute] videos/generations HTTP $statusCode body=${responseBody.take(300)}",
+            )
+            throw mapHttpError(statusCode, responseBody)
+        }
+
+        val json = try {
+            JSONObject(responseBody)
+        } catch (e: Exception) {
+            throw LLMError.ProviderError("videos/generations returned non-JSON body: ${e.message}")
+        }
+        return@withContext parseVideoGenerationsResult(json)
+    }
+
+    private fun parseVideoGenerationsResult(json: JSONObject): LLMResponse {
+        val dataArray = json.optJSONArray("data")
+        if (dataArray == null) {
+            return LLMResponse("", "end_turn", null, emptyList())
+        }
+
+        val attachments = mutableListOf<LLMMediaAttachment>()
+        for (i in 0 until dataArray.length()) {
+            val item = dataArray.optJSONObject(i) ?: continue
+            val urlStr = item.safeOptString("url", "")
+            if (urlStr.isNotEmpty()) {
+                val att = downloadVideoAttachment(urlStr)
+                if (att != null) attachments.add(att)
+            }
+        }
+        return LLMResponse("", "end_turn", null, attachments)
+    }
+
+    internal fun downloadVideoAttachment(urlStr: String): LLMMediaAttachment? {
+        return try {
+            val dlReq = Request.Builder().url(urlStr).get().build()
+            val dlResp = client.newCall(dlReq).execute()
+            val dlBytes = dlResp.body?.bytes()
+            val ctMime = dlResp.header("Content-Type")
+            dlResp.close()
+            if (dlBytes != null && dlBytes.isNotEmpty()) {
+                val mime = if (ctMime != null && ctMime.startsWith("video/")) ctMime else "video/mp4"
+                LLMMediaAttachment(LLMMediaAttachment.MediaType.VIDEO, mime, dlBytes)
+            } else null
+        } catch (e: Exception) {
+            com.jarvis.app.logging.AppLogger.warning(
+                "OpenAIProvider",
+                "[ModelUseRoute] video download failed for $urlStr: ${e.message}",
+            )
+            null
+        }
+    }
+
+    internal fun extractVideoUrl(text: String): String? {
+        val markdownRegex = Regex("""\[.*?\]\((https?://[^\s)]+)\)""")
+        markdownRegex.find(text)?.groupValues?.getOrNull(1)?.let { return it }
+
+        val plainUrlRegex = Regex("""https?://[^\s)\]>]+\.(mp4|mov|webm|mkv)(\?[^\s)\]>]*)?""", RegexOption.IGNORE_CASE)
+        plainUrlRegex.find(text)?.value?.let { return it }
+
+        val anyUrlRegex = Regex("""https?://[^\s)\]>]+""", RegexOption.IGNORE_CASE)
+        return anyUrlRegex.find(text)?.value
+    }
+
     // `internal` rather than private so the serialization can be asserted
     // directly in unit tests. The tool-result-image regression this guards
     // (T-android-toolresult-image-dropped) is a property of the request BODY,

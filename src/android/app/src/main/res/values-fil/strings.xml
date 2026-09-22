@@ -1778,4 +1778,7 @@
     <string name="selection_copy_as_rich_text">Kopyahin bilang Rich Text</string>
     <string name="selection_copy_as_plain_text">Kopyahin bilang Plain Text</string>
     <string name="chat_input_placeholder_hint_5">Puwedeng ipadala o mag-bagong linya ang Enter</string>
+    <string name="provider_detail_managed_gateway_url">Matalinong Pagruruta ng Jarvis (Naka-encrypt na Transmisyon)</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●● (Pinamamahalaan ng Cloud ng Sistema)</string>
+    <string name="provider_detail_managed_export_not_supported">Hindi maaaring i-export ang mga built-in na provider ng system.</string>
 </resources>

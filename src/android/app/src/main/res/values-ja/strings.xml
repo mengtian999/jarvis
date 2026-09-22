@@ -1777,4 +1777,7 @@
     <string name="chat_input_placeholder_hint_5">Jarvis なら ↩︎ キーを送信か改行かに変更できます</string>
     <string name="compact_progress">圧縮中… %1$d 秒経過</string>
     <string name="compact_progress_split">圧縮中… %1$d 秒 · 分割して要約中（%2$d/%3$d）</string>
+    <string name="provider_detail_managed_gateway_url">Jarvisインテリジェントルーティング（暗号化通信）</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●●（システムクラウド自動管理）</string>
+    <string name="provider_detail_managed_export_not_supported">システム組み込みプロバイダーはエクスポートできません。</string>
 </resources>

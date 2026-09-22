@@ -1827,4 +1827,7 @@
     <string name="chat_input_placeholder_hint_5">贾维斯 可以把 ↩︎ 键设为发送或换行</string>
     <string name="compact_progress">正在压缩… 已进行 %1$d 秒</string>
     <string name="compact_progress_split">正在压缩… %1$d 秒 · 分段摘要中（%2$d/%3$d）</string>
+    <string name="provider_detail_managed_gateway_url">Jarvis智能路由（已加密传输）</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●●（系统云端自动托管）</string>
+    <string name="provider_detail_managed_export_not_supported">系统内置供应商不支持导出。</string>
 </resources>

@@ -46,10 +46,12 @@ struct ProviderInstanceDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showExportShare = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
+                if instance?.id != GatewaySync.instanceId {
+                    Button {
+                        showExportShare = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
                 }
             }
         }
@@ -187,12 +189,13 @@ struct ProviderInstanceDetailView: View {
             // should expose these settings.
 
             // MARK: Custom User-Agent (custom-base OpenAI/Anthropic-compat only)
-            if instance.supportsCustomUserAgent {
+            if instance.id != GatewaySync.instanceId && instance.supportsCustomUserAgent {
                 customUserAgentSection(instance)
             }
 
             // MARK: API Format (OpenAI only)
-            if (instance.providerType == .openAI || instance.providerType == .openAIResponses)
+            if instance.id != GatewaySync.instanceId
+                && (instance.providerType == .openAI || instance.providerType == .openAIResponses)
                 && instance.credentialType == .apiKey {
                 Section {
                     Picker("API Format", selection: Binding(
@@ -231,7 +234,7 @@ struct ProviderInstanceDetailView: View {
             }
 
             // MARK: Azure OpenAI [T-ios-azure-openai]
-            if instance.supportsAzureMode {
+            if instance.id != GatewaySync.instanceId && instance.supportsAzureMode {
                 azureModeSection(instance)
             }
 
@@ -366,9 +369,11 @@ struct ProviderInstanceDetailView: View {
             }
 
             // MARK: Danger Zone
-            Section {
-                Button("Delete Provider", role: .destructive) {
-                    showDeleteConfirm = true
+            if instance.id != GatewaySync.instanceId {
+                Section {
+                    Button("Delete Provider", role: .destructive) {
+                        showDeleteConfirm = true
+                    }
                 }
             }
         }
@@ -401,9 +406,17 @@ struct ProviderInstanceDetailView: View {
 
     @ViewBuilder
     private func apiKeyCredentialView(_ instance: ProviderInstance) -> some View {
-        let rawKey = ProviderKeychainHelper.loadAPIKey(instanceId: instance.id)
+        if instance.id == GatewaySync.instanceId {
+            HStack {
+                Text(AppLocalized("Managed System Credential"))
+                    .font(.system(.body, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+        } else {
+            let rawKey = ProviderKeychainHelper.loadAPIKey(instanceId: instance.id)
 
-        HStack {
+            HStack {
             // Always use TextField to keep the normal keyboard (SecureField
             // switches to a password keyboard that blocks some characters).
             // When hidden, overlay bullet characters to mask the value.
@@ -461,6 +474,7 @@ struct ProviderInstanceDetailView: View {
                     Label("Copy API Key", systemImage: "doc.on.doc")
                 }
             }
+        }
         }
     }
 
@@ -541,32 +555,45 @@ struct ProviderInstanceDetailView: View {
 
     @ViewBuilder
     private func customBaseURLSection(_ instance: ProviderInstance) -> some View {
-        Section {
-            TextField(customBaseURLPlaceholder(instance), text: $editingCustomBaseURL)
-                .font(.system(.body, design: .monospaced))
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(.URL)
-                .onAppear { editingCustomBaseURL = instance.customBaseURL ?? "" }
-                .onSubmit { saveCustomBaseURL(instance) }
-                .onDisappear { saveCustomBaseURL(instance) }
-
-            // [T-mimo-shadow-voice] /v1 toggle always shown — instances are no
-            // longer classified voice-only; this is a normal endpoint setting.
-            Toggle("Auto Append \"/v1\"", isOn: Binding(
-                get: { instance.appendV1Suffix },
-                set: { newValue in
-                    var updated = instance
-                    updated.appendV1Suffix = newValue
-                    store.updateInstance(updated)
+        if instance.id == GatewaySync.instanceId {
+            Section {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.shield.fill")
+                        .foregroundStyle(Color.accentColor)
+                    Text(AppLocalized("Jarvis Intelligent Routing (Encrypted)"))
+                        .font(.body)
                 }
-            ))
-        } header: {
-            Text("Custom API Base")
-        } footer: {
-            Text(instance.appendV1Suffix
-                 ? "Leave empty to use the default endpoint. \"/v1\" is appended automatically — enter the base host only."
-                 : "The URL is used verbatim. Include the full path up to (but not including) the endpoint, e.g. \"/chat/completions\".")
+            } header: {
+                Text("Custom API Base")
+            }
+        } else {
+            Section {
+                TextField(customBaseURLPlaceholder(instance), text: $editingCustomBaseURL)
+                    .font(.system(.body, design: .monospaced))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .keyboardType(.URL)
+                    .onAppear { editingCustomBaseURL = instance.customBaseURL ?? "" }
+                    .onSubmit { saveCustomBaseURL(instance) }
+                    .onDisappear { saveCustomBaseURL(instance) }
+
+                // [T-mimo-shadow-voice] /v1 toggle always shown — instances are no
+                // longer classified voice-only; this is a normal endpoint setting.
+                Toggle("Auto Append \"/v1\"", isOn: Binding(
+                    get: { instance.appendV1Suffix },
+                    set: { newValue in
+                        var updated = instance
+                        updated.appendV1Suffix = newValue
+                        store.updateInstance(updated)
+                    }
+                ))
+            } header: {
+                Text("Custom API Base")
+            } footer: {
+                Text(instance.appendV1Suffix
+                     ? "Leave empty to use the default endpoint. \"/v1\" is appended automatically — enter the base host only."
+                     : "The URL is used verbatim. Include the full path up to (but not including) the endpoint, e.g. \"/chat/completions\".")
+            }
         }
     }
 

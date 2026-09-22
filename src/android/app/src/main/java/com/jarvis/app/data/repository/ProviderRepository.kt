@@ -2455,6 +2455,9 @@ class ProviderRepository(private val context: Context) {
 
     /** Export an instance as shareable JSON (includes base64-encoded API key). */
     fun exportInstanceJSON(instanceId: String): String? {
+        if (instanceId == com.jarvis.app.provider.gateway.GatewaySync.INSTANCE_ID) {
+            return null
+        }
         ensureConfigLoaded()
         val instance = instance(instanceId) ?: return null
         val entries = visibleEntries(instanceId) + _config.value.modelEntries.filter {

@@ -1780,4 +1780,7 @@
     <string name="chat_input_placeholder_hint_5">Jarvis puede hacer que la tecla ↩︎ envíe o inserte un salto de línea</string>
     <string name="compact_progress">Compactando… %1$d s transcurridos</string>
     <string name="compact_progress_split">Compactando… %1$d s · resumiendo por segmentos (%2$d/%3$d)</string>
+    <string name="provider_detail_managed_gateway_url">Enrutamiento inteligente de Jarvis (cifrado)</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●● (Gestionado por la nube del sistema)</string>
+    <string name="provider_detail_managed_export_not_supported">Los proveedores integrados del sistema no se pueden exportar.</string>
 </resources>

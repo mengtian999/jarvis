@@ -31,6 +31,8 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Lock
+import com.jarvis.app.provider.gateway.GatewaySync
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -136,15 +138,19 @@ fun ProviderDetailScreen(
 
     val exportContext = androidx.compose.ui.platform.LocalContext.current
 
+    val isBuiltIn = instance.id == GatewaySync.INSTANCE_ID
+
     SettingsScaffold(
         title = instance.label,
         onBack = onBack,
         actions = {
-            IconButton(onClick = {
-                AppLogger.info(TAG, "Export instance ${instance.id} (${instance.label})")
-                exportProviderInstance(exportContext, providerRepository, instance)
-            }) {
-                Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.provider_detail_export))
+            if (!isBuiltIn) {
+                IconButton(onClick = {
+                    AppLogger.info(TAG, "Export instance ${instance.id} (${instance.label})")
+                    exportProviderInstance(exportContext, providerRepository, instance)
+                }) {
+                    Icon(Icons.Default.IosShare, contentDescription = stringResource(R.string.provider_detail_export))
+                }
             }
         },
     ) {
@@ -184,7 +190,21 @@ fun ProviderDetailScreen(
             },
         ) {
             SettingsCardBlock {
-                if (isOAuthProvider) {
+                if (isBuiltIn) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.provider_detail_managed_api_key),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                } else if (isOAuthProvider) {
                     OAuthCredentialBlock(
                         instance = instance,
                         storedKey = storedKey,
@@ -240,7 +260,31 @@ fun ProviderDetailScreen(
         }
 
         // ─── Custom Base URL ────────────────────────────────────────
-        if (instance.providerType != ProviderType.openRouter) {
+        if (isBuiltIn) {
+            SettingsSection(header = stringResource(R.string.provider_detail_custom_api_base)) {
+                SettingsCardBlock {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.provider_detail_managed_gateway_url),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
+        } else if (instance.providerType != ProviderType.openRouter) {
             SettingsSection(header = stringResource(R.string.provider_detail_custom_api_base)) {
                 // URL input row — tighter vertical padding to match T226's
                 // SectionTextField height shrink (~-20%).
@@ -347,7 +391,7 @@ fun ProviderDetailScreen(
         }
 
         // ─── API Format (OpenAI API-key only) ───────────────────────
-        if (instance.providerType == ProviderType.openAI &&
+        if (!isBuiltIn && instance.providerType == ProviderType.openAI &&
             instance.credentialType != com.jarvis.app.data.model.ProviderCredential.oauth
         ) {
             SettingsSection(
@@ -724,17 +768,19 @@ fun ProviderDetailScreen(
         // above it for visual consistency (no explicit .height override). The
         // destructive intent is conveyed by the error container color, not by a
         // taller button.
-        MinisButton(
-            onClick = { showDeleteDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(top = 20.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-            ),
-        ) {
-            Text(stringResource(R.string.provider_detail_delete_provider))
+        if (!isBuiltIn) {
+            MinisButton(
+                onClick = { showDeleteDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                ),
+            ) {
+                Text(stringResource(R.string.provider_detail_delete_provider))
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))

@@ -1778,4 +1778,7 @@
     <string name="selection_copy_as_rich_text">Zengin Metin Olarak Kopyala</string>
     <string name="selection_copy_as_plain_text">Düz Metin Olarak Kopyala</string>
     <string name="chat_input_placeholder_hint_5">Enter tuşu gönderebilir ya da satır ekler</string>
+    <string name="provider_detail_managed_gateway_url">Jarvis Akıllı Yönlendirme (Şifreli İletim)</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●● (Sistem Bulutu Tarafından Yönetiliyor)</string>
+    <string name="provider_detail_managed_export_not_supported">Sistemle birlikte gelen sağlayıcılar dışa aktarılamaz.</string>
 </resources>

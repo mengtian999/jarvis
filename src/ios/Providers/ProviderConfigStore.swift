@@ -1050,6 +1050,9 @@ final class ProviderConfigStore: ObservableObject {
 
     /// Export an instance as shareable JSON (includes API key if present).
     func exportInstanceJSON(_ instanceId: String) -> String? {
+        if instanceId == GatewaySync.instanceId {
+            return nil
+        }
         guard let instance = instance(for: instanceId) else { return nil }
         let entries = entries(for: instanceId)
         var dict: [String: Any] = [

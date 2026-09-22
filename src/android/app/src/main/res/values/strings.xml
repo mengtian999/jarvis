@@ -2000,4 +2000,7 @@
     <!-- [T-android-compact-progress] Live status while a compaction runs. -->
     <string name="compact_progress">Compacting… %1$d s elapsed</string>
     <string name="compact_progress_split">Compacting… %1$d s · summarizing in segments (%2$d/%3$d)</string>
+    <string name="provider_detail_managed_gateway_url">Jarvis Intelligent Routing (Encrypted)</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●● (System Cloud Managed)</string>
+    <string name="provider_detail_managed_export_not_supported">Built-in system providers cannot be exported.</string>
 </resources>

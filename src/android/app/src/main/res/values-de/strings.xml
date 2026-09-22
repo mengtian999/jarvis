@@ -1780,4 +1780,7 @@
     <string name="chat_input_placeholder_hint_5">Jarvis kann die ↩︎-Taste auf Senden oder Zeilenumbruch stellen</string>
     <string name="compact_progress">Wird verdichtet… %1$d s vergangen</string>
     <string name="compact_progress_split">Wird verdichtet… %1$d s · Zusammenfassung in Segmenten (%2$d/%3$d)</string>
+    <string name="provider_detail_managed_gateway_url">Jarvis Intelligentes Routing (Verschlüsselt)</string>
+    <string name="provider_detail_managed_api_key">●●●●●●●● (System-Cloud verwaltet)</string>
+    <string name="provider_detail_managed_export_not_supported">Integrierte Systemanbieter können nicht exportiert werden.</string>
 </resources>
