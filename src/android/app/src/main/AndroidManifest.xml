@@ -559,5 +559,48 @@
             android:theme="@style/Theme.Jarvis"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- [T-im-deeplink] Exported trampoline for IM deep-link intent-filters.
+             ImFlutterActivity must stay exported=false: cold-launching a
+             FlutterActivity without the flutter_engine_id extra creates a
+             second engine. The trampoline ensures the cached engine, then
+             builds the proper intent. -->
+        <activity
+            android:name=".im.ImDeepLinkActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="bitjarvis.chat"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="www.bitjarvis.chat"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="matrix.to"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="matrix"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="im.bitjarvis" android:host="chat"/>
+            </intent-filter>
+        </activity>
+
     </application>
 </manifest>

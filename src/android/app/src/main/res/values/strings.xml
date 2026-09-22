@@ -325,7 +325,7 @@
     <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_feedback">Feedback</string>
     <string name="settings_submit_github_issues">Submit GitHub Issues</string>
-    <string name="settings_feedback_telegram">Feedback (Telegram)</string>
+    <string name="settings_feedback_telegram">反馈（Jarvis IM）</string>
     <string name="settings_feedback_email">Feedback (Email)</string>
     <string name="about_title">About</string>
     <string name="about_jarvis_tagline">Jarvis is Your Fully Local, Fully Private On-Device Agent.</string>
@@ -1906,6 +1906,9 @@
     <string name="chat_load_older_messages">↑ Load older messages</string>
     <!-- [T-error-persist-android] Shown when the model returns an empty reply (no text, no tools). -->
     <string name="error_empty_response_generic">Model returned an empty response. Please try again or switch models.</string>
+<string name="quota_option_add_key">Use my own API Key</string>
+<string name="quota_option_dismiss">Got it</string>
+<string name="quota_login_coming_soon">Account sign-in is coming soon</string>
     <string name="error_empty_response_context_large">The model returned an empty response. The conversation context may be too large — try compacting or starting a new session.</string>
     <string name="error_empty_response_after_tool">The model returned no response after a tool result, even after a reminder. It may be overloaded — please retry or switch models.</string>
     <!-- [T-thinking-render-perf-android] Inline windowed-tail hint + large-content viewer entry. -->

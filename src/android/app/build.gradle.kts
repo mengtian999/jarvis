@@ -42,7 +42,7 @@ android {
     // are available to compile against. targetSdk stays 35 to avoid pulling in
     // Android 16 behavior changes; the Live Updates path is runtime-gated on
     // Build.VERSION.SDK_INT >= 36 (see DynamicIslandSupport / AgentForegroundService).
-    compileSdk = 36
+    compileSdk = 37
 
     // Pin the NDK explicitly. BUILDING.md documents r28+ as the supported
     // toolchain; AGP 8.7.3's built-in default is 27.0.12077973, so without this

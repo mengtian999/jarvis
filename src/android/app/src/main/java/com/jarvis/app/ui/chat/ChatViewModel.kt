@@ -177,9 +177,11 @@ class ChatViewModel(
                     //  - TransientError (5xx): server-side fault, payload
                     //    independent; retrying smaller multiplies the outage.
                     //  - InvalidApiKey: auth, not size.
+                    //  - QuotaExceeded: gateway quota refusal (§1.4), not size.
                     is LLMError.Cancelled,
                     is LLMError.NetworkError,
                     is LLMError.RateLimited,
+                    is LLMError.QuotaExceeded,
                     is LLMError.TransientError,
                     is LLMError.InvalidApiKey,
                     -> false
@@ -866,6 +868,18 @@ class ChatViewModel(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    /**
+     * [T-gateway-quota-options] Set when the gateway refuses with a quota/budget
+     * error carrying recovery options (§1.4: 明日再来 / 登录提额 / BYOK). The chat
+     * screen renders it as a dialog; cleared by [dismissQuotaError].
+     */
+    private val _quotaError = MutableStateFlow<LLMError.QuotaExceeded?>(null)
+    val quotaError: StateFlow<LLMError.QuotaExceeded?> = _quotaError.asStateFlow()
+
+    fun dismissQuotaError() {
+        _quotaError.value = null
+    }
 
     private val _modelName = MutableStateFlow("")
     val modelName: StateFlow<String> = _modelName.asStateFlow()
@@ -4145,7 +4159,7 @@ class ChatViewModel(
                     "db.query.end",
                     "count=${rows.size}",
                 )
-                val chatUi = rows.toChatMessages()
+                val chatUi = rows.toChatMessages(sessionRoleId = _sessionRole.value.roleId)
                 val tIoAfterTransform = System.currentTimeMillis()
                 com.jarvis.app.diagnostics.PerfLongCtx.step(
                     sessionId,
@@ -5732,7 +5746,7 @@ class ChatViewModel(
                 } catch (e: Exception) {
                     AppLogger.error(TAG_STREAM, "$label runAgentLoop EXCEPTION ${e.javaClass.simpleName}: ${e.message}")
                     Log.e(TAG, "Agent loop error ($label)", e)
-                    setInlineError(e.message ?: "Unknown error")
+                    setInlineError(e)
                     // T298: flag the upcoming setInactive() so the
                     // background completion notifier renders the ❌
                     // variant instead of a clean success.
@@ -6331,7 +6345,7 @@ class ChatViewModel(
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Agent loop (queued-drain) error", e)
-                setInlineError(e.message ?: "Unknown error")
+                setInlineError(e)
                 break
             }
         }
@@ -6592,7 +6606,7 @@ class ChatViewModel(
                             Log.d(TAG, "Forward-respond loop cancelled")
                         } catch (e: Exception) {
                             Log.e(TAG, "Forward-respond loop error", e)
-                            setInlineError(e.message ?: "Unknown error")
+                            setInlineError(e)
                             SessionActivityTracker.markStreamError(activeSessionId)
                         } finally {
                             publishOverlayReplyExcerpt(activeSessionId)
@@ -6911,7 +6925,7 @@ class ChatViewModel(
                     } catch (e: Exception) {
                         AppLogger.error(TAG_STREAM, "send runAgentLoop EXCEPTION ${e.javaClass.simpleName}: ${e.message}")
                         Log.e(TAG, "Agent loop error (all fallbacks exhausted)", e)
-                        setInlineError(e.message ?: "Unknown error")
+                        setInlineError(e)
                         // T298: completion notifier should show the ❌ variant.
                         SessionActivityTracker.markStreamError(activeSessionId)
                     } finally {
@@ -6958,6 +6972,17 @@ class ChatViewModel(
      *  true at runAgentLoop ~4015) leaves the "Jarvis is thinking" indicator
      *  on screen even though streaming is over. The flag is per-message and
      *  is not implicitly cleared by isStreaming=false. */
+    /**
+     * [T-gateway-quota-options] Terminal agent-loop errors: surface the gateway's
+     * quota recovery options (§1.4) as a dialog in addition to the inline banner.
+     * QuotaExceeded is neither retryable nor fallbackable, so it always lands here
+     * with its `options` payload intact.
+     */
+    private fun setInlineError(e: Exception) {
+        (e as? LLMError.QuotaExceeded)?.let { _quotaError.value = it }
+        setInlineError(e.message ?: "Unknown error")
+    }
+
     private fun setInlineError(errorText: String) {
         // [T-error-persist-android] Never let an empty/blank error string reach
         // the banner. The UI gate is `message.error?.let { … }` — a non-null ""
@@ -7245,7 +7270,7 @@ class ChatViewModel(
                     } catch (e: Exception) {
                         AppLogger.error(TAG_STREAM, "retryLast runAgentLoop EXCEPTION ${e.javaClass.simpleName}: ${e.message}")
                         Log.e(TAG, "Agent loop error (retryLast)", e)
-                        setInlineError(e.message ?: "Unknown error")
+                        setInlineError(e)
                         // T298: completion notifier should show the ❌ variant.
                         SessionActivityTracker.markStreamError(activeSessionId)
                     } finally {
@@ -11811,7 +11836,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                     } catch (e: Exception) {
                         AppLogger.error(TAG_STREAM, "resumeQueueAfterCancel drain EXCEPTION ${e.javaClass.simpleName}: ${e.message}")
                         Log.e(TAG, "Queued drain error (resumeQueueAfterCancel)", e)
-                        setInlineError(e.message ?: "Unknown error")
+                        setInlineError(e)
                     } finally {
                         AppLogger.info(TAG_STREAM, "resumeQueueAfterCancel streamJob FINALLY enter")
                         // [T-android-overlay-reply-status-34599] Surface
@@ -12094,7 +12119,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                     } catch (e: Exception) {
                         AppLogger.error(TAG_STREAM, "resume runAgentLoop EXCEPTION ${e.javaClass.simpleName}: ${e.message}")
                         Log.e(TAG, "Agent loop error (resume)", e)
-                        setInlineError(e.message ?: "Unknown error")
+                        setInlineError(e)
                     } finally {
                         AppLogger.info(TAG_STREAM, "resume streamJob FINALLY enter")
                         // [T-android-overlay-reply-status-34599] Surface
@@ -12243,7 +12268,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
         }
     }
 
-    private fun List<MessageEntity>.toChatMessages(): List<ChatMessage> {
+    private fun List<MessageEntity>.toChatMessages(sessionRoleId: String? = null): List<ChatMessage> {
         // First pass: extract all toolResult data keyed by toolUseId
         val toolResultMap = mutableMapOf<String, ToolResultData>()
         for (entity in this) {
@@ -12449,7 +12474,9 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                 sourceDbIds = listOf(entity.id),
                 // [T-role-message-level] Per-message persona from the DB row
                 // (assistant rows only; user/system are null by contract).
-                roleId = entity.roleId,
+                // Fall back to sessionRoleId for assistant rows if null (legacy
+                // or restored package) so bubbles render the correct persona.
+                roleId = entity.roleId ?: if (entity.role == "assistant") sessionRoleId else null,
                 // [T-error-persist-android] Restore the persisted terminal error
                 // so the inline error banner + Retry button survive a reload.
                 // Coalesce a blank value to null: the UI gate is `error?.let`, so
@@ -12490,6 +12517,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                         // an assistant row that gets folded into a later
                         // assistant turn).
                         sourceDbIds = prev.sourceDbIds + msg.sourceDbIds,
+                        roleId = prev.roleId ?: msg.roleId,
                         // [T-error-persist-android] The error sticker is written
                         // to the LAST assistant row of the turn, so the later row
                         // (`msg`) wins; fall back to `prev` if only it carried one.

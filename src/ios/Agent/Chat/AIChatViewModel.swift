@@ -793,6 +793,11 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     /// re-evaluates the view.
     var hasCompletedInitialLoad = false
     @Published var errorMessage: String?
+    /// [T-gateway-quota-options] Set when the gateway refuses with a quota/budget
+    /// error carrying recovery options (§1.4: 明日再来 / 登录提额 / BYOK). The chat
+    /// view renders it as an alert; cleared when the alert dismisses.
+    /// Mirrors Android ChatViewModel.quotaError.
+    @Published var quotaAlert: QuotaAlertPayload?
 
     /// [T-ios-retry-keyboard] Marks the in-flight turn as one the user started
     /// by tapping Retry / Resume on an EXISTING failed message, rather than by
@@ -2714,6 +2719,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 if self.userDidCancel {
                     self.handleUserCancelledCleanup()
                 } else {
+                    presentQuotaAlertIfNeeded(error) // [T-gateway-quota-options]
                     let displayDesc = Self.friendlyErrorMessage((error as? LocalizedError)?.errorDescription ?? rawDesc)
                     // [T-ios-retry-tool-blocks-invisible / T-stream-empty-banner-trace]
                     // Resolve the streaming assistant by the last ASSISTANT row,
@@ -2915,6 +2921,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 if self.userDidCancel {
                     self.handleUserCancelledCleanup()
                 } else {
+                    presentQuotaAlertIfNeeded(error) // [T-gateway-quota-options]
                     let displayDesc = Self.friendlyErrorMessage((error as? LocalizedError)?.errorDescription ?? rawDesc)
                     // [T-ios-retry-tool-blocks-invisible / T-stream-empty-banner-trace]
                     // Resolve the streaming assistant by the last ASSISTANT row,
@@ -3062,6 +3069,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 if self.userDidCancel {
                     self.handleUserCancelledCleanup()
                 } else {
+                    presentQuotaAlertIfNeeded(error) // [T-gateway-quota-options]
                     let displayDesc = Self.friendlyErrorMessage((error as? LocalizedError)?.errorDescription ?? rawDesc)
                     // [T-ios-retry-tool-blocks-invisible / T-stream-empty-banner-trace]
                     // Resolve the streaming assistant by the last ASSISTANT row,
@@ -3179,6 +3187,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 if self.userDidCancel {
                     self.handleUserCancelledCleanup()
                 } else {
+                    presentQuotaAlertIfNeeded(error) // [T-gateway-quota-options]
                     let displayDesc = Self.friendlyErrorMessage((error as? LocalizedError)?.errorDescription ?? rawDesc)
                     // runAgentLoop appended the assistant row, so this attaches
                     // to the bubble; reportTurnFailure is the fallback for the
@@ -3581,6 +3590,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 if self.userDidCancel {
                     self.handleUserCancelledCleanup()
                 } else {
+                    presentQuotaAlertIfNeeded(error) // [T-gateway-quota-options]
                     let displayDesc = Self.friendlyErrorMessage((error as? LocalizedError)?.errorDescription ?? rawDesc)
                     // [T-ios-retry-tool-blocks-invisible / T-stream-empty-banner-trace]
                     // Resolve the streaming assistant by the last ASSISTANT row,
@@ -4158,6 +4168,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                 if self.userDidCancel {
                     self.handleUserCancelledCleanup()
                 } else {
+                    presentQuotaAlertIfNeeded(error) // [T-gateway-quota-options]
                     let displayDesc = Self.friendlyErrorMessage((error as? LocalizedError)?.errorDescription ?? rawDesc)
                     // [T-stream-empty-banner-trace] Diagnostic: log the
                     // messages-tail state when an agent-loop error

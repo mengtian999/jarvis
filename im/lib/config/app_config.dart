@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2019-Present Christian Kußowski
+// SPDX-FileCopyrightText: 2019-Present Christian Kußowski
 // SPDX-FileCopyrightText: 2019-Present Contributors to FluffyChat
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
@@ -16,9 +16,19 @@ abstract class AppConfig {
 
   static const String defaultHomeserver = 'bitjarvis.chat';
 
-  static const String inviteLinkPrefix = 'https://bitjarvis.chat/#/';
+  static const String inviteLinkPrefix = 'https://www.bitjarvis.chat/invite.html?id=';
   static String inviteLink(String? mxid) => mxid == null ? inviteLinkPrefix : '$inviteLinkPrefix$mxid';
   static const String deepLinkPrefix = 'im.bitjarvis://chat/';
+  static String deepLink(String? mxid) => mxid == null ? deepLinkPrefix : '$deepLinkPrefix$mxid';
+  static const String legacyInvitePrefix = 'https://bitjarvis.chat/#/';
+  static const List<String> allInvitePrefixes = [
+    'https://www.bitjarvis.chat/invite.html?id=',
+    'https://bitjarvis.chat/invite.html?id=',
+    'https://www.bitjarvis.chat/im/',
+    'https://bitjarvis.chat/im/',
+    'https://www.bitjarvis.chat/#/',
+    'https://bitjarvis.chat/#/',
+  ];
   static const String schemePrefix = 'matrix:';
   static const String pushNotificationsChannelId = 'bitjarvis_push';
   static const String pushNotificationsAppId = 'chat.fluffy.bitjarvis';
@@ -39,9 +49,9 @@ abstract class AppConfig {
   static const String appSsoUrlScheme = 'im.bitjarvis.auth';
 
   static const String sourceCodeUrl =
-      'https://github.com/mengtian999/bitjarvis';
+      'https://github.com/mengtian999/jarvis';
   static const String supportUrl =
-      'https://github.com/mengtian999/bitjarvis/issues';
+      'https://github.com/mengtian999/jarvis/issues';
   static const String changelogUrl = 'https://bitjarvis.chat/changelog/';
   static const String helpUrl =
       'https://bitjarvis.chat/faq/#how_can_i_support_bitjarvis';
@@ -51,7 +61,7 @@ abstract class AppConfig {
   static final Uri newIssueUrl = Uri(
     scheme: 'https',
     host: 'github.com',
-    path: '/mengtian999/bitjarvis/issues/new',
+    path: '/mengtian999/jarvis/issues/new',
   );
 
   static final Uri homeserverList = Uri(

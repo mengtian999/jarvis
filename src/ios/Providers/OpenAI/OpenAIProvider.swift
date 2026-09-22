@@ -2065,6 +2065,16 @@ final class OpenAIProvider: LLMProvider {
 
     func mapHTTPError(statusCode: Int, body: String) -> LLMError {
         if statusCode == 401 || statusCode == 403 { return .invalidAPIKey(detail: "HTTP \(statusCode): \(String(body.prefix(200)))") }
+
+        // [T-gateway-quota-options] The gateway's quota/budget errors (方案 §1.4)
+        // carry a recovery `options` array (明日再来 / 登录提额 / BYOK) alongside the
+        // error object. Intercept BEFORE the generic 429/5xx mappings below —
+        // quota_exceeded arrives as 429 (would become .rateLimited → group fallback,
+        // silently burning the next tier's quota) and budget_exhausted as 503
+        // (would become .transientError → pointless auto-retry). Only the gateway
+        // emits `options`, so this is inert for every other provider.
+        if let quotaError = Self.parseGatewayQuotaError(body) { return quotaError }
+
         if statusCode == 429 { return .rateLimited }
 
         // Transient server errors: retry same model, do not trigger group fallback.
@@ -2082,5 +2092,24 @@ final class OpenAIProvider: LLMProvider {
         }
 
         return .providerError(message: "HTTP \(statusCode): \(body.prefix(500))")
+    }
+
+    /// [T-gateway-quota-options] Parse the gateway's quota-error recovery payload:
+    /// `{ "error": {...}, "options": [{"key","label"}, ...] }`. Returns nil when
+    /// the body has no usable options array (non-gateway providers, plain errors).
+    /// Mirrors Android OpenAIProvider.parseGatewayQuotaError.
+    static func parseGatewayQuotaError(_ body: String) -> LLMError? {
+        guard let data = body.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let rawOptions = json["options"] as? [[String: Any]] else { return nil }
+        let options = rawOptions.compactMap { o -> QuotaOption? in
+            guard let key = o["key"] as? String, !key.isEmpty,
+                  let label = o["label"] as? String, !label.isEmpty else { return nil }
+            return QuotaOption(key: key, label: label)
+        }
+        guard !options.isEmpty else { return nil }
+        let serverMessage = ((json["error"] as? [String: Any])?["message"] as? String)
+            .flatMap { $0.isEmpty ? nil : $0 }
+        return .quotaExceeded(message: serverMessage ?? "今日免费额度已用完", options: options)
     }
 }

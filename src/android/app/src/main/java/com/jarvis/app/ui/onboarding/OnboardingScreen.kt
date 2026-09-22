@@ -49,6 +49,7 @@ import com.jarvis.app.data.model.ProviderType
 import com.jarvis.app.data.repository.ProviderRepository
 import com.jarvis.app.ui.components.MinisButton
 import com.jarvis.app.ui.components.MinisTextButton
+import androidx.compose.runtime.LaunchedEffect
 
 /**
  * Multi-step onboarding flow shown on first launch.
@@ -218,6 +219,13 @@ private fun ModelSelectionStep(
     val config by providerRepository.config.collectAsState()
     val selected = remember { mutableStateListOf<String>() } // entry UUIDs
     var searchText by remember { mutableStateOf("") }
+
+    // Pre-check gateway-synced tiers (auto / office / role) or the members of
+    // an existing "Default Models" group so the step arrives pre-selected.
+    LaunchedEffect(Unit) {
+        selected.clear()
+        selected.addAll(initialModelPreselections(config))
+    }
 
     val enabledInstanceIds = config.instances.filter { it.isEnabled }.map { it.id }.toSet()
     val allEntries = config.modelEntries.filter {

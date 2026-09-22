@@ -303,8 +303,7 @@ fun SettingsScreen(
                     iconColor = Color(0xFF007AFF),
                     title = stringResource(R.string.settings_privacy_policy),
                     subtitle = null,
-                    // iOS canonical URL — ContentView.swift / AddProviderView.swift
-                    onClick = { openExternalUrl(context, "https://openminis.github.io/privacy-policy.html") },
+                    onClick = { openExternalUrl(context, "https://www.bitjarvis.chat/privacy.html") },
                 )
                 SettingsItem(
                     icon = Icons.Outlined.Feedback,
@@ -336,7 +335,7 @@ fun SettingsScreen(
                     title = stringResource(R.string.settings_feedback_telegram),
                     onClick = {
                         showFeedbackSheet = false
-                        openExternalUrl(context, "https://t.me/+2NzhOJuzRyI1YmM1")
+                        openExternalUrl(context, "https://www.bitjarvis.chat/invite.html?id=!r5PjhfZnf2BsDxysbJ:bitjarvis.chat")
                     },
                 )
                 FeedbackSheetItem(
@@ -450,7 +449,7 @@ private fun buildBugReportUrl(): String {
     // since URLEncoder turns spaces into '+' which GitHub also accepts but
     // the spec calls for the literal "[Bug] " form.
     val title = java.net.URLEncoder.encode("[Bug] ", "UTF-8")
-    return "https://github.com/OpenMinis/OpenMinis/issues/new" +
+    return "https://github.com/mengtian999/jarvis/issues/new" +
         "?template=bug_report.md" +
         "&title=$title" +
         "&body=$encodedBody"
@@ -475,7 +474,7 @@ private fun buildFeedbackMailto(): String {
     """.trimIndent()
     val subject = java.net.URLEncoder.encode("Jarvis Feedback", "UTF-8")
     val encodedBody = java.net.URLEncoder.encode(body, "UTF-8")
-    return "mailto:dev@openminis.app?subject=$subject&body=$encodedBody"
+    return "mailto:mengtiansky@gmail.com?subject=$subject&body=$encodedBody"
 }
 
 /**

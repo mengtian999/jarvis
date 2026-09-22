@@ -1,4 +1,4 @@
-import SwiftUI
+﻿import SwiftUI
 import ObjectiveC
 import FileProvider
 import UserNotifications
@@ -388,6 +388,10 @@ struct MinisApp: App {
                     ProviderConfigStore.shared.migrateVoiceModalityIfNeeded()
                     // For existing users with no model groups, create a default group silently
                     Task { await ProviderConfigStore.shared.createDefaultGroupIfNeeded() }
+                    // ⚡ Gateway model sync — background, non-blocking.
+                    // Registers anonymous device + pulls /v1/models for jarvis-gateway provider.
+                    // On failure, preserves existing config (no block, no clear).
+                    Task { await GatewaySync.sync() }
                     shareLog.info("[Share] onAppear — checking for pending share")
                     shareCoordinator.checkForPendingShare()
                     // Set up background keep-alive manager

@@ -1,4 +1,4 @@
-package com.jarvis.app
+﻿package com.jarvis.app
 
 import android.app.Activity
 import android.app.Application
@@ -23,6 +23,7 @@ import com.jarvis.app.data.repository.EnvVarRepository
 import com.jarvis.app.data.MountedFoldersStore
 import com.jarvis.app.data.repository.MemoryRepository
 import com.jarvis.app.data.repository.ProviderRepository
+import com.jarvis.app.provider.gateway.GatewaySync
 import com.jarvis.app.data.repository.WebAppShortcutRepository
 import com.jarvis.app.data.repository.MCPRepository
 import com.jarvis.app.data.repository.SkillRepository
@@ -732,6 +733,18 @@ class MinisApp : Application(), ImageLoaderFactory {
         providerRepository.refreshAllModelsIfNeeded(
             kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
         )
+
+        // ⚡ Gateway model sync — background, non-blocking.
+        // Registers anonymous device + pulls /v1/models for jarvis-gateway provider.
+        // On failure, preserves existing config (no block, no clear).
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                GatewaySync(this@MinisApp, providerRepository).sync()
+            } catch (e: Throwable) {
+                android.util.Log.w("GatewaySync", "sync failed: ${e.message}")
+            }
+        }
+
 
         // Propagate system timezone and HTTP-proxy changes into the sandbox.
         // iOS recomputes TZ for every command (ISHShellExecutor.m:335-353);

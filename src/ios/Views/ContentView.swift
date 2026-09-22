@@ -7799,7 +7799,7 @@ private struct SettingsSheet: View {
                                 .background(.indigo, in: Circle())
                         }
                     }
-                    Link(destination: URL(string: "https://openminis.github.io/privacy-policy.html")!) {
+                    Link(destination: URL(string: "https://www.bitjarvis.chat/privacy.html")!) {
                         Label {
                             Text("Privacy Policy")
                         } icon: {
@@ -7828,8 +7828,8 @@ private struct SettingsSheet: View {
                         Button("Report a Bug (GitHub)") {
                             if let url = Self.makeBugReportURL() { UIApplication.shared.open(url) }
                         }
-                        Button("Feedback (Telegram)") {
-                            if let url = URL(string: "https://t.me/+2NzhOJuzRyI1YmM1") { UIApplication.shared.open(url) }
+                        Button("Feedback (Jarvis IM)") {
+                            if let url = URL(string: "https://www.bitjarvis.chat/invite.html?id=!r5PjhfZnf2BsDxysbJ:bitjarvis.chat") { UIApplication.shared.open(url) }
                         }
                         Button("Feedback (Email)") {
                             if let url = Self.makeFeedbackEmailURL() { UIApplication.shared.open(url) }
@@ -8019,7 +8019,7 @@ private struct SettingsSheet: View {
 
         var components = URLComponents()
         components.scheme = "mailto"
-        components.path = "dev@openminis.app"
+        components.path = "mengtiansky@gmail.com"
         components.queryItems = [
             URLQueryItem(name: "subject", value: "Jarvis Feedback"),
             URLQueryItem(name: "body", value: body),
@@ -8072,7 +8072,7 @@ private struct SettingsSheet: View {
 
         """
 
-        var components = URLComponents(string: "https://github.com/OpenMinis/OpenMinis/issues/new")
+        var components = URLComponents(string: "https://github.com/mengtian999/jarvis/issues/new")
         components?.queryItems = [
             URLQueryItem(name: "template", value: "bug_report.md"),
             URLQueryItem(name: "title", value: "[Bug] "),

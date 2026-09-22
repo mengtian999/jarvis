@@ -343,6 +343,10 @@ struct AIChatView: View {
     @State private var showDocumentPicker = false
     @State private var showMoveToSheet = false
     @State private var showClearChatConfirm = false
+    /// [T-gateway-quota-options] BYOK action on the quota alert (§1.4): presents
+    /// the Add Provider sheet; the `login` option uses showQuotaLoginSoon.
+    @State private var showAddProviderFromQuota = false
+    @State private var showQuotaLoginSoon = false
     /// [T-new-chat-menu-entry] Confirmation gate for "New Chat" from the "…"
     /// menu while the current session is still streaming: stopping the task is
     /// destructive enough to warrant an explicit confirm.
@@ -869,6 +873,45 @@ struct AIChatView: View {
             }
         } message: {
             Text(AppLocalized("The conversation context has reached its limit. Start a new session or clear the chat to continue."))
+        }
+        // [T-gateway-quota-options] Gateway quota/budget exhaustion (§1.4): the
+        // server attaches recovery options to the error; render them as alert
+        // actions. `byok` presents Add Provider; `login` is a placeholder until
+        // the end-user account system (待评审取舍) ships; `tomorrow` / anything
+        // unknown simply dismisses. Mirrors Android ChatScreen's quota dialog.
+        .alert(
+            AppLocalized("Quota Reached"),
+            isPresented: Binding(
+                get: { vm.quotaAlert != nil },
+                set: { if !$0 { vm.quotaAlert = nil } }
+            ),
+            presenting: vm.quotaAlert
+        ) { payload in
+            ForEach(payload.options, id: \.key) { option in
+                Button(option.label) {
+                    switch option.key {
+                    case "byok":
+                        showAddProviderFromQuota = true
+                    case "login":
+                        showQuotaLoginSoon = true
+                    default:
+                        break // "tomorrow" / unknown: dismiss only
+                    }
+                }
+            }
+            Button(AppLocalized("Cancel"), role: .cancel) {}
+        } message: { payload in
+            Text(payload.message)
+        }
+        .alert(AppLocalized("Coming Soon"), isPresented: $showQuotaLoginSoon) {
+            Button(AppLocalized("OK"), role: .cancel) {}
+        } message: {
+            Text(AppLocalized("Account sign-in is coming soon."))
+        }
+        .sheet(isPresented: $showAddProviderFromQuota) {
+            NavigationStack {
+                AddProviderView()
+            }
         }
         // [T-new-chat-menu-entry] Streaming guard for the "…" menu's New Chat:
         // confirm → stop the running task, then create; cancel → stay put.

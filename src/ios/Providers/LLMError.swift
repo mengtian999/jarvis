@@ -9,6 +9,13 @@ enum LLMError: LocalizedError {
     case transientError(message: String)
     case decodingError(underlying: Error)
     case rateLimited
+    /// [T-gateway-quota-options] Gateway quota/budget exhaustion (方案 §1.4):
+    /// carries the server's human-readable message plus the recovery `options`
+    /// payload (明日再来 / 登录提额 / BYOK) so the chat UI can render the choices.
+    /// Deliberately NOT retryable and NOT fallbackable: silently falling through
+    /// to the next group member would burn the next tier's quota and defeat the
+    /// §2.4 差异化限额 cost funnel. Mirrors Android LLMError.QuotaExceeded.
+    case quotaExceeded(message: String, options: [QuotaOption])
     case cancelled
     case unknown(underlying: Error?)
 
@@ -26,6 +33,8 @@ enum LLMError: LocalizedError {
             return "Decoding error: \(error.localizedDescription)"
         case .rateLimited:
             return "Rate limited — please try again later"
+        case .quotaExceeded(let message, _):
+            return message
         case .cancelled:
             return "Request was cancelled"
         case .unknown(let error):
@@ -44,7 +53,7 @@ enum LLMError: LocalizedError {
         switch self {
         case .networkError, .transientError:
             return true
-        case .invalidAPIKey, .providerError, .decodingError, .rateLimited, .cancelled, .unknown:
+        case .invalidAPIKey, .providerError, .decodingError, .rateLimited, .quotaExceeded, .cancelled, .unknown:
             return false
         }
     }
@@ -58,6 +67,7 @@ enum LLMError: LocalizedError {
     var fallbackReason: String {
         switch self {
         case .rateLimited: return "Rate limited"
+        case .quotaExceeded: return "Quota exceeded"
         case .invalidAPIKey: return "Invalid API key"
         case .providerError(let msg): return "Provider error: \(String(msg.prefix(60)))"
         default: return "Error"
@@ -68,8 +78,23 @@ enum LLMError: LocalizedError {
         switch self {
         case .rateLimited, .invalidAPIKey, .providerError:
             return true
-        case .transientError, .networkError, .decodingError, .cancelled, .unknown:
+        case .transientError, .networkError, .decodingError, .quotaExceeded, .cancelled, .unknown:
             return false
         }
     }
+}
+
+/// [T-gateway-quota-options] One entry of the gateway's quota-error `options`
+/// array (§1.4 recovery choices: tomorrow / login / byok).
+struct QuotaOption: Equatable {
+    let key: String
+    let label: String
+}
+
+/// [T-gateway-quota-options] Alert payload the chat view renders when the
+/// gateway refuses with a quota/budget error. Identifiable for `.alert(item:)`.
+struct QuotaAlertPayload: Identifiable, Equatable {
+    let id = UUID()
+    let message: String
+    let options: [QuotaOption]
 }

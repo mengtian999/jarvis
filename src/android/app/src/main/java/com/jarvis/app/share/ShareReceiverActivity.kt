@@ -56,6 +56,23 @@ class ShareReceiverActivity : ComponentActivity() {
             AppLogger.error(TAG, "extraction failed: ${e.message}")
         }
 
+        // [T-im-link-route] Check if the share is an IM deep link (matrix user
+        // ID, room alias/ID, bitjarvis.chat URL, etc.). If so, route to the IM
+        // module instead of the normal attachment flow. Must happen BEFORE the
+        // provider-JSON check because a URL text could also look like JSON.
+        val imLink = items.singleOrNull()?.takeIf {
+            it.kind == PendingShare.Item.Kind.INLINE_TEXT && ImLinkPolicy.isImLink(it.value)
+        }?.value
+        if (imLink != null) {
+            try {
+                com.jarvis.app.im.ImLauncher.openImShare(this, imLink)
+            } catch (t: Throwable) {
+                AppLogger.warning(TAG, "IM launch failed: ${t.message}, falling back")
+            }
+            try { finish() } catch (_: Throwable) {}
+            return
+        }
+
         // [T-android-json-open-provider-import-prompt] If exactly one item was
         // staged and it parses as a Provider-export JSON, offer a two-way
         // choice: import it as a provider, or fall through to the normal

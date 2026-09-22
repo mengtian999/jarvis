@@ -64,7 +64,7 @@ struct AboutView: View {
 
             // MARK: - Links
             Section("Links") {
-                Link(destination: URL(string: "https://github.com/OpenMinis")!) {
+                Link(destination: URL(string: "https://github.com/mengtian999/jarvis")!) {
                     Label {
                         HStack {
                             Text("GitHub Repository")
@@ -78,7 +78,7 @@ struct AboutView: View {
                         Image(systemName: "link.circle.fill")
                     }
                 }
-                Link(destination: URL(string: "https://github.com/OpenMinis/OpenMinis/issues")!) {
+                Link(destination: URL(string: "https://github.com/mengtian999/jarvis/issues")!) {
                     Label {
                         HStack {
                             Text("Report an Issue")

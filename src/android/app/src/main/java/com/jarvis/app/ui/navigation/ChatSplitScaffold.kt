@@ -972,6 +972,8 @@ fun ChatSplitScaffoldRoute(
                     navController.safeNavigate(Routes.FILE_PREVIEW)
                 },
                 onModelGroupsClick = { navController.safeNavigate(Routes.MODEL_GROUPS) },
+                // [T-gateway-quota-options] BYOK action on the quota dialog (§1.4).
+                onAddProvider = { navController.safeNavigate(Routes.ADD_PROVIDER) },
             )
         },
     )

@@ -51,7 +51,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jarvis.app.data.model.ModelGroup
+import com.jarvis.app.data.model.ProviderConfig
 import com.jarvis.app.data.repository.ProviderRepository
+import com.jarvis.app.provider.gateway.GatewaySync
 
 /**
  * Onboarding step 2: pick 1-3 models from configured providers
@@ -71,6 +73,12 @@ fun OnboardingModelSelectionScreen(
     // user sees the live provider catalog (not just the built-in placeholder list
     // seeded by addInstance). Mirrors iOS fetchModelsWithFallback chain.
     LaunchedEffect(Unit) {
+        // Pre-check gateway-synced tiers (auto / office / role) or the members
+        // of an existing "Default Models" group. Entry ids stay valid across the
+        // refresh below because replaceEntries carries uuids forward.
+        selected.clear()
+        selected.addAll(initialModelPreselections(config))
+
         val enabled = config.instances.filter { it.isEnabled }
         for (instance in enabled) {
             launch(Dispatchers.IO) { providerRepository.refreshModels(instance) }
@@ -238,4 +246,37 @@ fun OnboardingModelSelectionScreen(
             }
         }
     }
+}
+
+/**
+ * Pre-seed the model-selection step so gateway tiers arrive pre-checked:
+ * - an existing "Default Models" group's members (re-checks the active
+ *   selection when the screen is re-opened);
+ * - otherwise the preferred gateway catalog tiers, capped at 3 (auto / office / role;
+ *   the 4th tier "Coding" stays unchecked by design).
+ */
+internal fun initialModelPreselections(config: ProviderConfig): List<String> {
+    val enabled = config.instances.filter { it.isEnabled }.map { it.id }.toSet()
+    val visible = config.modelEntries.filter { it.providerInstanceId in enabled && !it.isHidden }
+    val group = config.modelGroups.firstOrNull { it.name == "Default Models" }
+    if (group != null) {
+        val visibleIds = visible.map { it.id }.toSet()
+        val gatewayEntries = visible.filter { it.providerInstanceId == GatewaySync.INSTANCE_ID }
+        val codingEntry = gatewayEntries.firstOrNull { GatewaySync.isCodingTier(it) }
+        val roleEntry = gatewayEntries.firstOrNull { GatewaySync.isRoleTier(it) }
+        val officeEntry = gatewayEntries.firstOrNull { GatewaySync.isOfficeTier(it) }
+        val memberIds = group.memberEntryIds.filter { it in visibleIds }
+        val targetReplacement = when {
+            roleEntry != null && roleEntry.id !in memberIds -> roleEntry
+            officeEntry != null && officeEntry.id !in memberIds -> officeEntry
+            else -> null
+        }
+        val migratedMemberIds = if (codingEntry != null && codingEntry.id in memberIds && targetReplacement != null) {
+            memberIds.map { if (it == codingEntry.id) targetReplacement.id else it }
+        } else {
+            memberIds
+        }
+        return migratedMemberIds.take(3)
+    }
+    return GatewaySync.defaultGatewayTierEntryIds(visible)
 }

@@ -106,7 +106,7 @@ class BackupRecordRoundTripTest {
         // But the fields a restore genuinely needs must all be present.
         for (key in listOf(
             "id", "sessionId", "role", "parts", "createdAt", "sortOrder",
-            "streamInterruptCount", "reasoningContent",
+            "streamInterruptCount", "reasoningContent", "roleId",
         )) {
             assertTrue("missing wire key '$key'", key in m)
         }
@@ -158,7 +158,7 @@ class BackupRecordRoundTripTest {
         """
         {"id":"m1","sessionId":"s1","role":"user","parts":[{"type":"text","value":"hi"}],
          "createdAt":"${iso(1)}","tokenUsage":null,"reasoningContent":null,
-         "streamInterruptCount":0,"sortOrder":0}
+         "streamInterruptCount":0,"sortOrder":0,"roleId":null}
         """.trimIndent()
     ).jsonObject
 

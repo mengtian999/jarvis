@@ -6,6 +6,19 @@ sealed class LLMError(message: String, cause: Throwable? = null) : Exception(mes
     class ProviderError(val detail: String) : LLMError("Provider error: $detail")
     class DecodingError(cause: Throwable) : LLMError("Decoding error: ${cause.message}", cause)
     class RateLimited : LLMError("Rate limited — please try again later")
+    /**
+     * [T-gateway-quota-options] Gateway quota/budget exhaustion (方案 §1.4):
+     * carries the server's human-readable message plus the recovery `options`
+     * payload (明日再来 / 登录提额 / BYOK) so the chat UI can render the choices.
+     *
+     * Deliberately NOT retryable and NOT fallbackable (see [isFallbackable]):
+     * silently falling through to the next group member would burn the next
+     * tier's quota and defeat the §2.4 差异化限额 cost funnel.
+     */
+    class QuotaExceeded(
+        val serverMessage: String,
+        val options: List<QuotaOption>,
+    ) : LLMError(serverMessage)
     class TransientError(val detail: String) : LLMError("Transient error: $detail")
     class Cancelled : LLMError("Request was cancelled")
     class Unknown(cause: Throwable?) : LLMError("Unknown error: ${cause?.message}", cause)
@@ -23,6 +36,7 @@ sealed class LLMError(message: String, cause: Throwable? = null) : Exception(mes
     val fallbackReason: String
         get() = when (this) {
             is RateLimited -> "Rate limited"
+            is QuotaExceeded -> "Quota exceeded"
             is InvalidApiKey -> "Invalid API key"
             is ProviderError -> "Provider error"
             is TransientError -> "Transient error"
@@ -32,3 +46,6 @@ sealed class LLMError(message: String, cause: Throwable? = null) : Exception(mes
             is Unknown -> "Unknown error"
         }
 }
+
+/** One entry of the gateway's quota-error `options` array (§1.4 recovery choices). */
+data class QuotaOption(val key: String, val label: String)

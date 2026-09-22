@@ -23,8 +23,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/universal_html.dart' as web;
 
 import 'config/setting_keys.dart';
+import 'utils/agent_bridge.dart';
 import 'utils/background_push.dart';
 import 'widgets/fluffy_chat_app.dart';
+import 'widgets/share_scaffold_dialog.dart';
 
 ReceivePort? mainIsolateReceivePort;
 
@@ -64,6 +66,50 @@ void main(List<String> args) async {
     final appLinks = AppLinks();
     appLinks.getInitialLink().then(_handleDeepLink);
     appLinks.uriLinkStream.listen(_handleDeepLink);
+  }
+
+  // [T-im-deeplink] Embedded (Agent host) deep link handling:
+  // When running as a Flutter module inside the native Agent app, the host
+  // forwards IM deep-link URLs (from Android intent-filters or
+  // ShareReceiverActivity) via MethodChannel. Subscribe early so links
+  // arriving before runApp() are not lost; route on post-frame callback.
+  if (!kIsWeb && await AgentBridge.isEmbedded()) {
+    AgentBridge.startDeepLinkReceiver();
+    AgentBridge.onDeepLink.listen((uri) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        FluffyChatApp.router.go('/rooms/newprivatechat#$uri');
+      });
+    });
+    AgentBridge.onShare.listen((content) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final nav = FluffyChatApp.router.routerDelegate.navigatorKey.currentState;
+        while (nav?.canPop() == true) {
+          nav?.pop();
+        }
+        FluffyChatApp.router.go(
+          '/rooms',
+          extra: [TextShareItem(content)],
+        );
+      });
+    });
+  }
+
+  // kIsWeb deep link handling (BitJarvis desktop Electron host):
+  // The desktop main process forwards jarvis://im/{mxid} via postMessage.
+  if (kIsWeb) {
+    web.window.addEventListener('message', (web.Event e) {
+      final m = e as web.MessageEvent;
+      if (m.origin != web.window.location.origin) return;
+      // m.data is a JS object on web; JsObject is not exported by universal_html,
+      // so use dynamic property access (kIsWeb-only block, never runs on VM).
+      final d = (m.data as dynamic)['type'];
+      if (d == 'im/open') {
+        final mxid = (m.data as dynamic)['mxid'] as String;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          FluffyChatApp.router.go('/rooms/newprivatechat#$mxid');
+        });
+      }
+    }, true);
   }
 
   final store = await AppSettings.init();

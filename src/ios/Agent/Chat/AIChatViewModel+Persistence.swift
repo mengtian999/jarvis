@@ -342,6 +342,9 @@ extension AIChatViewModel {
                 } else {
                     // First assistant message in this turn
                     let msg = raw.toChatMessage(mediaResolver: resolver, showThinking: showThinking)
+                    if msg.roleId == nil {
+                        msg.roleId = sessionRole.roleId
+                    }
                     msg.sourceSortOrder = raw.sortOrder
                     msg.lastSourceSortOrder = raw.sortOrder
                     currentAssistant = msg

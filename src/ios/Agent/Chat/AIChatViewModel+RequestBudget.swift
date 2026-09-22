@@ -215,6 +215,17 @@ extension AIChatViewModel {
         return resized.jpegData(compressionQuality: quality)
     }
 
+    /// [T-gateway-quota-options] Surface the gateway's quota recovery options
+    /// (§1.4: 明日再来 / 登录提额 / BYOK) as an alert, in addition to the inline
+    /// error banner. QuotaExceeded is neither retryable nor fallbackable, so it
+    /// reaches the agent loop's terminal catch with its options payload intact.
+    /// Mirrors Android ChatViewModel.setInlineError(Exception) overload.
+    func presentQuotaAlertIfNeeded(_ error: Error) {
+        if case LLMError.quotaExceeded(let message, let options) = error {
+            quotaAlert = QuotaAlertPayload(message: message, options: options)
+        }
+    }
+
     /// Rewrite known provider error messages into friendlier guidance. The
     /// raw Anthropic 413 text is `"Downloaded image content cannot exceed
     /// 30MB"` — we keep the agent-visible record (`raw`) for diagnosis but

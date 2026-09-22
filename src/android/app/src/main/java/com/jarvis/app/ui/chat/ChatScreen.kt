@@ -1,6 +1,7 @@
 package com.jarvis.app.ui.chat
 
 import android.content.Intent
+import android.widget.Toast
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -559,6 +560,9 @@ fun ChatScreen(
      *  management screen — wired to the "Edit" button on the model picker's
      *  Model Groups section header. */
     onModelGroupsClick: () -> Unit = {},
+    /** [T-gateway-quota-options] "使用自己的 API Key" action on the gateway quota
+     *  dialog (§1.4): navigates to Add Provider (BYOK). */
+    onAddProvider: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -598,6 +602,8 @@ fun ChatScreen(
     // [T-android-compact-progress] null when no compaction is running.
     val compactProgress by viewModel.compactProgress.collectAsState()
     val error by viewModel.error.collectAsState()
+    // [T-gateway-quota-options] Gateway quota/budget refusal with recovery options (§1.4).
+    val quotaError by viewModel.quotaError.collectAsState()
     val modelName by viewModel.modelName.collectAsState()
     val sessionTitle by viewModel.sessionTitle.collectAsState()
     val sessionCategory by viewModel.sessionCategory.collectAsState()
@@ -6900,6 +6906,37 @@ fun ChatScreen(
                     neutralText = stringResource(R.string.context_compact_and_enable_auto),
                     onNeutral = {
                         viewModel.compactAndSendPending(alsoEnableAutoCompact = true)
+                    },
+                )
+            }
+
+            // [T-gateway-quota-options] Gateway quota/budget exhaustion (§1.4):
+            // the server attaches recovery options to the error; render them as
+            // the dialog actions. `byok` jumps to Add Provider; `login` is a
+            // placeholder toast until the end-user account system (待评审取舍)
+            // ships; `tomorrow` / anything unknown simply dismisses.
+            quotaError?.let { qe ->
+                val byok = qe.options.firstOrNull { it.key == "byok" }
+                val login = qe.options.firstOrNull { it.key == "login" }
+                val tomorrow = qe.options.firstOrNull { it.key == "tomorrow" }
+                MinisAlertDialog(
+                    onDismissRequest = { viewModel.dismissQuotaError() },
+                    title = qe.serverMessage,
+                    confirmText = byok?.label ?: stringResource(R.string.quota_option_add_key),
+                    onConfirm = {
+                        viewModel.dismissQuotaError()
+                        onAddProvider()
+                    },
+                    dismissText = tomorrow?.label ?: stringResource(R.string.quota_option_dismiss),
+                    neutralText = login?.label,
+                    onNeutral = login?.let {
+                        {
+                            Toast.makeText(
+                                context,
+                                R.string.quota_login_coming_soon,
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
                     },
                 )
             }

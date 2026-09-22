@@ -155,6 +155,7 @@ extension BackupImporter {
 
         // Sessions before messages — restoreMessage requires the parent row.
         var restoredSessionIds: [String] = []
+        var sessionRoleMap: [String: String] = [:]
         struct SessionRecord: Codable {
             let session: ChatSession
             let memoryEnabled: Bool
@@ -162,6 +163,9 @@ extension BackupImporter {
         }
         for rec in readJSONL(dataDir, base: "sessions", as: SessionRecord.self) {
             let sid = rec.session.id
+            if let rId = rec.session.roleId {
+                sessionRoleMap[sid] = rId
+            }
             // Refuse rather than silently skip: a running agent loop owns its
             // message list, and writing under it would scramble sort_order.
             if await store.isSessionRunning(sid) {
@@ -185,6 +189,7 @@ extension BackupImporter {
                 report.unreadable += 1
                 continue
             }
+            let effectiveRoleId = msg.roleId ?? (msg.role == .assistant ? (sessionRoleMap[msg.sessionId] ?? await store.getSession(msg.sessionId)?.roleId) : nil)
             let outcome = await store.restoreMessage(
                 id: msg.id, sessionId: msg.sessionId, role: msg.role.rawValue,
                 partsJson: partsJson, createdAt: msg.createdAt,
@@ -192,6 +197,7 @@ extension BackupImporter {
                 reasoningContent: msg.reasoningContent,
                 streamInterruptCount: msg.streamInterruptCount,
                 updatedAt: msg.createdAt,
+                roleId: effectiveRoleId,
                 // [T-token-attribution-snapshot] RawMessage decodes these
                 // straight from the package; nil for older packages.
                 modelId: msg.modelId, modelDisplayName: msg.modelDisplayName,

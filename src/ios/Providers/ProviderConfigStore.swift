@@ -796,7 +796,7 @@ final class ProviderConfigStore: ObservableObject {
 
     var instances: [ProviderInstance] { config.instances }
 
-    func addInstance(_ instance: ProviderInstance) {
+    func addInstance(_ instance: ProviderInstance, skipModelRefresh: Bool = false) {
         config.instances.append(instance)
         if instance.credentialType == .oauth {
             // OAuth instances: pre-populate with static built-in list, enriched with models.dev data.
@@ -815,7 +815,7 @@ final class ProviderConfigStore: ObservableObject {
             config.modelEntries.append(contentsOf: entries)
             logger.info("[ModelList] addInstance (OAuth): instance=\(instance.label) seeded \(entries.count) built-in entries: [\(entries.map { $0.baseModel.id }.prefix(10).joined(separator: ","))]")
             // Manual OAuth tokens and OpenRouter OAuth can fetch models from the API
-            if hasManualToken || instance.providerType == .openRouter {
+            if !skipModelRefresh && (hasManualToken || instance.providerType == .openRouter) {
                 Task { await refreshModels(for: instance) }
             }
         } else if !VoiceProviderTemplate.mockEntries(for: instance).isEmpty {
@@ -825,11 +825,13 @@ final class ProviderConfigStore: ObservableObject {
             // Dual-purpose providers (MiMo, DashScope) also serve text models
             // via /v1/models. Fetch them now; replaceEntries preserves the
             // voice seeds above (T-mimo-shadow-voice guard).
-            if instance.credentialType == .apiKey {
+            if !skipModelRefresh && instance.credentialType == .apiKey {
                 Task { await refreshModels(for: instance) }
             }
         } else {
-            Task { await refreshModels(for: instance) }
+            if !skipModelRefresh {
+                Task { await refreshModels(for: instance) }
+            }
         }
         save()
     }

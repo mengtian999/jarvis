@@ -448,7 +448,8 @@ class BackupImporter(
             // A message whose session was skipped as locally-newer still
             // belongs to a session that exists; one whose session is absent
             // entirely would violate the foreign key.
-            if (dao.getSession(sessionId) == null) {
+            val session = dao.getSession(sessionId)
+            if (session == null) {
                 // [T-android-restore-logging] The single most destructive skip
                 // in the importer: it silently discards a message because its
                 // parent session is absent. 356 of 500 sessions restored empty
@@ -460,11 +461,18 @@ class BackupImporter(
                 return@readJsonl
             }
             val createdAt = m.millis("createdAt") ?: 0
+            val role = m.str("role") ?: "user"
+            // [T-role-message-level] Restore the persona that generated this
+            // assistant message. If absent/null (older package or pre-roleId
+            // build), fall back to the parent session's bound persona so history
+            // inside restored conversations doesn't collapse into Jarvis.
+            // User and system rows are null by contract.
+            val roleId = if (role == "assistant") (m.str("roleId") ?: session.roleId) else null
             dao.insertMessage(
                 MessageEntity(
                     id = id,
                     sessionId = sessionId,
-                    role = m.str("role") ?: "user",
+                    role = role,
                     // Re-serialised from the parsed element, so any part type
                     // this build doesn't model is preserved verbatim.
                     partsJson = (m["parts"]?.toString()) ?: "[]",
@@ -476,6 +484,7 @@ class BackupImporter(
                     updatedAt = createdAt,
                     // errorInfo is device-local (§0.2) and is never restored.
                     errorInfo = null,
+                    roleId = roleId,
                     // [T-token-attribution-snapshot] Absent in packages written
                     // before this existed (and in any category the other
                     // platform hasn't updated yet) — null then, which is

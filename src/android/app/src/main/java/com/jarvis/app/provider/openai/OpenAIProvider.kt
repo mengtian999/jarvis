@@ -4,6 +4,7 @@ import android.util.Base64
 import com.jarvis.app.data.model.AgentContentPart
 import com.jarvis.app.data.model.AgentToolDefinition
 import com.jarvis.app.data.model.LLMError
+import com.jarvis.app.data.model.QuotaOption
 import com.jarvis.app.data.model.LLMMediaAttachment
 import com.jarvis.app.data.model.LLMMessage
 import com.jarvis.app.data.model.LLMModel
@@ -3429,6 +3430,16 @@ class OpenAIProvider private constructor(
 
     private fun mapHttpError(statusCode: Int, body: String): LLMError {
         if (statusCode == 401 || statusCode == 403) return LLMError.InvalidApiKey()
+
+        // [T-gateway-quota-options] The gateway's quota/budget errors (方案 §1.4)
+        // carry a recovery `options` array (明日再来 / 登录提额 / BYOK) alongside the
+        // error object. Intercept BEFORE the generic 429/5xx mappings below —
+        // quota_exceeded arrives as 429 (would become RateLimited → group fallback,
+        // silently burning the next tier's quota) and budget_exhausted as 503
+        // (would become TransientError → pointless auto-retry). Only the gateway
+        // emits `options`, so this is inert for every other provider.
+        parseGatewayQuotaError(body)?.let { return it }
+
         if (statusCode == 429) return LLMError.RateLimited()
 
         val message = try {
@@ -3449,6 +3460,33 @@ class OpenAIProvider private constructor(
             return LLMError.TransientError(message)
         }
         return LLMError.ProviderError(message)
+    }
+
+    /**
+     * [T-gateway-quota-options] Parse the gateway's quota-error recovery payload:
+     * `{ "error": {...}, "options": [{"key","label"}, ...] }`. Returns null when
+     * the body has no usable options array (non-gateway providers, plain errors).
+     */
+    private fun parseGatewayQuotaError(body: String): LLMError.QuotaExceeded? {
+        return try {
+            val json = JSONObject(body)
+            val arr = json.optJSONArray("options") ?: return null
+            val options = buildList {
+                for (i in 0 until arr.length()) {
+                    val o = arr.optJSONObject(i) ?: continue
+                    val key = o.safeOptString("key", "")
+                    val label = o.safeOptString("label", "")
+                    if (key.isNotBlank() && label.isNotBlank()) add(QuotaOption(key, label))
+                }
+            }
+            if (options.isEmpty()) return null
+            val message = json.optJSONObject("error")?.safeOptString("message", "")
+                ?.takeIf { it.isNotBlank() }
+                ?: "今日免费额度已用完"
+            LLMError.QuotaExceeded(message, options)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun mapError(error: Throwable): LLMError {

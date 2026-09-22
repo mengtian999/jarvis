@@ -287,7 +287,7 @@
     <string name="settings_privacy_policy">隐私政策</string>
     <string name="settings_feedback">反馈问题</string>
     <string name="settings_submit_github_issues">提交 GitHub Issue</string>
-    <string name="settings_feedback_telegram">反馈 (Telegram)</string>
+    <string name="settings_feedback_telegram">反馈（Jarvis IM）</string>
     <string name="settings_feedback_email">反馈 (邮件)</string>
     <string name="about_title">关于</string>
     <string name="about_jarvis_tagline">贾维斯 是完全本地、完全私密的设备端 Agent。</string>
@@ -1737,6 +1737,9 @@
     <string name="debug_trigger_crash_menu">触发闪退 (Debug)</string>
     <string name="chat_load_older_messages">↑ 加载更早的消息</string>
     <string name="error_empty_response_generic">模型返回了空响应。请重试或切换模型。</string>
+<string name="quota_option_add_key">使用自己的 API Key</string>
+<string name="quota_option_dismiss">知道了</string>
+<string name="quota_login_coming_soon">账号登录即将上线，敬请期待</string>
     <string name="error_empty_response_context_large">模型返回了空响应。会话上下文可能过大 —— 请尝试压缩上下文或开启新会话。</string>
     <string name="error_empty_response_after_tool">在工具结果之后，即使经过提醒，模型仍未返回任何响应。它可能已过载 —— 请重试或切换模型。</string>
     <string name="thinking_truncated_hint">显示最后 %1$dK / 共 %2$dK 字符</string>

@@ -1046,7 +1046,10 @@ extension AIChatViewModel {
         if error is CancellationError { return false }
         if let llm = error as? LLMError {
             switch llm {
-            case .cancelled, .networkError:
+            // [T-gateway-quota-options] quotaExceeded: gateway quota refusal
+            // (§1.4), not payload size — halving just doubles rejected calls.
+            // Mirrors Android shouldSplitOnError.
+            case .cancelled, .networkError, .quotaExceeded:
                 return false
             default:
                 return true

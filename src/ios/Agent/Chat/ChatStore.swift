@@ -7385,6 +7385,8 @@ extension ChatStore {
                         createdAt: Date, tokenUsageJson: String?, sortOrder: Int,
                         reasoningContent: String?, streamInterruptCount: Int,
                         updatedAt: Date,
+                        // [T-role-message-level] The persona that generated this assistant message.
+                        roleId: String? = nil,
                         // [T-token-attribution-snapshot] Carried through backup
                         // restore so a restored package keeps its attribution.
                         // nil for packages written before the fields existed.
@@ -7419,8 +7421,8 @@ extension ChatStore {
             INSERT OR REPLACE INTO messages
               (id, session_id, role, parts_json, created_at, token_usage, sort_order,
                reasoning_content, stream_interrupt_count, updated_at, part_flags,
-               model_id, model_display_name, provider_type, provider_instance_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \(Self.partFlagsSQLExpr("?4")), ?, ?, ?, ?)
+               role_id, model_id, model_display_name, provider_type, provider_instance_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, \(Self.partFlagsSQLExpr("?4")), ?, ?, ?, ?, ?)
             """
         var ins: OpaquePointer?
         var outcome: RestoreOutcome = localUpdated == nil ? .inserted : .updated
@@ -7435,10 +7437,11 @@ extension ChatStore {
             bindText(ins, 8, reasoningContent)
             sqlite3_bind_int(ins, 9, Int32(streamInterruptCount))
             sqlite3_bind_double(ins, 10, incoming)
-            bindText(ins, 11, modelId)
-            bindText(ins, 12, modelDisplayName)
-            bindText(ins, 13, providerType)
-            bindText(ins, 14, providerInstanceId)
+            bindText(ins, 11, roleId)
+            bindText(ins, 12, modelId)
+            bindText(ins, 13, modelDisplayName)
+            bindText(ins, 14, providerType)
+            bindText(ins, 15, providerInstanceId)
             if sqlite3_step(ins) != SQLITE_DONE {
                 logger.warning("[Restore] message insert failed id=\(id.prefix(8)): \(String(cString: sqlite3_errmsg(db)))")
                 outcome = .skippedNoParent
