@@ -16,9 +16,7 @@
 
 GitHub: **[mengtian999/jarvis](https://github.com/mengtian999/jarvis)**
 
-<a href="https://apps.apple.com/app/id6759188481">
-  <img alt="Download on the App Store" height="48" src="assets/badge-appstore.svg" />
-</a>
+
 &nbsp;
 <a href="https://github.com/mengtian999/jarvis/releases">
   <img alt="Get the APK on GitHub" height="48" src="assets/badge-android.svg" />
@@ -26,7 +24,6 @@ GitHub: **[mengtian999/jarvis](https://github.com/mengtian999/jarvis)**
 
 > **This repository is the mobile client (iOS / Android).** The desktop client lives at <https://github.com/mengtian999/Bitjarvis>; the mobile IM client is in its own repository and is planned to merge into this app.
 
-![Jarvis on iOS — deep research, chat, agent runtime, integrations, iCloud sync and granular permissions](assets/screenshots.png)
 
 ---
 
@@ -73,7 +70,7 @@ A few things people actually use it for:
 - **Share anything into a calendar event** — send a page or message to Jarvis via the iOS Share Sheet and it creates the event, time and place included.
 - **Hand off between your agents** — one role drafts a proposal, forwards it to another role for review and polish; leave home, switch devices — roles and sessions all stay with you.
 
-**→ [OpenMinis/AwesomeMinis](https://github.com/OpenMinis/AwesomeMinis)** — a curated, community-contributed collection of use cases and workflows across health, productivity, research, finance, and developer tooling.
+
 
 ## Skills
 
@@ -81,24 +78,8 @@ A **skill** is a folder with a `SKILL.md` file — instructions, and optionally 
 
 Jarvis has its own tool system, but it does not require skills written specifically for it: **skills built for Claude, Codex, OpenClaw or Hermes Agent generally run in Jarvis as-is.** Skills adapted to Jarvis' tools simply run better — they can reach the Linux shell, device integrations and native offloads directly.
 
-**→ [OpenMinis/MinisSkills](https://github.com/OpenMinis/MinisSkills)** — skills adapted for Jarvis alongside ones built for it from scratch, covering TTS, search, media downloads, health analysis, cloud APIs and more.
 
-## Press
 
-> "the most impressive indie app I've seen in a while"
->
-> — Federico Viticci, [**Open Minis Is the iOS Agent I Wish Siri AI Could Be**](https://www.macstories.net/reviews/open-minis-is-the-ios-agent-i-wish-siri-ai-could-be/),
-> MacStories (July 2026)
-
-> "在很大程度上实现甚至局部超越了 Apple Intelligence"
->
-> — Ye Han, [**这可能是 iPhone 最强 Agent 软件，没有之一 丨Open Minis 入门指南**](https://zhuanlan.zhihu.com/p/2045570157783807562),
-> 知乎 / Zhihu (June 2026)
-
-> "可能是 iOS 端最强 AI Agent"
->
-> — [**Open Minis：可能是 iOS 端最强 AI Agent**](https://www.appinn.com/open-minis/),
-> 小众软件 / Appinn (March 2026)
 
 ## Roadmap: merging with the mobile IM into one app
 
@@ -185,5 +166,3 @@ The app links GPL-licensed components — [iSH](https://github.com/OpenMinis/ish
 
 - **Telegram**: [Join the group](https://t.me/+2NzhOJuzRyI1YmM1)
 - **Issues**: Bug reports, feature requests and discussion via [GitHub Issues](https://github.com/mengtian999/jarvis/issues)
-
-This repository is a mirror of a private development tree, so it **does not accept pull requests** — there is nowhere for them to land. Issues are the way to shape the product, and [AwesomeMinis](https://github.com/OpenMinis/AwesomeMinis) and [MinisSkills](https://github.com/OpenMinis/MinisSkills) both do take contributions. See [CONTRIBUTING.md](CONTRIBUTING.md).

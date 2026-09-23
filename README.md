@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://bitjarvis.chat">官网</a>
+  <a href="https://www.bitjarvis.chat">官网</a>
   · <a href="README_EN.md">English</a>
 </p>
 
@@ -16,17 +16,14 @@
 
 GitHub: **[mengtian999/jarvis](https://github.com/mengtian999/jarvis)**
 
-<a href="https://apps.apple.com/app/id6759188481">
-  <img alt="Download on the App Store" height="48" src="assets/badge-appstore.svg" />
-</a>
 &nbsp;
 <a href="https://github.com/mengtian999/jarvis/releases">
   <img alt="Get the APK on GitHub" height="48" src="assets/badge-android.svg" />
 </a>
 
-> **本仓库为移动端（iOS / Android）。** 桌面端在 <https://github.com/mengtian999/Bitjarvis>；移动端 IM 在独立仓库，并计划与移动端合为一个 App。
+> **本仓库为移动端（iOS / Android）。** 桌面端在 <https://github.com/mengtian999/Bitjarvis>；
 
-![Jarvis on iOS — deep research, chat, agent runtime, integrations, iCloud sync and granular permissions](assets/screenshots.png)
+
 
 ---
 
@@ -70,44 +67,12 @@ Jarvis 已从「单 Agent」进化为**多角色**：一个 App 里可以同时�
 - **随手分享成日程** — 从 iOS 分享面板把页面 / 消息交给 Jarvis，时间地点自动变成一条日历事件。
 - **多位 Ta 接力** — 一个角色写方案草稿，转发给另一个角色审阅润色；出门换手机，角色和会话一个不少。
 
-**→ [OpenMinis/AwesomeMinis](https://github.com/OpenMinis/AwesomeMinis)** — 社区贡献的用例与工作流合集（健康、生产力、研究、财务、开发工具……）。
-
 ## Skills
 
 **Skill** 就是带 `SKILL.md` 的文件夹——指令，以及可选的脚本、参考资料与资源——请求命中时按需加载。元数据常驻上下文用于触发；正文与资源只在真正使用时才载入。
 
 Jarvis 有自己的工具体系，但不要求技能必须为它专门编写：**为 Claude、Codex、OpenClaw 或 Hermes Agent 编写的技能一般可以直接运行在 Jarvis 中。** 适配了 Jarvis 工具的技能运行得更好——能直接触达 Linux 壳、设备集成和原生卸载。
 
-**→ [OpenMinis/MinisSkills](https://github.com/OpenMinis/MinisSkills)** — 为 Jarvis 从零编写的技能，以及为它移植的技能，覆盖 TTS、搜索、媒体下载、健康分析、云端 API 等。
-
-## 评价
-
-> "the most impressive indie app I've seen in a while"
->
-> — Federico Viticci, [**Open Minis Is the iOS Agent I Wish Siri AI Could Be**](https://www.macstories.net/reviews/open-minis-is-the-ios-agent-i-wish-siri-ai-could-be/),
-> MacStories (July 2026)
-
-> "在很大程度上实现甚至局部超越了 Apple Intelligence"
->
-> — Ye Han, [**这可能是 iPhone 最强 Agent 软件，没有之一 丨Open Minis 入门指南**](https://zhuanlan.zhihu.com/p/2045570157783807562),
-> 知乎 / Zhihu (June 2026)
-
-> "可能是 iOS 端最强 AI Agent"
->
-> — [**Open Minis：可能是 iOS 端最强 AI Agent**](https://www.appinn.com/open-minis/),
-> 小众软件 / Appinn (March 2026)
-
-## 路线图：与移动端 IM 合成一个 App
-
-移动端 IM 与 Jarvis 即将合并为同一个 App：**真人和多角色 Agent 的对话将进入同一界面**，一个入口、一套同步、一段上下文。
-
-桌面端已经打通了「内嵌 IM + Agent 互通」：侧栏内嵌 Jarvis IM，一个 Jarvis IM 账号对应每个 Agent 的 AppService 虚拟用户（如 `@jarvis_home3f2a`）。移动端合体后，多端体验将完全一致——手机替你在群里回话的、和桌面上帮你写报告的，是同一群 Ta。
-
-## Beta 计划
-
-App Store 的发布常常滞后：每次更新都要等审核，稳定性不足时我们也会压住版本。TestFlight 版本总是最先落地新功能和修复。
-
-**→ [加入 TestFlight beta](https://testflight.apple.com/join/3BdkA5c3)**
 
 Android 的 APK 始终在 [releases 页面](https://github.com/mengtian999/jarvis/releases) 提供最新版。
 
@@ -168,19 +133,20 @@ Jarvis 站在大量开源工作的肩膀上。感谢这些项目的维护者—�
 
 **Android** — [AndroidX & Jetpack Compose](https://developer.android.com/jetpack)、[OkHttp](https://square.github.io/okhttp/)、[Coil](https://coil-kt.github.io/coil/)、[kotlinx](https://github.com/Kotlin) 序列化与协程、[multiplatform-markdown-renderer](https://github.com/mikepenz/multiplatform-markdown-renderer)、[Reorderable](https://github.com/Calvin-LL/Reorderable)、[ACRA](https://github.com/ACRA/acra)（均 Apache-2.0）、[Shizuku](https://github.com/RikkaApps/Shizuku-API) (MIT)。
 
+本应用的上游为：[Openminis](https://github.com/OpenMinis) 
+
 ---
 
 ## 许可证
 
 Jarvis 以 **[GNU General Public License v3.0](LICENSE)** 授权。
 
-应用链接了 GPL 组件——[iSH](https://github.com/OpenMinis/ish-arm64) (GPLv3) 与 [PRoot](https://github.com/OpenMinis/proot) (GPLv2)——因此整体作品以 GPLv3 分发。打包的第三方许可证列表见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。
+应用链接了 GPL 组件——[iSH](https://github.com/ish-app/ish) (GPLv3) 与 [PRoot](https://github.com/proot-me/PRoot) (GPLv2)——因此整体作品以 GPLv3 分发。打包的第三方许可证列表见 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。
 
 ---
 
 ## 社区
 
-- **Telegram**: [加入群组](https://t.me/+2NzhOJuzRyI1YmM1)
+- **Jarvis IM**: [加入群组](https://www.bitjarvis.chat/invite.html?id=!r5PjhfZnf2BsDxysbJ:bitjarvis.chat)
 - **Issues**: 通过 [GitHub Issues](https://github.com/mengtian999/jarvis/issues) 提交 bug、功能请求与讨论
 
-本仓库是私有开发树的镜像，因此**不接受 pull request**——没有地方让它们落地。Issues 是塑造产品的方式；[AwesomeMinis](https://github.com/OpenMinis/AwesomeMinis) 与 [MinisSkills](https://github.com/OpenMinis/MinisSkills) 都接受贡献。参见 [CONTRIBUTING.md](CONTRIBUTING.md)。
