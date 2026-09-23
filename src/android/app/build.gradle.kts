@@ -86,6 +86,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = "jarvis2025"
+            keyAlias = "jarvis-release"
+            keyPassword = "jarvis2025"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -93,7 +102,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

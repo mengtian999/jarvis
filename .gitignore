@@ -23,6 +23,7 @@ build_log/
 .im/android/
 src/android/.cxx/
 src/android/local.properties
+src/android/app/release.keystore
 
 # Binary & large assets
 src/android/app/libs/rclone.aar
