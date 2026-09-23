@@ -24,6 +24,10 @@ GitHub: **[mengtian999/jarvis](https://github.com/mengtian999/jarvis)**
 
 > **This repository is the mobile client (iOS / Android).** The desktop client lives at <https://github.com/mengtian999/Bitjarvis>; the mobile IM client is in its own repository and is planned to merge into this app.
 
+<p align="center">
+  <img src="https://www.bitjarvis.chat/jgt.png" alt="Bit Jarvis" width="800">
+</p>
+
 
 ---
 

@@ -23,6 +23,10 @@ GitHub: **[mengtian999/jarvis](https://github.com/mengtian999/jarvis)**
 
 > **本仓库为移动端（iOS / Android）。** 桌面端在 <https://github.com/mengtian999/Bitjarvis>；
 
+<p align="center">
+  <img src="https://www.bitjarvis.chat/jgt.png" alt="Bit Jarvis" width="800">
+</p>
+
 
 
 ---
