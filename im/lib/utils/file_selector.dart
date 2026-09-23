@@ -24,15 +24,15 @@ Future<List<XFile>> selectFiles(
             type: type,
             dialogTitle: title,
           );
-          return result.map((e) => e.xFile).toList();
+          return result?.files?.map((e) => e.xFile).toList() ?? [];
         }
         final result = await FilePicker.pickFile(
           type: type,
           dialogTitle: title,
         );
-        return result == null ? <XFile>[] : [result.xFile];
+        return result == null ? <XFile>[] : [result.xFile as XFile];
       },
     ),
   );
-  return result.result ?? [];
+  return (result.result ?? []).cast<XFile>();
 }
