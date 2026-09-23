@@ -1,5 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Bit Jarvis
-Exec=bitjarvis %U
-MimeType=x-scheme-handler/im.bitjarvis;
