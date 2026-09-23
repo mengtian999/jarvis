@@ -155,6 +155,7 @@ fun CheckUpdateSection() {
         )
         if (showReleasesLink) {
             val linkLabel = stringResource(R.string.update_error_open_releases)
+            val releasesUrl = stringResource(R.string.releases_url)
             val annotated = buildAnnotatedString {
                 withStyle(
                     SpanStyle(
@@ -166,7 +167,7 @@ fun CheckUpdateSection() {
                 }
                 addStringAnnotation(
                     tag = "URL",
-                    annotation = UpdateChecker.RELEASES_URL,
+                    annotation = releasesUrl,
                     start = 0,
                     end = length,
                 )
