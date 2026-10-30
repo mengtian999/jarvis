@@ -14,8 +14,6 @@ struct GatewayIdentity: Codable, Sendable {
     let installId: String
     let deviceId: String
     let token: String
-    /// "cn" | "intl" — server-assigned based on client IP (§4.2 线路选择).
-    let region: String
     let registeredAt: Date
 }
 
@@ -159,18 +157,17 @@ final class GatewayClient: @unchecked Sendable {
             installId: installId,
             deviceId: deviceId,
             token: token,
-            region: (json["region"] as? String) ?? "cn",
             registeredAt: Date()
         )
         saveIdentity(identity)
-        logger.info("Registered: deviceId=\(identity.deviceId) region=\(identity.region)")
+        logger.info("Registered: deviceId=\(identity.deviceId)")
         return identity
     }
 
     // MARK: - List Models (§2.1)
 
     /// Fetch model list (GET /v1/models). Returns the raw parsed JSON.
-    /// Response shape: { object: "list", data: [...], pools: { region: { chat, image, video } } }
+    /// Response shape: { object: "list", data: [...] }
     func listModels() async throws -> [String: Any] {
         let id = try await ensureDevice()
         var request = URLRequest(url: URL(string: "\(baseURL)/v1/models")!)

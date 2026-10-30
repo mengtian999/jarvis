@@ -77,38 +77,43 @@ class GatewaySync(
             return (preferred + nonCoding + target).distinctBy { it.id }.take(3).map { it.id }
         }
 
-        internal data class GatewayTier(val id: String, val displayName: String, val isDefault: Boolean)
+        internal data class GatewayTier(
+            val id: String,
+            val displayName: String,
+            val isDefault: Boolean,
+            val contextWindow: Int? = null,
+            val maxOutputTokens: Int? = null,
+        )
 
-        internal fun parseModels(json: JSONObject, region: String, kind: String): List<GatewayTier> {
-            json.optJSONObject("pools")?.optJSONObject(region)?.let { pool ->
-                parseTierArray(pool, kind).takeIf { it.isNotEmpty() }?.let { return it }
-            }
+        internal fun parseModels(json: JSONObject, kind: String): List<GatewayTier> {
             val data = json.optJSONArray("data") ?: return emptyList()
             val tiers = mutableListOf<GatewayTier>()
+            val seen = mutableSetOf<String>()
             for (i in 0 until data.length()) {
                 val entry = data.getJSONObject(i)
                 val id = entry.optString("id", "")
                 if (id.isEmpty()) continue
-                val entryKind = entry.optString("kind", null)
-                val entryRegion = entry.optString("region", null)
-                val kindOK = entryKind == null || entryKind == kind
-                val regionOK = entryRegion == null || entryRegion == region
-                if (kindOK && regionOK) parseTier(entry)?.let { tiers.add(it) }
+                val entryKind = entry.optString("kind", "").ifEmpty { "chat" }
+                // kind 缺省视为 chat（OpenAI 兼容默认）；单池后不再有 region 过滤
+                if (entryKind != kind) continue
+                if (!seen.add(id)) continue
+                parseTier(entry)?.let { tiers.add(it) }
             }
-            return tiers
-        }
-
-        private fun parseTierArray(pool: JSONObject, kind: String): List<GatewayTier> {
-            val arr = pool.optJSONArray(kind) ?: return emptyList()
-            val tiers = mutableListOf<GatewayTier>()
-            for (i in 0 until arr.length()) parseTier(arr.getJSONObject(i))?.let { tiers.add(it) }
             return tiers
         }
 
         private fun parseTier(entry: JSONObject): GatewayTier? {
             val id = entry.optString("id", "")
             if (id.isEmpty()) return null
-            return GatewayTier(id, entry.optString("display_name", id), entry.optBoolean("is_default", false))
+            // 0/缺省 = 服务端未声明 → null，由 LLMModel 侧兜底
+            fun positive(key: String): Int? = entry.optInt(key, 0).takeIf { it > 0 }
+            return GatewayTier(
+                id = id,
+                displayName = entry.optString("display_name", id),
+                isDefault = entry.optBoolean("is_default", false),
+                contextWindow = positive("context_window"),
+                maxOutputTokens = positive("max_output_tokens"),
+            )
         }
     }
 
@@ -148,19 +153,26 @@ class GatewaySync(
             return r
         }
 
-        val region = identity.region
-        val chatEntries = parseModels(modelsJSON, region, "chat")
-        val imageEntries = parseModels(modelsJSON, region, "image")
-        val videoEntries = parseModels(modelsJSON, region, "video")
+        val chatEntries = parseModels(modelsJSON, "chat")
+        val imageEntries = parseModels(modelsJSON, "image")
+        val videoEntries = parseModels(modelsJSON, "video")
 
         if (chatEntries.isEmpty()) {
-            Log.w(TAG, "Gateway model list is empty for region=$region")
+            Log.w(TAG, "Gateway model list is empty")
             val result = SyncResult(ok = false, deviceId = identity.deviceId, error = "Gateway model list is empty")
             _syncState.value = result
             return result
         }
 
-        val chatModels = chatEntries.map { tier -> LLMModel(tier.id, tier.displayName, PROVIDER_NAME) }
+        val chatModels = chatEntries.map { tier ->
+            LLMModel(
+                id = tier.id,
+                displayName = tier.displayName,
+                provider = PROVIDER_NAME,
+                contextWindow = tier.contextWindow,
+                maxOutputTokens = tier.maxOutputTokens,
+            )
+        }
         val imageModels = imageEntries.map { tier ->
             val tierId = if (tier.id.startsWith("image")) tier.id else "image/${tier.id}"
             val displayName = if (tier.displayName.contains("图") || tier.displayName.contains("Image", ignoreCase = true)) {
@@ -174,6 +186,8 @@ class GatewaySync(
                 provider = PROVIDER_NAME,
                 inputModalities = listOf("text", "image"),
                 outputModalities = listOf("image"),
+                contextWindow = tier.contextWindow,
+                maxOutputTokens = tier.maxOutputTokens,
             )
         }
         val videoModels = videoEntries.map { tier ->
@@ -189,6 +203,8 @@ class GatewaySync(
                 provider = PROVIDER_NAME,
                 inputModalities = listOf("text", "image"),
                 outputModalities = listOf("video"),
+                contextWindow = tier.contextWindow,
+                maxOutputTokens = tier.maxOutputTokens,
             )
         }
         val allModels = chatModels + imageModels + videoModels
@@ -202,7 +218,7 @@ class GatewaySync(
         val defaultModelId = chatEntries.firstOrNull { it.isDefault }?.id
             ?: (if (chatEntries.any { it.id == "auto" }) "auto" else chatEntries.firstOrNull()?.id)
 
-        Log.i(TAG, "Synced: ${chatModels.size} chat, ${imageEntries.size} image, ${videoEntries.size} video, region=$region")
+        Log.i(TAG, "Synced: ${chatModels.size} chat, ${imageEntries.size} image, ${videoEntries.size} video")
 
         val result = SyncResult(
             ok = true,

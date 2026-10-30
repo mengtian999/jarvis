@@ -44,7 +44,6 @@ class GatewayClient(
         val installId: String,
         val deviceId: String,
         val token: String,
-        val region: String = "cn",
         val registeredAt: Long = System.currentTimeMillis(),
     )
 
@@ -79,9 +78,9 @@ class GatewayClient(
             throw GatewayException("Missing device_id or token in register response")
         }
 
-        val identity = GatewayIdentity(installId, deviceId, token, json.optString("region", "cn"))
+        val identity = GatewayIdentity(installId, deviceId, token)
         saveIdentity(identity)
-        Log.i(TAG, "Registered: deviceId=${identity.deviceId} region=${identity.region}")
+        Log.i(TAG, "Registered: deviceId=${identity.deviceId}")
         identity
     }
 
@@ -204,7 +203,6 @@ class GatewayClient(
                 installId = obj.getString("installId"),
                 deviceId = obj.getString("deviceId"),
                 token = obj.getString("token"),
-                region = obj.optString("region", "cn"),
                 registeredAt = obj.optLong("registeredAt", System.currentTimeMillis()),
             )
         } catch (e: Exception) {
@@ -219,7 +217,6 @@ class GatewayClient(
                 put("installId", identity.installId)
                 put("deviceId", identity.deviceId)
                 put("token", identity.token)
-                put("region", identity.region)
                 put("registeredAt", identity.registeredAt)
             }.toString()
             context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)

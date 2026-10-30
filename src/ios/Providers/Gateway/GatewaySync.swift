@@ -60,13 +60,12 @@ enum GatewaySync {
             return .notReached
         }
 
-        let region = identity.region
-        let chatEntries = pickModels(modelsJSON, region: region, kind: "chat")
-        let imageEntries = pickModels(modelsJSON, region: region, kind: "image")
-        let videoEntries = pickModels(modelsJSON, region: region, kind: "video")
+        let chatEntries = pickModels(modelsJSON, kind: "chat")
+        let imageEntries = pickModels(modelsJSON, kind: "image")
+        let videoEntries = pickModels(modelsJSON, kind: "video")
 
         guard !chatEntries.isEmpty else {
-            logger.warning("Gateway model list is empty for region=\(region)")
+            logger.warning("Gateway model list is empty")
             return GatewaySyncResult(
                 ok: false, models: [], imageModels: [], videoModels: [], defaultModelId: nil,
                 deviceId: identity.deviceId, error: "Gateway model list is empty"
@@ -74,7 +73,13 @@ enum GatewaySync {
         }
 
         let chatModels = chatEntries.map { tier in
-            LLMModel(id: tier.id, displayName: tier.displayName, provider: providerName)
+            LLMModel(
+                id: tier.id,
+                displayName: tier.displayName,
+                provider: providerName,
+                contextWindow: tier.contextWindow,
+                maxOutputTokens: tier.maxOutputTokens
+            )
         }
         let imageModels = imageEntries.map { tier -> LLMModel in
             let tierId = tier.id.hasPrefix("image") ? tier.id : "image/\(tier.id)"
@@ -84,7 +89,9 @@ enum GatewaySync {
             var model = LLMModel(
                 id: tierId,
                 displayName: displayName,
-                provider: providerName
+                provider: providerName,
+                contextWindow: tier.contextWindow,
+                maxOutputTokens: tier.maxOutputTokens
             )
             model.modalityOverride = [.textInput, .imageInput, .imageOutput]
             return model
@@ -97,7 +104,9 @@ enum GatewaySync {
             var model = LLMModel(
                 id: tierId,
                 displayName: displayName,
-                provider: providerName
+                provider: providerName,
+                contextWindow: tier.contextWindow,
+                maxOutputTokens: tier.maxOutputTokens
             )
             model.modalityOverride = [.textInput, .imageInput, .videoOutput]
             return model
@@ -117,7 +126,7 @@ enum GatewaySync {
         let defaultModelId = chatEntries.first(where: { $0.isDefault })?.id
             ?? (chatEntries.contains(where: { $0.id == "auto" }) ? "auto" : chatEntries.first?.id)
 
-        logger.info("Synced: \(chatModels.count) chat, \(imageEntries.count) image, \(videoEntries.count) video, region=\(region)")
+        logger.info("Synced: \(chatModels.count) chat, \(imageEntries.count) image, \(videoEntries.count) video")
 
         return GatewaySyncResult(
             ok: true,
@@ -136,40 +145,47 @@ enum GatewaySync {
         let id: String
         let displayName: String
         let isDefault: Bool
+        /// 0/缺省 = 服务端未声明 → nil
+        let contextWindow: Int?
+        let maxOutputTokens: Int?
     }
 
-    /// Parse /v1/models response, picking tiers of a given kind for a region.
-    /// Tries grouped `pools[region][kind]` first, then falls back to the flat
-    /// `data[]` array filtered by `kind` + `region` (for older gateway versions).
-    static func pickModels(
-        _ json: [String: Any], region: String, kind: String
-    ) -> [GatewayTier] {
-        // Grouped: pools[region][kind]
-        if let pools = json["pools"] as? [String: Any],
-           let pool = pools[region] as? [String: Any],
-           let tiers = pool[kind] as? [[String: Any]] {
-            let parsed = tiers.compactMap { parseTier($0) }
-            if !parsed.isEmpty { return parsed }
-        }
-        // Flat: data[] filtered by kind + region
+    /// Parse /v1/models response, picking tiers of the given kind.
+    ///
+    /// 单池后网关只返回扁平 `data[]`（无 pools / region）；按 kind 分流并去重。
+    /// 旧网关残留的 `pools` 字段被忽略。
+    static func pickModels(_ json: [String: Any], kind: String) -> [GatewayTier] {
         guard let data = json["data"] as? [[String: Any]] else { return [] }
-        return data.compactMap { entry -> GatewayTier? in
-            guard let id = entry["id"] as? String, !id.isEmpty else { return nil }
-            let entryKind = entry["kind"] as? String
-            let entryRegion = entry["region"] as? String
-            // kind match: nil kind = treat as chat (OpenAI-compat default)
-            let kindOK = (entryKind == nil) || (entryKind == kind)
-            let regionOK = (entryRegion == nil) || (entryRegion == region)
-            guard kindOK && regionOK else { return nil }
-            return parseTier(entry)
+        var seen = Set<String>()
+        var out: [GatewayTier] = []
+        for entry in data {
+            guard let id = entry["id"] as? String, !id.isEmpty else { continue }
+            // kind 缺省视为 chat（OpenAI 兼容默认）
+            let entryKind = (entry["kind"] as? String) ?? "chat"
+            if entryKind != kind { continue }
+            if seen.contains(id) { continue }
+            seen.insert(id)
+            if let tier = parseTier(entry) { out.append(tier) }
         }
+        return out
     }
 
     private static func parseTier(_ entry: [String: Any]) -> GatewayTier? {
         guard let id = entry["id"] as? String, !id.isEmpty else { return nil }
         let displayName = (entry["display_name"] as? String) ?? id
         let isDefault = (entry["is_default"] as? Bool) ?? false
-        return GatewayTier(id: id, displayName: displayName, isDefault: isDefault)
+        // 0/缺省 = 服务端未声明 → nil，交给 LLMModel 侧兜底
+        func positive(_ key: String) -> Int? {
+            guard let v = entry[key] as? Int, v > 0 else { return nil }
+            return v
+        }
+        return GatewayTier(
+            id: id,
+            displayName: displayName,
+            isDefault: isDefault,
+            contextWindow: positive("context_window"),
+            maxOutputTokens: positive("max_output_tokens")
+        )
     }
 
     // MARK: - Instance Upsert

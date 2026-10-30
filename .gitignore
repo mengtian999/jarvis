@@ -15,14 +15,21 @@ Thumbs.db
 # Logs
 *.log
 build_log/
+.build_log/
 .probe/
+probe_*.txt
+.apk_check/
 
 # Android
-.im/.android/
-.im/.ios/
-.im/android/
+im/.android/
+im/.ios/
+im/android/
 src/android/.cxx/
+src/android/.gradle/
+src/android/app/.cxx/
 src/android/local.properties
+*.keystore
+*.jks
 
 # Binary & large assets
 src/android/app/libs/rclone.aar
@@ -40,8 +47,9 @@ src/android/app/src/main/jniLibs/
 *.mov
 
 # Test outputs
-.im/build_log.txt
-.mc_log.txt
+im/build_log.txt
+mc_log.txt
+src/android/build_log.txt
 probe_*.txt
 screen*.png
 ui.xml

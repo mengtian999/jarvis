@@ -142,31 +142,33 @@ class GatewayDefaultTiersTest {
     }
 
     @Test
-    fun `parseModels extracts image and video tiers from pools structure`() {
+    fun `parseModels ignores legacy pools structure and reads flat data`() {
         val raw = """
         {
           "pools": {
             "cn": {
-              "chat": [{"id": "auto", "display_name": "贾维斯", "is_default": true}],
-              "image": [{"id": "standard", "display_name": "标准图片", "is_default": true}],
-              "video": [{"id": "standard", "display_name": "标准视频", "is_default": true}]
+              "chat": [{"id": "legacy-auto", "display_name": "旧池档位"}],
+              "image": [], "video": []
             }
-          }
+          },
+          "data": [
+            {"id": "auto", "display_name": "贾维斯", "kind": "chat", "is_default": true},
+            {"id": "image", "display_name": "标准图片", "kind": "image"},
+            {"id": "video", "display_name": "标准视频", "kind": "video"}
+          ]
         }
         """.trimIndent()
         val json = org.json.JSONObject(raw)
 
-        val chatTiers = GatewaySync.parseModels(json, "cn", "chat")
-        val imageTiers = GatewaySync.parseModels(json, "cn", "image")
-        val videoTiers = GatewaySync.parseModels(json, "cn", "video")
+        val chatTiers = GatewaySync.parseModels(json, "chat")
+        val imageTiers = GatewaySync.parseModels(json, "image")
+        val videoTiers = GatewaySync.parseModels(json, "video")
 
-        assertEquals(1, chatTiers.size)
-        assertEquals("auto", chatTiers[0].id)
-        assertEquals(1, imageTiers.size)
-        assertEquals("standard", imageTiers[0].id)
+        // 只读 data[]：pools 里的 legacy-auto 不应出现
+        assertEquals(listOf("auto"), chatTiers.map { it.id })
+        assertEquals(listOf("image"), imageTiers.map { it.id })
         assertEquals("标准图片", imageTiers[0].displayName)
-        assertEquals(1, videoTiers.size)
-        assertEquals("standard", videoTiers[0].id)
+        assertEquals(listOf("video"), videoTiers.map { it.id })
         assertEquals("标准视频", videoTiers[0].displayName)
     }
 
@@ -183,8 +185,8 @@ class GatewayDefaultTiersTest {
         """.trimIndent()
         val json = org.json.JSONObject(raw)
 
-        val imageTiers = GatewaySync.parseModels(json, "cn", "image")
-        val videoTiers = GatewaySync.parseModels(json, "cn", "video")
+        val imageTiers = GatewaySync.parseModels(json, "image")
+        val videoTiers = GatewaySync.parseModels(json, "video")
 
         assertEquals(1, imageTiers.size)
         assertEquals("standard", imageTiers[0].id)
