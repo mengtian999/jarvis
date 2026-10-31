@@ -458,19 +458,17 @@ object UpdateChecker {
 
     /**
      * Numeric-aware version comparator. `1.0.10` beats `1.0.9`. Non-numeric
-     * components fall back to lexicographic compare so a `1.0.0-rc1` build is
-     * treated as "newer than 1.0.0" — acceptable noise for our use case.
+     * components count as 0, so a tag that isn't a version at all (e.g. a
+     * release literally named `Jarvis`) can never outrank a real one.
      */
     private fun compareVersions(a: String, b: String): Int {
         val ap = a.split('.', '-')
         val bp = b.split('.', '-')
         val n = maxOf(ap.size, bp.size)
         for (i in 0 until n) {
-            val x = ap.getOrNull(i) ?: ""
-            val y = bp.getOrNull(i) ?: ""
-            val xi = x.toIntOrNull()
-            val yi = y.toIntOrNull()
-            val c = if (xi != null && yi != null) xi.compareTo(yi) else x.compareTo(y)
+            val x = ap.getOrNull(i)?.toIntOrNull() ?: 0
+            val y = bp.getOrNull(i)?.toIntOrNull() ?: 0
+            val c = x.compareTo(y)
             if (c != 0) return c
         }
         return 0
