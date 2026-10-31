@@ -15,6 +15,7 @@ import 'package:bitjarvis/utils/date_time_extension.dart';
 import 'package:bitjarvis/utils/file_description.dart';
 import 'package:bitjarvis/utils/matrix_sdk_extensions/matrix_locals.dart';
 import 'package:bitjarvis/utils/string_color.dart';
+import 'package:bitjarvis/services/translation_service.dart';
 import 'package:bitjarvis/widgets/avatar.dart';
 import 'package:bitjarvis/widgets/matrix.dart';
 import 'package:bitjarvis/widgets/member_actions_popup_menu_button.dart';
@@ -53,6 +54,9 @@ class Message extends StatelessWidget {
   final void Function()? onExpand;
   final bool isCollapsed;
   final Set<String> bigEmojis;
+  final TranslationResult? translationResult;
+  final bool isTranslating;
+  final void Function(String eventId)? onHideTranslation;
 
   const Message(
     this.event, {
@@ -78,6 +82,9 @@ class Message extends StatelessWidget {
     this.onExpand,
     required this.enterThread,
     this.isCollapsed = false,
+    this.translationResult,
+    this.isTranslating = false,
+    this.onHideTranslation,
     super.key,
   });
 
@@ -539,6 +546,9 @@ class Message extends StatelessWidget {
                                               timeline: timeline,
                                               selected: selected,
                                               bigEmojis: bigEmojis,
+                                              translationResult: translationResult,
+                                              isTranslating: isTranslating,
+                                              onHideTranslation: onHideTranslation,
                                             ),
                                           ],
                                         ),
