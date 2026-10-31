@@ -36,6 +36,10 @@ object UpdateChecker {
     private const val TAG = "UpdateChecker"
     private const val OWNER = "mengtian999"
     private const val REPO = "jarvis"
+    // Gitee mirror: used as a fallback when GitHub is unreachable / geo-
+    // blocked (mainland China). Same repo content, faster to download there.
+    private const val GITEE_OWNER = "dreamsky111333"
+    private const val GITEE_REPO = "jarvis"
     private const val DOWNLOAD_FILENAME = "jarvis-update.apk"
     /**
      * Sub-directory of `filesDir` where we stage downloaded update APKs. We
@@ -98,139 +102,114 @@ object UpdateChecker {
      * coroutine scope.
      */
     suspend fun check(): CheckResult = withContext(Dispatchers.IO) {
-        val url = "https://api.github.com/repos/$OWNER/$REPO/releases?per_page=30"
-        AppLogger.info(TAG, "GET $url (local=${BuildConfig.VERSION_NAME})")
+        val githubUrl = "https://api.github.com/repos/$OWNER/$REPO/releases?per_page=30"
+        val giteeUrl = "https://gitee.com/api/v5/repos/$GITEE_OWNER/$GITEE_REPO/releases"
+        AppLogger.info(TAG, "GET $githubUrl (local=${BuildConfig.VERSION_NAME})")
         try {
-            val req = Request.Builder()
-                .url(url)
-                .header("Accept", "application/vnd.github+json")
-                .header("X-GitHub-Api-Version", "2022-11-28")
-                .build()
-            client.newCall(req).execute().use { resp ->
-                AppLogger.info(TAG, "HTTP ${resp.code}")
-                if (resp.code == 404) {
-                    return@withContext CheckResult.NoReleaseAvailable
-                }
-                // 403 = rate-limit or geo-blocked. 451 = legal block. Both
-                // map to the same "open Releases in browser" hint — there's
-                // nothing the app can do client-side.
-                if (resp.code == 403 || resp.code == 451) {
-                    AppLogger.warning(TAG, "GitHub API ${resp.code} — geo-block or rate-limit")
-                    return@withContext CheckResult.Forbidden
-                }
-                if (!resp.isSuccessful) {
-                    val msg = "GitHub API ${resp.code}"
-                    AppLogger.warning(TAG, msg)
-                    return@withContext CheckResult.Error(msg)
-                }
-                val body = resp.body?.string() ?: return@withContext CheckResult.Error("empty body")
-                val arr = runCatching { JSONArray(body) }.getOrNull()
-                if (arr == null || arr.length() == 0) {
-                    AppLogger.info(TAG, "releases list empty")
-                    return@withContext CheckResult.NoReleaseAvailable
-                }
-
-                // Build a list of non-draft releases. GitHub already returns
-                // them sorted by created_at desc, but we re-sort by parsed
-                // version number to be robust against odd ordering.
-                data class ReleaseInfo(
-                    val tagName: String,
-                    val versionName: String,
-                    val releaseName: String,
-                    val changelog: String,
-                    val isPrerelease: Boolean,
-                    val apkUrl: String?,
-                    val apkSize: Long,
-                )
-
-                val candidates = mutableListOf<ReleaseInfo>()
-                for (i in 0 until arr.length()) {
-                    val r = arr.optJSONObject(i) ?: continue
-                    if (r.optBoolean("draft", false)) continue
-                    val tag = r.optString("tag_name")
-                    if (tag.isEmpty()) continue
-                    val (apkUrl, apkSize) = findApkAsset(r.optJSONArray("assets"))
-                    candidates += ReleaseInfo(
-                        tagName = tag,
-                        versionName = normalizeTag(tag),
-                        releaseName = r.optString("name").ifEmpty { tag },
-                        changelog = r.optString("body", ""),
-                        isPrerelease = r.optBoolean("prerelease", false),
-                        apkUrl = apkUrl,
-                        apkSize = apkSize,
-                    )
-                }
-                AppLogger.info(
-                    TAG,
-                    "non-draft releases=${candidates.size} (apk-bearing=${candidates.count { it.apkUrl != null }})",
-                )
-                if (candidates.isEmpty()) {
-                    return@withContext CheckResult.NoReleaseAvailable
-                }
-
-                // [T-android-updatechecker-localver-normalize] Normalize the
-                // LOCAL version the same way remote tags are (normalizeTag),
-                // otherwise the comparison is asymmetric: remote "v0.11-preview"
-                // becomes "0.11" but local "0.11-preview" stays raw, and
-                // compareVersions("0.11","0.11-preview") puts "" before
-                // "preview" in the 3rd component → remote judged OLDER → the
-                // user is told they're up to date when they're actually on the
-                // matching version (and a real newer "0.12-preview" → "0.12"
-                // still compares greater, so updates still surface).
-                val localVer = normalizeTag(BuildConfig.VERSION_NAME)
-                // Highest version we've seen at all (used for the "release
-                // exists but is older or equal" → UpToDate decision and for
-                // logging).
-                val highest = candidates.maxWithOrNull(
-                    compareBy { compareVersions(it.versionName, "0") },
-                ) ?: candidates.first()
-                AppLogger.info(
-                    TAG,
-                    "highest-published tag=${highest.tagName} parsed=${highest.versionName} prerelease=${highest.isPrerelease} apk=${highest.apkUrl != null}",
-                )
-
-                // First APK-bearing release with version > local. We pick the
-                // highest such release so a stale older APK never shadows a
-                // newer non-APK preview.
-                val upgradeCandidate = candidates
-                    .filter { it.apkUrl != null }
-                    .filter { compareVersions(it.versionName, localVer) > 0 }
-                    .maxWithOrNull(compareBy { compareVersions(it.versionName, "0") })
-
-                if (upgradeCandidate != null) {
-                    AppLogger.info(
-                        TAG,
-                        "Update available: $localVer → ${upgradeCandidate.versionName} (${upgradeCandidate.tagName})",
-                    )
-                    return@withContext CheckResult.UpdateAvailable(
-                        tagName = upgradeCandidate.tagName,
-                        versionName = upgradeCandidate.versionName,
-                        releaseName = upgradeCandidate.releaseName,
-                        changelog = upgradeCandidate.changelog,
-                        apkUrl = upgradeCandidate.apkUrl!!,
-                        apkSizeBytes = upgradeCandidate.apkSize,
-                    )
-                }
-
-                // No newer-with-APK candidate exists. Decide between three
-                // remaining states:
-                //   1. Highest release ≤ local version → UpToDate.
-                //   2. Highest release > local but no APK in the listing →
-                //      NoApkAsset (mention the tag so the user can grab the
-                //      release manually if they really want).
-                //   3. Otherwise (all releases ≤ local) → UpToDate as well.
-                val highestVsLocal = compareVersions(highest.versionName, localVer)
-                if (highestVsLocal > 0 && highest.apkUrl == null) {
-                    AppLogger.info(
-                        TAG,
-                        "Release ${highest.tagName} > local but no APK asset",
-                    )
-                    return@withContext CheckResult.NoApkAsset(highest.tagName)
-                }
-
-                AppLogger.info(TAG, "Up to date: local=$localVer highest=${highest.versionName}")
-                CheckResult.UpToDate
+            // Prefer GitHub when reachable (overseas); fall back to the
+            // Gitee mirror when GitHub is blocked or geo-limited (China).
+            val arr = fetchReleasesJson(githubUrl, giteeUrl)
+            if (arr == null) {
+                AppLogger.info(TAG, "releases list empty on both sources")
+                return@withContext CheckResult.NoReleaseAvailable
             }
+
+            // Build a list of non-draft releases. GitHub already returns
+            // them sorted by created_at desc, but we re-sort by parsed
+            // version number to be robust against odd ordering.
+            data class ReleaseInfo(
+                val tagName: String,
+                val versionName: String,
+                val releaseName: String,
+                val changelog: String,
+                val isPrerelease: Boolean,
+                val apkUrl: String?,
+                val apkSize: Long,
+            )
+
+            val candidates = mutableListOf<ReleaseInfo>()
+            for (i in 0 until arr.length()) {
+                val r = arr.optJSONObject(i) ?: continue
+                if (r.optBoolean("draft", false)) continue
+                val tag = r.optString("tag_name")
+                if (tag.isEmpty()) continue
+                val (apkUrl, apkSize) = findApkAsset(r.optJSONArray("assets"))
+                candidates += ReleaseInfo(
+                    tagName = tag,
+                    versionName = normalizeTag(tag),
+                    releaseName = r.optString("name").ifEmpty { tag },
+                    changelog = r.optString("body", ""),
+                    isPrerelease = r.optBoolean("prerelease", false),
+                    apkUrl = apkUrl,
+                    apkSize = apkSize,
+                )
+            }
+            AppLogger.info(
+                TAG,
+                "non-draft releases=${candidates.size} (apk-bearing=${candidates.count { it.apkUrl != null }})",
+            )
+            if (candidates.isEmpty()) {
+                return@withContext CheckResult.NoReleaseAvailable
+            }
+
+            // [T-android-updatechecker-localver-normalize] Normalize the
+            // LOCAL version the same way remote tags are (normalizeTag),
+            // otherwise remote "v0.11-preview" becomes "0.11" but local
+            // "0.11-preview" stays raw, and the two stop aligning — a user
+            // already on v0.11-preview gets a bogus "update" prompt.
+            val localVer = normalizeTag(BuildConfig.VERSION_NAME)
+            // Highest version we've seen at all (used for the "release
+            // exists but is older or equal" → UpToDate decision and for
+            // logging).
+            val highest = candidates.maxWithOrNull(
+                compareBy { compareVersions(it.versionName, "0") },
+            ) ?: candidates.first()
+            AppLogger.info(
+                TAG,
+                "highest-published tag=${highest.tagName} parsed=${highest.versionName} prerelease=${highest.isPrerelease} apk=${highest.apkUrl != null}",
+            )
+
+            // First APK-bearing release with version > local. We pick the
+            // highest such release so a stale older APK never shadows a
+            // newer non-APK preview.
+            val upgradeCandidate = candidates
+                .filter { it.apkUrl != null }
+                .filter { compareVersions(it.versionName, localVer) > 0 }
+                .maxWithOrNull(compareBy { compareVersions(it.versionName, "0") })
+
+            if (upgradeCandidate != null) {
+                AppLogger.info(
+                    TAG,
+                    "Update available: $localVer → ${upgradeCandidate.versionName} (${upgradeCandidate.tagName})",
+                )
+                return@withContext CheckResult.UpdateAvailable(
+                    tagName = upgradeCandidate.tagName,
+                    versionName = upgradeCandidate.versionName,
+                    releaseName = upgradeCandidate.releaseName,
+                    changelog = upgradeCandidate.changelog,
+                    apkUrl = upgradeCandidate.apkUrl!!,
+                    apkSizeBytes = upgradeCandidate.apkSize,
+                )
+            }
+
+            // No newer-with-APK candidate exists. Decide between three
+            // remaining states:
+            //   1. Highest release ≤ local version → UpToDate.
+            //   2. Highest release > local but no APK in the listing →
+            //      NoApkAsset (mention the tag so the user can grab the
+            //      release manually if they really want).
+            //   3. Otherwise (all releases ≤ local) → UpToDate as well.
+            val highestVsLocal = compareVersions(highest.versionName, localVer)
+            if (highestVsLocal > 0 && highest.apkUrl == null) {
+                AppLogger.info(
+                    TAG,
+                    "Release ${highest.tagName} > local but no APK asset",
+                )
+                return@withContext CheckResult.NoApkAsset(highest.tagName)
+            }
+
+            AppLogger.info(TAG, "Up to date: local=$localVer highest=${highest.versionName}")
+            CheckResult.UpToDate
         } catch (e: UnknownHostException) {
             AppLogger.error(TAG, "check failed: UnknownHostException: ${e.message}")
             CheckResult.NetworkUnreachable
@@ -254,6 +233,55 @@ object UpdateChecker {
 
     /** Public so UI can deep-link users to manual download when GitHub is blocked. */
     const val RELEASES_URL: String = "https://github.com/mengtian999/jarvis/releases"
+
+    /**
+     * Fetch the releases list, trying GitHub first then the Gitee mirror.
+     * Returns the first source's parsed JSON array, or null if both sources
+     * report no releases. Throws (IO) if every source is unreachable so the
+     * caller can surface [CheckResult.NetworkUnreachable].
+     */
+    private fun fetchReleasesJson(githubUrl: String, giteeUrl: String): JSONArray? {
+        // Try GitHub first. Overseas this is the right source; in China it
+        // fails fast (UnknownHost / 403 geo-block) and we fall through.
+        try {
+            val gh = fetchJsonArray(githubUrl, githubStyle = true)
+            if (gh != null) return gh
+            AppLogger.warning(TAG, "GitHub releases empty; trying Gitee")
+        } catch (e: Exception) {
+            AppLogger.warning(TAG, "GitHub unreachable (${e.javaClass.simpleName}: ${e.message}); trying Gitee")
+        }
+        // Gitee mirror fallback (fast in mainland China).
+        val gitee = fetchJsonArray(giteeUrl, githubStyle = false)
+        if (gitee == null) AppLogger.warning(TAG, "Gitee releases empty too")
+        return gitee
+    }
+
+    /**
+     * Fetch one releases endpoint. Returns the JSON array, or null when the
+     * repo has no releases (404 / empty). Throws IOException on unreachable
+     * or geo-blocked (403/451) responses so callers can fall back to a
+     * mirror.
+     */
+    private fun fetchJsonArray(url: String, githubStyle: Boolean): JSONArray? {
+        val builder = Request.Builder().url(url)
+        if (githubStyle) {
+            builder.header("Accept", "application/vnd.github+json")
+                .header("X-GitHub-Api-Version", "2022-11-28")
+        }
+        client.newCall(builder.build()).execute().use { resp ->
+            AppLogger.info(TAG, "GET $url → HTTP ${resp.code}")
+            if (resp.code == 404) return null
+            // 403 = rate-limit or geo-blocked; 451 = legal block. Treat as
+            // unreachable so the caller tries the mirror.
+            if (resp.code == 403 || resp.code == 451) {
+                throw IOException("HTTP ${resp.code} (geo-block / rate-limit)")
+            }
+            if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
+            val body = resp.body?.string() ?: throw IOException("empty body")
+            val arr = runCatching { JSONArray(body) }.getOrNull()
+            return if (arr == null || arr.length() == 0) null else arr
+        }
+    }
 
     /** Returns (downloadUrl, sizeBytes) for the first .apk asset, or (null, 0). */
     private fun findApkAsset(assets: JSONArray?): Pair<String?, Long> {
