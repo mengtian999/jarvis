@@ -2,9 +2,12 @@ package com.jarvis.app.im
 
 import android.content.Context
 import android.content.Intent
+import androidx.lifecycle.lifecycleScope
+import com.jarvis.app.provider.gateway.GatewayClient
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.launch
 
 /**
  * IM（bitjarvis Flutter module）的宿主 Activity。
@@ -61,6 +64,32 @@ class ImFlutterActivity : FlutterActivity() {
                     "exitToAgent" -> {
                         result.success(null)
                         finish()
+                    }
+                    "translate" -> {
+                        val text = call.argument<String>("text") ?: ""
+                        val target = call.argument<String>("target") ?: "en"
+                        if (text.isEmpty()) {
+                            result.success(null)
+                        } else {
+                            val gateway = GatewayClient(this)
+                            lifecycleScope.launch {
+                                try {
+                                    val translated = gateway.translate(text, target)
+                                    if (translated.isEmpty()) {
+                                        result.error("translate_empty", "empty translation", null)
+                                    } else {
+                                        result.success(
+                                            mapOf(
+                                                "translatedText" to translated,
+                                                "targetLanguage" to target,
+                                            ),
+                                        )
+                                    }
+                                } catch (e: Exception) {
+                                    result.error("translate_failed", e.message ?: "unknown", null)
+                                }
+                            }
+                        }
                     }
                     else -> result.notImplemented()
                 }

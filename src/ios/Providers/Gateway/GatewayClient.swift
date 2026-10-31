@@ -200,6 +200,45 @@ final class GatewayClient: @unchecked Sendable {
         return json
     }
 
+    // MARK: - Translate (IM, hidden im_translate tier)
+
+    /// Translate `text` into `targetLanguage` (BCP-47 code) via the gateway's
+    /// hidden `im_translate` tier. Returns the assistant message content only.
+    ///
+    /// The tier is absent from /v1/models (hidden=true) but callable by name.
+    func translate(_ text: String, into targetLanguage: String) async throws -> String {
+        let id = try await ensureDevice()
+        var request = URLRequest(url: URL(string: "\(baseURL)/v1/chat/completions")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(id.token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = [
+            "model": "im_translate",
+            "stream": false,
+            "max_tokens": 1024,
+            "messages": [
+                [
+                    "role": "system",
+                    "content": "Translate the user's message into \(targetLanguage). Output only the translation. No explanation, no quotes, no prefixes, no reasoning.",
+                ],
+                ["role": "user", "content": text],
+            ],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        sign(&request)
+
+        let (data, _) = try await send(request)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let message = choices.first?["message"] as? [String: Any],
+              let content = message["content"] as? String,
+              !content.isEmpty
+        else {
+            throw GatewayError.parseFailed("Invalid translation response")
+        }
+        return content
+    }
+
     // MARK: - Signing (Route A, §1.3)
 
     /// Sign a URLRequest with HMAC-SHA256.

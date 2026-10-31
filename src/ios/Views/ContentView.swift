@@ -8250,6 +8250,26 @@ final class IMEmbed {
             case "exitToAgent":
                 result(nil)
                 Task { @MainActor in self?.exitToAgent() }
+            case "translate":
+                let args = call.arguments as? [String: Any] ?? [:]
+                let text = (args["text"] as? String) ?? ""
+                let target = (args["target"] as? String) ?? "en"
+                if text.isEmpty {
+                    result(nil)
+                } else {
+                    Task {
+                        do {
+                            let translated = try await GatewayClient.shared.translate(text, into: target)
+                            result(["translatedText": translated, "targetLanguage": target])
+                        } catch {
+                            result(FlutterError(
+                                code: "translate_failed",
+                                message: error.localizedDescription,
+                                details: nil
+                            ))
+                        }
+                    }
+                }
             default:
                 result(FlutterMethodNotImplemented)
             }

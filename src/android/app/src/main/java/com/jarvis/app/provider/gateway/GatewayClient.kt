@@ -128,6 +128,40 @@ class GatewayClient(
         executeRequest(request)
     }
 
+    /**
+     * Translate [text] into [targetLanguage] (BCP-47 code) via the gateway's
+     * hidden `im_translate` tier. Returns the assistant message content only.
+     *
+     * The im_translate tier is not listed in /v1/models (hidden=true), but is
+     * callable by name. The system prompt forces raw translation output.
+     */
+    suspend fun translate(text: String, targetLanguage: String): String = withContext(Dispatchers.IO) {
+        val id = ensureDevice()
+        val messages = org.json.JSONArray()
+        messages.put(JSONObject().apply {
+            put("role", "system")
+            put("content", "Translate the user's message into $targetLanguage. Output only the translation. No explanation, no quotes, no prefixes, no reasoning.")
+        })
+        messages.put(JSONObject().apply {
+            put("role", "user")
+            put("content", text)
+        })
+        val body = JSONObject().apply {
+            put("model", "im_translate")
+            put("stream", false)
+            put("max_tokens", 1024)
+            put("messages", messages)
+        }
+        val request = Request.Builder()
+            .url("$baseURL/v1/chat/completions")
+            .post(body.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
+            .header("Authorization", "Bearer ${id.token}")
+            .build()
+            .let { sign(it) }
+        val resp = executeRequest(request)
+        resp.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content") ?: ""
+    }
+
     fun clearIdentity() {
         context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
             .edit().remove(KEY_IDENTITY).apply()
