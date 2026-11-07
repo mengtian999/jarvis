@@ -1999,5 +1999,26 @@
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
     },
-    "jarvis": "Jarvis"
+    "jarvis": "Jarvis",
+    "addAccount": "Magdagdag ng account",
+    "appSubtitle": "Naka-encrypt nang end-to-end, desentralisado",
+    "appDescription": "Ang mga usapan ninyo ay mababasa lamang ninyong dalawa, walang ikatlong tumitingin.",
+    "continueText": "Magpatuloy",
+    "createNewAccount": "Gumawa ng bagong account",
+    "help": "Tulong",
+    "hydrate": "Ibalik mula sa backup file",
+    "logInTo": "Mag-log in sa {homeserver}",
+    "login": "Mag-log in",
+    "loginWithMatrixId": "Mag-log in gamit ang BitJarvis-ID",
+    "password": "Password",
+    "passwordForgotten": "Nakalimutan ang password",
+    "pleaseEnterYourPassword": "Pakilagay ang iyong password",
+    "pleaseEnterYourUsername": "Pakilagay ang iyong username",
+    "privacy": "Privacy",
+    "searchOrEnterHomeserverAddress": "Maghanap o maglagay ng homeserver address",
+    "signIn": "Mag-sign in",
+    "signInGreeting": "May account ka na sa Matrix? Maligayang pagbabalik! Piliin ang iyong homeserver at mag-sign in.",
+    "signUpGreeting": "Desentralisado ang Bit Jarvis! Pumili ng server kung saan mo gustong gumawa ng account at simulan na!",
+    "theyDontMatch": "Hindi Magkatugma",
+    "website": "Website"
 }

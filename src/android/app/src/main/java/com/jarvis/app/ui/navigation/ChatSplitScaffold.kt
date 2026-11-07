@@ -299,6 +299,13 @@ fun ChatSplitScaffold(
          * to the pane navigator's push-equivalent.
          */
         onNewChatWithRoleInPane: (String) -> Unit,
+        /**
+         * [T-group-chat] 发起群聊 confirm: same pane swap as
+         * [onNewChatWithRoleInPane] but seeds the fresh draft with the agent
+         * group id (draft id carries `__agrp__<id>`). Routes through the pane
+         * navigator — same funnel, same rationale.
+         */
+        onNewAgentGroupChatInPane: (String) -> Unit,
         onMoveToInPane: (String) -> Unit,
         /**
          * [T-android-tablet-sidebar-collapse] Show/hide the session list, or
@@ -471,6 +478,17 @@ fun ChatSplitScaffold(
                 navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, draft)
             }
         }
+        // [T-group-chat] Agent-group variant of openNewDraftWithRole: the draft
+        // id carries __agrp__<groupId> (distinct from __grp__ = MODEL group),
+        // which ChatScreen's draft parser (draftInitialAgentGroupId) resolves so
+        // the new session binds to the group and takes its name as the title.
+        val openNewDraftWithAgentGroup: (String) -> Unit = { agentGroupId ->
+            val draft = newDraftSessionId() + "__agrp__$agentGroupId"
+            selectedSessionId = draft
+            scope.launch {
+                navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, draft)
+            }
+        }
 
     // [T-android-tablet-split-resizable] The scaffold is wrapped so the drag
     // handle can be OVERLAID on it (below) rather than living inside a pane.
@@ -628,6 +646,7 @@ fun ChatSplitScaffold(
                         // behaviour, in the one layout that exists to avoid it.
                         openNewDraft,
                         openNewDraftWithRole,
+                        openNewDraftWithAgentGroup,
                         { targetId ->
                             selectedSessionId = targetId
                             scope.launch {
@@ -910,7 +929,7 @@ fun ChatSplitScaffoldRoute(
                 draftPlaceholderId = draftPlaceholderId,
             )
         },
-        detailPane = { sessionId, onBackInPane, onNewChatInPane, onNewChatWithRoleInPane,
+        detailPane = { sessionId, onBackInPane, onNewChatInPane, onNewChatWithRoleInPane, onNewAgentGroupChatInPane,
             onMoveToInPane, onToggleSidebar, sidebarCollapsed ->
             com.jarvis.app.ui.chat.ChatScreen(
                 // The pane navigator's contentKey IS the session id, so a
@@ -948,6 +967,9 @@ fun ChatSplitScaffoldRoute(
                 // and hit the safeNavigate RESUMED guard under the
                 // RolePickerSheet — the intermittent "tap does nothing" bug).
                 onNewChatWithRole = onNewChatWithRoleInPane,
+                // [T-group-chat] 发起群聊确认 → swap the detail pane to an
+                // agent-group draft (openNewDraftWithAgentGroup), same funnel.
+                onNewAgentGroupChat = onNewAgentGroupChatInPane,
                 // Everything below leaves the list/detail pair entirely and so
                 // stays on the OUTER NavHost as a full-screen push.
                 onOpenTerminal = {

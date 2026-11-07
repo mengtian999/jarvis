@@ -59,6 +59,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.FolderOpen
@@ -606,6 +607,8 @@ fun SessionListScreen(
     val onNewChatGuarded: (String) -> Unit = { id -> exitSearchIfQueryBlank(); onNewChat(id) }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    // [T-group-chat] 发起群聊 sheet (pick existing agent group / create new).
+    var showAgentGroupSheet by remember { mutableStateOf(false) }
     var deleteTargetId by remember { mutableStateOf<String?>(null) }
     // [T-android-session-grouping] Group management dialogs.
     var folderToRename by remember { mutableStateOf<FolderEntity?>(null) }
@@ -844,6 +847,20 @@ fun SessionListScreen(
                                 onDismissRequest = { showOverflowMenu = false },
                                 offset = DpOffset(0.dp, 0.dp),
                             ) {
+                                // [T-group-chat] 发起群聊 — always-visible entry
+                                // point (the FAB long-press menu is easy to miss;
+                                // this one sits in the top bar).
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.agent_group_new_chat)) },
+                                    onClick = {
+                                        showOverflowMenu = false
+                                        showAgentGroupSheet = true
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Default.Group, contentDescription = null)
+                                    },
+                                )
+                                MinisMenuDivider()
                                 if (sessions.isNotEmpty()) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.sessionlist_select_action)) },
@@ -1350,6 +1367,7 @@ fun SessionListScreen(
                             if (sessionId != null) onNewChatGuarded(sessionId)
                         }
                     },
+                    onNewAgentGroupChat = { showAgentGroupSheet = true },
                     modelGroups = providerConfig.modelGroups,
                     onSearchToggle = {
                         if (isSearchActive) {
@@ -1385,6 +1403,23 @@ fun SessionListScreen(
                 deleteTargetId?.let { viewModel.deleteSession(it) }
                 showDeleteDialog = false
                 deleteTargetId = null
+            },
+        )
+    }
+
+    // [T-group-chat] 发起群聊 sheet — pick an existing agent group (→ new
+    // group chat) or create/edit one. Confirm in create mode navigates straight
+    // into the new group session via the same draft-id path as onNewChat.
+    if (showAgentGroupSheet) {
+        com.jarvis.app.ui.chat.AgentGroupSheet(
+            providerRepository = providerRepository,
+            onDismiss = { showAgentGroupSheet = false },
+            onOpenGroupChat = { groupId ->
+                showAgentGroupSheet = false
+                scope.launch {
+                    val sessionId = viewModel.createNewSession(agentGroupId = groupId)
+                    if (sessionId != null) onNewChatGuarded(sessionId)
+                }
             },
         )
     }
@@ -1563,6 +1598,10 @@ private fun DualFabRow(
     hasSessions: Boolean,
     onNewChat: () -> Unit,
     onNewChatWithGroup: (String) -> Unit,
+    // [T-group-chat] 发起群聊 — opens AgentGroupSheet (pick existing group /
+    // create new). Kept OUT of the model-group menu items above on purpose:
+    // model groups route the LLM, agent groups multiply the speakers.
+    onNewAgentGroupChat: () -> Unit = {},
     modelGroups: List<com.jarvis.app.data.model.ModelGroup>,
     onSearchToggle: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
@@ -1640,7 +1679,12 @@ private fun DualFabRow(
                     .combinedClickable(
                         onClick = onNewChat,
                         onLongClick = {
-                            if (topGroups.isNotEmpty()) showGroupMenu = true
+                            // [T-group-chat] Unconditional now: the menu always
+                            // carries 发起群聊 as its first item, so it must open
+                            // even when the user has no MODEL groups (the old
+                            // topGroups.isNotEmpty() gate left users without LLM
+                            // groups with a dead long-press).
+                            showGroupMenu = true
                         },
                     )
                     .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.2f)),
@@ -1652,6 +1696,17 @@ private fun DualFabRow(
                 expanded = showGroupMenu,
                 onDismissRequest = { showGroupMenu = false },
             ) {
+                // [T-group-chat] 发起群聊 entry — first item in the long-press
+                // menu so it reads as a peer of plain "New Chat", above the
+                // model-group routing items.
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.agent_group_new_chat)) },
+                    leadingIcon = { Icon(Icons.Default.Group, contentDescription = null) },
+                    onClick = {
+                        showGroupMenu = false
+                        onNewAgentGroupChat()
+                    },
+                )
                 topGroups.forEach { group ->
                     DropdownMenuItem(
                         text = { Text(group.name) },
@@ -2877,10 +2932,25 @@ private fun SessionRow(
         val roleAvatar = remember(session.roleId, snapshotForAvatar) {
             com.jarvis.app.agent.RoleStore.cachedAvatarBitmap(session.roleId)
         }
+        // [T-group-chat] Group sessions render a stacked-avatar cluster of the
+        // member roster instead of a single role avatar. A stale groupId
+        // (group deleted) falls through to the ordinary role avatar — same
+        // orphan-tolerance as the chat screen.
+        val groupForAvatar by com.jarvis.app.agent.GroupStore.groupsSnapshot.collectAsState()
+        val agentGroup = remember(session.groupId, groupForAvatar) {
+            groupForAvatar.firstOrNull { it.id == session.groupId }
+        }
         Box(
             modifier = Modifier.size(44.dp),
         ) {
-            if (roleAvatar != null) {
+            if (agentGroup != null) {
+                Box(
+                    modifier = Modifier.size(44.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    com.jarvis.app.ui.chat.GroupAvatarStack(agentGroup.members.map { it.roleId }, avatarSize = 24)
+                }
+            } else if (roleAvatar != null) {
                 androidx.compose.foundation.Image(
                     bitmap = roleAvatar.asImageBitmap(),
                     contentDescription = null,

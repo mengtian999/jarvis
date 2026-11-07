@@ -2447,5 +2447,10 @@
     "@appDescription": {
         "description": "Home page tagline."
     },
-    "jarvis": "賈維斯"
+    "jarvis": "賈維斯",
+    "signIn": "登入",
+    "createNewAccount": "建立新帳號",
+    "searchOrEnterHomeserverAddress": "搜尋或輸入主機位址",
+    "signInGreeting": "已經有 Matrix 帳號了？歡迎回來！選擇您的主機並登入。",
+    "signUpGreeting": "Bit Jarvis 是去中心化的！選擇您希望建立帳號的伺服器！"
 }

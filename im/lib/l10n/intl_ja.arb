@@ -2141,5 +2141,12 @@
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
     },
-    "jarvis": "ジャーヴィス"
+    "jarvis": "ジャーヴィス",
+    "appSubtitle": "エンドツーエンドで暗号化、分散型",
+    "appDescription": "会話を読むことができるのはお二人だけ。第三者の目はありません。",
+    "signIn": "サインイン",
+    "createNewAccount": "新しいアカウントを作成",
+    "searchOrEnterHomeserverAddress": "ホームサーバーのアドレスを検索または入力",
+    "signInGreeting": "Matrixのアカウントをすでにお持ちですか？おかえりなさい！ホームサーバーを選んでサインインしてください。",
+    "signUpGreeting": "Bit Jarvisは分散型です！アカウントを作成するサーバーを選んで始めましょう！"
 }

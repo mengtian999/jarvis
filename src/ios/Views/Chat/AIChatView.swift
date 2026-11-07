@@ -178,6 +178,10 @@ struct AIChatView: View {
     /// ("以此角色新建会话"). Encoded in the draft id like the group id;
     /// seeded into vm.initialRoleId → persisted at draft promotion.
     var initialRoleId: String? = nil
+    /// [T-group-chat] Agent group to bind when creating a new session ("发起
+    /// 群聊"). Encoded in the draft id (__agrp__); seeded into
+    /// vm.initialAgentGroupId → persisted at draft promotion.
+    var initialAgentGroupId: String? = nil
     @EnvironmentObject var shareCoordinator: ShareCoordinator
     @StateObject private var cached: CachedViewModel
 
@@ -198,12 +202,13 @@ struct AIChatView: View {
         )
     }
 
-    init(sessionId: String? = nil, draftId: String? = nil, remoteDeviceId: String? = nil, initialGroupId: String? = nil, initialRoleId: String? = nil) {
+    init(sessionId: String? = nil, draftId: String? = nil, remoteDeviceId: String? = nil, initialGroupId: String? = nil, initialRoleId: String? = nil, initialAgentGroupId: String? = nil) {
         self.sessionId = sessionId
         self.draftId = draftId
         self.remoteDeviceId = remoteDeviceId
         self.initialGroupId = initialGroupId
         self.initialRoleId = initialRoleId
+        self.initialAgentGroupId = initialAgentGroupId
         // [T-ios-aichatview-eager-cachedvm] Build the CachedViewModel INSIDE the
         // StateObject autoclosure so SwiftUI only constructs it the first time
         // this view's StateObject is created — NOT on every struct re-init.
@@ -1315,6 +1320,9 @@ struct AIChatView: View {
             // [T-role-session-bound] Draft role binding ("以此角色新建会话");
             // consumed at first send (ensureSessionReturningId).
             vm.initialRoleId = initialRoleId
+            // [T-group-chat] Draft group binding ("发起群聊"); consumed at
+            // first send (ensureSessionReturningId).
+            vm.initialAgentGroupId = initialAgentGroupId
             // Snapshot total session count once so the New-Chat onboarding
             // grid only appears for first-time users (no prior sessions).
             // [T-ios-session-coldload-listsessions-block] Use the bare
@@ -3723,7 +3731,7 @@ struct AIChatView: View {
     // generic type of `inputBar` past what Swift can demangle at runtime).
 
     private func handleReturnKey() {
-        if vm.showMentionMenu && vm.executeSelectedMention() { return }
+        if vm.showMentionMenu && (vm.isGroupChat ? vm.executeSelectedGroupMention() : vm.executeSelectedMention()) { return }
         if vm.showSlashMenu && vm.executeSelectedSlashCommand() { return }
         if canEnqueue { performEnqueue() }
         else if canSend { performSend() }
@@ -4318,7 +4326,71 @@ struct AIChatView: View {
     }
 
     /// `@` file-mention popup — mirrors slashCommandMenu styling.
+
+    /// [T-group-chat] Member variant of the @ popup (same chrome/height as
+    /// the file-mention popup). Rows: avatar + name; selection state driven
+    /// by the shared mentionSelectedIndex.
+    private var groupMentionMenu: some View {
+        let candidates = vm.groupMentionCandidates
+        return InputBarPopupChrome(maxContentWidth: maxContentWidth) {
+            VStack(spacing: 0) {
+                if candidates.isEmpty {
+                    VStack {
+                        HStack(spacing: 8) {
+                            Text(AppLocalized("No matching members"))
+                                .font(.system(size: 13))
+                                .foregroundStyle(ChatColors.secondaryText)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(height: Self.slashPickerFixedHeight)
+                } else {
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(spacing: 0) {
+                                ForEach(Array(candidates.enumerated()), id: \.offset) { index, member in
+                                    let isSelected = index == vm.mentionSelectedIndex
+                                    Button {
+                                        vm.selectGroupMention(member)
+                                    } label: {
+                                        HStack(spacing: 10) {
+                                            AgentGroupAvatarStack(roleIds: [member.role.roleId], avatarSize: 20)
+                                            Text(member.role.metadata.name.isEmpty ? "Agent" : member.role.metadata.name)
+                                                .font(.system(size: 13, weight: .medium))
+                                                .foregroundStyle(ChatColors.primaryText)
+                                                .lineLimit(1)
+                                            Spacer()
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(SlashMenuButtonStyle(isSelected: isSelected))
+                                    .id(index)
+                                }
+                            }
+                            .id(vm.mentionFilter)
+                        }
+                        .scrollIndicators(.visible)
+                        .frame(height: Self.slashPickerFixedHeight)
+                        .onChange(of: vm.mentionSelectedIndex) { newIndex in
+                            guard newIndex >= 0, newIndex < candidates.count else { return }
+                            withAnimation(.easeOut(duration: 0.12)) {
+                                proxy.scrollTo(newIndex, anchor: .center)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     private var mentionMenu: some View {
+        // [T-group-chat] In group chats the popup lists MEMBERS
+        // (avatar + name) instead of files — same popup chrome.
+        if vm.isGroupChat { return AnyView(groupMentionMenu) }
         let rows = vm.filteredMentionEntries
         #if DEBUG
         let preview = rows.prefix(6).map { $0.basename }.joined(separator: ",")

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
@@ -1852,6 +1853,7 @@ internal fun categoryNameRes(cat: BackupCategory): Int = when (cat) {
     BackupCategory.SKILLS -> R.string.backup_category_skills
     BackupCategory.MEMORY -> R.string.backup_category_memory
     BackupCategory.ROLES -> R.string.backup_category_roles
+    BackupCategory.GROUPS -> R.string.agent_group_pick_title
     BackupCategory.PROVIDERS -> R.string.backup_category_providers
     BackupCategory.MCP_SERVERS -> R.string.backup_category_mcp
     BackupCategory.ENVIRONMENT_VARIABLES -> R.string.backup_category_env_vars
@@ -1869,6 +1871,7 @@ private fun categoryIcon(cat: BackupCategory): ImageVector = when (cat) {
     BackupCategory.SKILLS -> Icons.Outlined.Extension            // puzzlepiece.fill
     BackupCategory.MEMORY -> Icons.Outlined.Psychology           // brain.head.profile
     BackupCategory.ROLES -> Icons.Outlined.Person                // person.crop.circle.fill
+    BackupCategory.GROUPS -> Icons.Default.Group                 // person.3.fill
     BackupCategory.PROVIDERS -> Icons.Outlined.Link              // link
     BackupCategory.MCP_SERVERS -> Icons.Outlined.Layers          // square.stack.3d.up.fill
     BackupCategory.ENVIRONMENT_VARIABLES -> Icons.Outlined.Terminal // terminal.fill
@@ -1882,6 +1885,7 @@ private fun categoryTint(cat: BackupCategory): Color = when (cat) {
     BackupCategory.SKILLS -> Color(0xFFFF9500)              // orange
     BackupCategory.MEMORY -> Color(0xFFFF2D55)             // pink
     BackupCategory.ROLES -> Color(0xFF34C759)              // green
+    BackupCategory.GROUPS -> Color(0xFFFF9500)             // orange
     BackupCategory.PROVIDERS -> Color(0xFF30B0C7)         // teal
     BackupCategory.MCP_SERVERS -> Color(0xFF32ADE6)      // cyan
     BackupCategory.ENVIRONMENT_VARIABLES -> Color(0xFFA2845E) // brown

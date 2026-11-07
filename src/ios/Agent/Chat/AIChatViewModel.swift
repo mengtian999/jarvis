@@ -96,11 +96,31 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     // baseSystemPrompt reads it (RoleSystemPromptBuilder), and persisted
     // assistant rows carry sessionRole.roleId (message-level rendering).
     @Published private(set) var sessionRole: RoleFile = RoleStore.loadDefault()
+
+    // ─── [T-group-chat] §4.1 Current speaker ────────────────────────────────
+    /// The persona whose identity drives the in-flight agent loop: system
+    /// prompt identitySection, assistant-row roleId stamping, and per-speaker
+    /// memory attribution read THIS, not sessionRole. Ordinary chats: always
+    /// equal to sessionRole. Group chats: the round scheduler retargets it per
+    /// member; it resets when the round ends. Mirrors Android _speakerRole.
+    @Published private(set) var speakerRole: RoleFile = RoleStore.loadDefault()
+
+    /// [T-group-chat] The agent group this chat belongs to (hydrated at load).
+    /// Non-nil marks a GROUP session (multi-role round-robin chat). Nil =
+    /// ordinary session.
+    @Published private(set) var agentGroupId: String? = nil
+
+    /// True when this chat is an agent-group session (multi-role round-robin).
+    var isGroupChat: Bool { agentGroupId != nil }
     /// Explicit role binding for a not-yet-persisted draft ("以此角色新建会话").
     /// Set by the draft-creation site (ContentView / forward flow) BEFORE the
     /// first send; consumed by ensureSessionReturningId. nil = plain draft →
     /// global current role.
     var initialRoleId: String? = nil
+    /// [T-group-chat] Agent group bound to a not-yet-persisted draft ("发起群
+    /// 聊"), parsed from the __agrp__-encoded draft id by AIChatView. Consumed
+    /// by ensureSessionReturningId at first send; nil = plain draft.
+    var initialAgentGroupId: String? = nil
     /// Guards the one-time draft role seed (initialRoleId ?? global current).
     private var draftRoleSeeded = false
 
@@ -202,7 +222,9 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     /// while streaming (persisted rows get the same id via buildRawMessage).
     func makeAssistantPlaceholder() -> ChatMessage {
         let m = ChatMessage(role: .assistant, content: "", blocks: [])
-        m.roleId = sessionRole.roleId
+        // [T-group-chat] In a group round this is the CURRENT SPEAKER
+        // (retargeted per member), not the session persona.
+        m.roleId = speakerRole.roleId
         return m
     }
 
@@ -1850,14 +1872,32 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
         return _cachedTimeString
     }
 
-    private var baseSystemPrompt: String {
+    // ─── [T-group-chat] Per-round injection points ──────────────────────────
+    /// The group scheduler sets these before each member's runAgentLoop() and
+    /// clears them after (AIChatViewModel+GroupChat.swift). Nil = ordinary
+    /// chat, where both are unused and behavior is byte-identical.
+    ///
+    /// baseSystemPromptOverride replaces the IDENTITY layer only — the loop's
+    /// memory/skill/runtime appends stack on top of it exactly as they stack
+    /// on the session persona's base. groupEntryOverride pins the provider
+    /// entry for the in-flight member (model chain §5).
+    var baseSystemPromptOverride: String? = nil
+    var groupEntryOverride: ModelEntry? = nil
+
+    /// The effective base prompt: group-round override when set, else the
+    /// session persona's core. All in-loop consumers read this.
+    private var baseSystemPrompt: String { baseSystemPromptOverride ?? baseSystemPromptCore }
+
+    private var baseSystemPromptCore: String {
         // [T-role-session-bound] Layer 1 is rendered by
         // RoleSystemPromptBuilder, parametric on the SESSION's bound persona
         // (immutable in-session) — NOT the global current role, so a Settings
         // role switch mid-session never re-personas an open chat. The builder
         // owns the identity sentence + Personality/style blocks and scrubs
         // prompt injections from the role body.
-        RoleSystemPromptBuilder.identitySection(for: sessionRole)
+        // [T-group-chat] Reads the CURRENT SPEAKER — in a group round each
+        // member's reply is built with the member's own identity.
+        RoleSystemPromptBuilder.identitySection(for: speakerRole)
             + "You should proactively use shell commands to accomplish the user's tasks — installing packages (apk add), "
             + "writing and running scripts, managing files, networking, and any other operations a Linux terminal can perform.\n\n"
             + "Available tools:\n"
@@ -2706,7 +2746,16 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
             defer { concurrency.releaseSlot(sessionId: sid) }
 
             do {
-                try await self.runAgentLoop()
+                if self.isGroupChat {
+                    // [T-group-chat] §4.3 Group round: the user turn is already
+                    // persisted + in agentHistory; the scheduler rebuilds
+                    // per-speaker history from the DB anyway. Each queued
+                    // prompt gets its own round (drained inside — see §4.6).
+                    try await self.runGroupRound(userText: text)
+                    await self.drainQueuedGroupPrompts()
+                } else {
+                    try await self.runAgentLoop()
+                }
             } catch is CancellationError {
                 logger.info("Agent loop cancelled")
                 self.handleUserCancelledCleanup()
@@ -3533,13 +3582,20 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
             effectiveResumeAt = r
             effectiveResumeBlocks = resumeBlocks
         } else {
-            // Append placeholder assistant so the typing indicator can latch
-            // on instantly; tell runAgentLoop to resume into it.
-            let placeholder = makeAssistantPlaceholder()
-            placeholder.isAwaitingModelResponse = true
-            messages.append(placeholder)
-            effectiveResumeAt = messages.count - 1
-            effectiveResumeBlocks = 0
+            // [T-group-chat][P2-fix] Group retries run a full ROUND (runGroupRound
+            // appends one placeholder per member) — no single placeholder here.
+            if !isGroupChat {
+                // Append placeholder assistant so the typing indicator can latch
+                // on instantly; tell runAgentLoop to resume into it.
+                let placeholder = makeAssistantPlaceholder()
+                placeholder.isAwaitingModelResponse = true
+                messages.append(placeholder)
+                effectiveResumeAt = messages.count - 1
+                effectiveResumeBlocks = 0
+            } else {
+                effectiveResumeAt = nil
+                effectiveResumeBlocks = nil
+            }
         }
 
         isProcessing = true
@@ -3577,7 +3633,23 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
             defer { concurrency.releaseSlot(sessionId: retryFromSid) }
 
             do {
-                try await self.runAgentLoop(resumingAt: effectiveResumeAt, committedBlocks: effectiveResumeBlocks)
+                if self.isGroupChat {
+                    // [T-group-chat][P2-fix] Group retry = full ROUND over the
+                    // surviving (truncated) history — NOT the ordinary loop,
+                    // which answered every retry as the session default
+                    // persona (Jarvis). Same fix as Android's runGroupStreamTail.
+                    let retryText = self.agentHistory.last(where: { Self.isUserBubbleEntry($0) })
+                        .map { entry in
+                            entry.parts.compactMap {
+                                if case .text(let s) = $0 { return s }
+                                return nil
+                            }.joined(separator: "\n")
+                        } ?? ""
+                    try await self.runGroupRound(userText: retryText)
+                    await self.drainQueuedGroupPrompts()
+                } else {
+                    try await self.runAgentLoop(resumingAt: effectiveResumeAt, committedBlocks: effectiveResumeBlocks)
+                }
             } catch is CancellationError {
                 logger.info("Agent loop cancelled (\(label))")
                 self.handleUserCancelledCleanup()
@@ -4777,7 +4849,9 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
         didInjectEmptyToolReminderThisRun = false
 
         // Resolve provider from ProviderConfigStore
-        guard let entry = resolveCurrentEntry() else {
+        // [T-group-chat] A group round pins the entry for the in-flight member
+        // (§5 model chain); ordinary chats resolve as before.
+        guard let entry = groupEntryOverride ?? resolveCurrentEntry() else {
             let errMsg = makeAssistantPlaceholder()
             errMsg.error = String(localized: "No model configured. Add a provider in Settings.")
             let errMsg = ChatMessage(role: .assistant, content: "", blocks: [])

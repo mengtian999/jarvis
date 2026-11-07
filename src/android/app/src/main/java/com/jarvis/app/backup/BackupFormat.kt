@@ -167,6 +167,13 @@ enum class BackupCategory(val key: String) {
      * `environment_variables` to match the iOS `BackupCategory` raw value so a
      * cross-platform package is decodable on both sides.
      */
+    /**
+     * [T-group-chat] Agent groups (multi-role chat rosters). The rows travel
+     * as one JSON file (data/agent_groups.json) — groups live in the Room DB,
+     * not the filesystem. Wire key must stay agent_groups to match the iOS
+     * BackupCategory raw value.
+     */
+    GROUPS("agent_groups"),
     ENVIRONMENT_VARIABLES("environment_variables");
 
     /**
@@ -178,7 +185,7 @@ enum class BackupCategory(val key: String) {
             CHATS, SHARED_FILES, SKILLS -> true
             // ROLES copies verbatim like MEMORY — role dirs are tiny (a JSON
             // body plus a 64px avatar), so the §3.4 cap has nothing to do.
-            MEMORY, ROLES, PROVIDERS, MCP_SERVERS, VOICE_CORRECTIONS,
+            MEMORY, ROLES, GROUPS, PROVIDERS, MCP_SERVERS, VOICE_CORRECTIONS,
             ENVIRONMENT_VARIABLES -> false
         }
 

@@ -895,5 +895,7 @@ enum SyncedTypesBootstrap {
         // 角色同步类型
         r.register(SyncedRole.self)           // 单个角色配置
         r.register(SyncedRolesCollection.self) // 角色集合索引
+        // [T-group-chat] P4: agent groups (multi-role chat rosters).
+        r.register(SyncedAgentGroup.self)
     }
 }

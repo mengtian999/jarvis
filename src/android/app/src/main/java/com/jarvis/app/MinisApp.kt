@@ -468,6 +468,11 @@ class MinisApp : Application(), ImageLoaderFactory {
         // current-role StateFlow consumed by the chat UI.
         com.jarvis.app.agent.RoleStore.prime(this)
 
+        // [T-group-chat] Warm the agent-group snapshot (session list renders
+        // stacked avatars per group row without a first-frame DB round trip).
+        // AFTER RoleStore — group member resolution reads the role snapshot.
+        com.jarvis.app.agent.GroupStore.prime(this)
+
         // T-config: jarvis-config CLI surface — registry / audit log /
         // master-switch store. Initialized eagerly here so
         // ConfigRegistry.get() is safe from any thread for the rest of

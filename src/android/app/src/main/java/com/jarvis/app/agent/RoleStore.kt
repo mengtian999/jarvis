@@ -557,12 +557,19 @@ object RoleStore {
      */
     private fun buildJson(role: RoleFile): String {
         return try {
-            JSONObject()
+            val obj = JSONObject()
                 .put("name", role.metadata.name)
                 .put("style", role.metadata.style)
                 .put("lang", role.metadata.lang)
                 .put("body", role.body)
-                .toString(2)
+            // [T-group-chat] §2.3 Optional — omitted entirely when unset so
+            // role.json stays byte-compatible with pre-group installs.
+            role.metadata.model?.let { ref ->
+                obj.put("model", JSONObject()
+                    .put("modelId", ref.modelId)
+                    .put("providerInstanceId", ref.providerInstanceId))
+            }
+            obj.toString(2)
         } catch (e: Exception) {
             AppLogger.warning(TAG, "buildJson via JSONObject 失败: ${e.message}")
             val bodyEscaped = role.body
@@ -586,7 +593,18 @@ object RoleStore {
 data class RoleMetadata(
     val name: String,
     val style: String = "",
-    val lang: String = "auto"
+    val lang: String = "auto",
+    /**
+     * [T-group-chat] §2.3 The role's default model — a COMPLETE reference
+     * ({modelId, providerInstanceId}, same shape as the message attribution
+     * snapshot columns, because users have several provider instances that can
+     * carry the same model id). Null = follow the current default model, which
+     * keeps every pre-existing behavior byte-identical. Resolution chain at
+     * speak time: group unified-model override > this > session default.
+     * Setter UI lands with the role editor; the field is wired end-to-end so
+     * a hand-edited role.json already works.
+     */
+    val model: AgentGroupModelRef? = null,
 ) {
     companion object {
         /**
@@ -600,7 +618,8 @@ data class RoleMetadata(
                 RoleMetadata(
                     name = obj.optString("name", "Jarvis").ifEmpty { "Jarvis" },
                     style = obj.optString("style", ""),
-                    lang = obj.optString("lang", "auto").ifEmpty { "auto" }
+                    lang = obj.optString("lang", "auto").ifEmpty { "auto" },
+                    model = parseModelRef(obj.optJSONObject("model")),
                 )
             } catch (e: Exception) {
                 val nameMatch = """"name"\s*:\s*"([^"]+)"""".toRegex().find(json)
@@ -609,9 +628,18 @@ data class RoleMetadata(
                 RoleMetadata(
                     name = nameMatch?.groupValues?.get(1) ?: "Jarvis",
                     style = styleMatch?.groupValues?.get(1) ?: "",
-                    lang = langMatch?.groupValues?.get(1) ?: "auto"
+                    lang = langMatch?.groupValues?.get(1) ?: "auto",
                 )
             }
+        }
+
+        /** [T-group-chat] `{"modelId":"…","providerInstanceId":"…"}` or null. */
+        private fun parseModelRef(o: JSONObject?): AgentGroupModelRef? {
+            if (o == null) return null
+            val modelId = o.optString("modelId", "").trim()
+            val instanceId = o.optString("providerInstanceId", "").trim()
+            if (modelId.isEmpty() || instanceId.isEmpty()) return null
+            return AgentGroupModelRef(modelId, instanceId)
         }
     }
 }

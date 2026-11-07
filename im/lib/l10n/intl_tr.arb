@@ -2372,5 +2372,12 @@
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
     },
-    "jarvis": "Jarvis"
+    "jarvis": "Jarvis",
+    "appSubtitle": "Uçtan uca şifreli, merkeziyetsiz",
+    "appDescription": "Sohbetlerinizi yalnızca ikiniz okuyabilir, üçüncü bir göz göremez.",
+    "signIn": "Oturum aç",
+    "createNewAccount": "Yeni hesap oluştur",
+    "searchOrEnterHomeserverAddress": "Ana sunucu adresini ara veya gir",
+    "signInGreeting": "Zaten bir Matrix hesabınız var mı? Tekrar hoş geldiniz! Ana sunucunuzu seçin ve oturum açın.",
+    "signUpGreeting": "Bit Jarvis merkeziyetsizdir! Hesabınızı oluşturmak istediğiniz bir sunucu seçin ve başlayın!"
 }

@@ -154,17 +154,22 @@ internal fun CompactProgressIndicator(
 // ─── Typing Indicator (three dots pulsing) ────────────────────────────────────
 
 @Composable
-internal fun TypingIndicator(roleName: String? = null) {
+internal fun TypingIndicator(roleId: String? = null) {
     val infiniteTransition = rememberInfiniteTransition(label = "typing")
-    // [T-role-session-bound] "<role> is thinking…" reads the SESSION's bound
-    // role (passed by the caller from ChatViewModel.sessionRole), not the
-    // global current role — switching roles in Settings mid-session must not
-    // relabel an in-flight reply. Null (legacy call sites) falls back to the
-    // global current role, the pre-refactor behavior. The global collect is
-    // unconditional so the composable call count never changes between
-    // recompositions.
+    // [T-role-session-bound] "<role> is thinking…" resolves the role that
+    // produced THIS message. [T-group-chat] In a group round the streaming
+    // placeholder carries the CURRENT SPEAKER's roleId, so the indicator
+    // relabels per member ("小花 正在思考" → "小草 正在思考"); ordinary
+    // sessions resolve to the session persona exactly as before. Snapshot
+    // lookup (no disk IO) with the global current role as fallback; the
+    // collects are unconditional so the composable call count never changes
+    // between recompositions.
+    val snapshotRoles by com.jarvis.app.agent.RoleStore.rolesSnapshot.collectAsState()
     val globalRole by com.jarvis.app.agent.RoleStore.currentRoleState.collectAsState()
-    val soulName = (roleName ?: globalRole.metadata.name).trim().ifEmpty { "Jarvis" }
+    val soulName = (
+        roleId?.let { id -> snapshotRoles.firstOrNull { it.roleId == id }?.metadata?.name }
+            ?: globalRole.metadata.name
+        ).trim().ifEmpty { "Jarvis" }
 
     Row(
         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),

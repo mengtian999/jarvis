@@ -2409,5 +2409,12 @@
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
     },
-    "jarvis": "자비스"
+    "jarvis": "자비스",
+    "appSubtitle": "종단간 암호화, 분산형",
+    "appDescription": "대화는 두 사람만 읽을 수 있고, 제3자는 볼 수 없습니다.",
+    "signIn": "로그인",
+    "createNewAccount": "새 계정 만들기",
+    "searchOrEnterHomeserverAddress": "홈서버 주소 검색 또는 입력",
+    "signInGreeting": "이미 Matrix 계정이 있나요? 다시 오신 것을 환영합니다! 홈서버를 선택하고 로그인하세요.",
+    "signUpGreeting": "Bit Jarvis는 분산형입니다! 계정을 만들 서버를 선택하고 시작하세요!"
 }

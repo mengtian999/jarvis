@@ -36,7 +36,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoleSettingsScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    // [T-group-chat] Optional — the 默认模型 row renders only when a
+    // repository is wired; existing previews / tests keep compiling without it.
+    providerRepository: com.jarvis.app.data.repository.ProviderRepository? = null,
 ) {
     val context = LocalContext.current
     val currentRole by RoleStore.currentRoleState.collectAsState()
@@ -114,18 +117,27 @@ fun RoleSettingsScreen(
     if (editorVisible) {
         RoleEditorDialog(
             existing = editingRole,
+            providerRepository = providerRepository,
             onDismiss = {
                 editorVisible = false
                 editingRole = null
             },
-            onSave = { name, style, lang, body, avatarBytes ->
+            onSave = { name, style, lang, body, avatarBytes, model ->
                 val trimmed = name.trim()
                 if (trimmed.isNotEmpty()) {
                     if (editingRole == null) {
-                        RoleStore.createRole(context, trimmed, style, lang, body, avatarBytes)
+                        val created = RoleStore.createRole(context, trimmed, style, lang, body, avatarBytes)
+                        // [T-group-chat] createRole builds its own metadata;
+                        // persist the chosen default model through a follow-up
+                        // save so the field round-trips role.json.
+                        if (model != null) {
+                            RoleStore.saveRole(context, created.copy(
+                                metadata = created.metadata.copy(model = model),
+                            ))
+                        }
                     } else {
                         val updated = editingRole!!.copy(
-                            metadata = RoleMetadata(trimmed, style, lang),
+                            metadata = RoleMetadata(trimmed, style, lang, model = model),
                             body = body,
                             avatarData = avatarBytes
                         )
@@ -282,11 +294,13 @@ private fun RoleRow(
 }
 // ─── 新建 / 编辑角色对话框 ───────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RoleEditorDialog(
     existing: RoleFile?,
+    providerRepository: com.jarvis.app.data.repository.ProviderRepository? = null,
     onDismiss: () -> Unit,
-    onSave: (name: String, style: String, lang: String, body: String, avatarBytes: ByteArray?) -> Unit,
+    onSave: (name: String, style: String, lang: String, body: String, avatarBytes: ByteArray?, model: com.jarvis.app.agent.AgentGroupModelRef?) -> Unit,
 ) {
     val context = LocalContext.current
     var name by remember { mutableStateOf(existing?.metadata?.name ?: "") }
@@ -294,6 +308,13 @@ private fun RoleEditorDialog(
     var lang by remember { mutableStateOf((existing?.metadata?.lang ?: "").ifEmpty { "auto" }) }
     var body by remember { mutableStateOf(existing?.body ?: "") }
     var avatarBytes by remember { mutableStateOf(existing?.avatarData) }
+    // [T-group-chat] §5 The role's default model ("跟谁走"的第三级配置：
+    // 群覆盖 > 角色模型 > 会话默认). Null = follow the default model.
+    var model by remember { mutableStateOf(existing?.metadata?.model) }
+    var modelMenuOpen by remember { mutableStateOf(false) }
+    val modelEntries = remember {
+        runCatching { providerRepository?.allVisibleEntries() }.getOrNull().orEmpty()
+    }
 
     val avatarPicker = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.GetContent()
@@ -371,11 +392,66 @@ private fun RoleEditorDialog(
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // [T-group-chat] §5 默认模型 — 「跟随默认」+ 全部可见模型。
+                if (modelEntries.isNotEmpty()) {
+                    androidx.compose.material3.ExposedDropdownMenuBox(
+                        expanded = modelMenuOpen,
+                        onExpandedChange = { modelMenuOpen = it },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        val currentLabel: String = if (model == null) {
+                            stringResource(R.string.agent_group_host_none)
+                        } else {
+                            modelEntries.firstOrNull {
+                                it.providerInstanceId == model?.providerInstanceId &&
+                                    it.baseModel.id == model?.modelId
+                            }?.baseModel?.displayName ?: model?.modelId.orEmpty()
+                        }
+                        OutlinedTextField(
+                            value = currentLabel,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.role_default_model)) },
+                            trailingIcon = { androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelMenuOpen) },
+                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = modelMenuOpen,
+                            onDismissRequest = { modelMenuOpen = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.agent_group_host_none)) },
+                                onClick = {
+                                    model = null
+                                    modelMenuOpen = false
+                                },
+                            )
+                            modelEntries.forEach { entry ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            entry.baseModel.displayName,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        )
+                                    },
+                                    onClick = {
+                                        model = com.jarvis.app.agent.AgentGroupModelRef(
+                                            entry.baseModel.id, entry.providerInstanceId,
+                                        )
+                                        modelMenuOpen = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             TextButton(
-                onClick = { onSave(name, style, lang, body, avatarBytes) }
+                onClick = { onSave(name, style, lang, body, avatarBytes, model) }
             ) { Text(stringResource(R.string.role_save)) }
         },
         dismissButton = {

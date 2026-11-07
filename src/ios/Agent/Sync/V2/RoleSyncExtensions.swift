@@ -71,6 +71,64 @@ extension ChatStoreSyncHydrators {
         try? RoleStore.save(role)
         logger.info("[SyncCore] applied RoleV2: \(id)")
     }
+
+    // MARK: - AgentGroup 同步器 [T-group-chat]
+
+    /// 构建群记录（DB 行 → PortableRecord）。
+    private static func buildAgentGroup(id: String) async -> PortableRecord? {
+        guard let group = await ChatStore.shared.listAgentGroups().first(where: { $0.id == id }) else {
+            return nil
+        }
+        let synced = SyncedAgentGroup(
+            id: group.id,
+            name: group.name,
+            instruction: group.instruction,
+            membersJson: group.membersJson,
+            hostRoleId: group.hostRoleId,
+            modelOverrideJson: group.modelOverrideJson,
+            maxRounds: group.maxRounds,
+            createdAt: group.createdAt,
+            updatedAt: group.updatedAt,
+        )
+        return SyncableTypeRegistry.shared.metadata(for: "AgentGroupV2")?.buildPortable(synced)
+    }
+
+    /// 合并群记录（LWW by updatedAt：仅当远端更新时间更新时才落库）。
+    /// 群行被远端删除时由 deletionApplier 处理——只删群行，**不级联删会话**：
+    /// 会话有自己的 tombstone 流，未随之删除的会话渲染为普通会话（降级）。
+    private static func mergeAgentGroup(record: PortableRecord) async {
+        guard let id = stringField(record, "groupId") else {
+            logger.warning("[SyncCore] mergeAgentGroup: missing groupId field")
+            return
+        }
+        let remoteUpdatedAt = dateField(record, "updatedAt") ?? record.updatedAt
+        if let local = await ChatStore.shared.listAgentGroups().first(where: { $0.id == id }),
+           local.updatedAt >= remoteUpdatedAt {
+            return // local is newer or equal — LWW keeps it
+        }
+        let existing = await ChatStore.shared.listAgentGroups().first(where: { $0.id == id })
+        let group = AgentGroupRecord(
+            id: id,
+            name: stringField(record, "name") ?? "Group",
+            instruction: optionalStringField(record, "instruction"),
+            membersJson: stringField(record, "membersJson") ?? "[]",
+            hostRoleId: optionalStringField(record, "hostRoleId"),
+            modelOverrideJson: optionalStringField(record, "modelOverrideJson"),
+            maxRounds: intField(record, "maxRounds") ?? existing?.maxRounds ?? 1,
+            createdAt: dateField(record, "createdAt") ?? existing?.createdAt ?? Date(),
+            updatedAt: remoteUpdatedAt,
+        )
+        await ChatStore.shared.upsertAgentGroup(group)
+        await MainActor.run { GroupStore.refreshSnapshotAsync() }
+        logger.info("[SyncCore] applied AgentGroupV2: \(id)")
+    }
+
+    /// 远端群删除：仅删群行（不级联删本地会话——会话 tombstone 自己到达）。
+    private static func applyAgentGroupDeletion(id: String) async {
+        _ = await ChatStore.shared.deleteAgentGroupRowOnly(id)
+        await MainActor.run { GroupStore.refreshSnapshotAsync() }
+        logger.info("[SyncCore] applied AgentGroupV2 delete: \(id)")
+    }
     
     /// 构建角色集合记录
     private static func buildRolesCollection() async -> PortableRecord? {

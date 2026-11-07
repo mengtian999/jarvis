@@ -152,6 +152,10 @@ class BackupExporter(
                     onProgress?.invoke("Exporting roles…")
                     exportRoles(dataDir, options.excludedRoleIds)?.let { stats[BackupCategory.ROLES.key] = it }
                 }
+                if (BackupCategory.GROUPS in options.categories) {
+                    onProgress?.invoke("Exporting agent groups…")
+                    exportAgentGroups(dataDir)?.let { stats[BackupCategory.GROUPS.key] = it }
+                }
                 if (BackupCategory.MCP_SERVERS in options.categories) {
                     onProgress?.invoke("Exporting MCP servers…")
                     exportMcpServers(dataDir)?.let { stats[BackupCategory.MCP_SERVERS.key] = it }
@@ -472,6 +476,35 @@ class BackupExporter(
      * `servers.json` verbatim. Returns null when there is nothing to write, so
      * an absent MCP config contributes no category rather than an empty one.
      */
+    /**
+     * [T-group-chat] Export agent groups as data/agent_groups.json — one
+     * JSON object per group in the RAW DB row shape (members_json inlined)
+     * so the importer can upsert rows without knowing the JSON grammar.
+     * Null when the table is empty: an absent section keeps old packages
+     * and old importers byte-compatible.
+     */
+    private suspend fun exportAgentGroups(dataDir: File): BackupManifest.CategoryStat? {
+        val groups = db.agentGroupDao().listGroups()
+        if (groups.isEmpty()) return null
+        val arr = org.json.JSONArray()
+        for (g in groups) {
+            arr.put(
+                org.json.JSONObject()
+                    .put("id", g.id)
+                    .put("name", g.name)
+                    .put("instruction", g.instruction ?: org.json.JSONObject.NULL)
+                    .put("members_json", g.membersJson)
+                    .put("host_role_id", g.hostRoleId ?: org.json.JSONObject.NULL)
+                    .put("model_override_json", g.modelOverrideJson ?: org.json.JSONObject.NULL)
+                    .put("max_rounds", g.maxRounds)
+                    .put("created_at", g.createdAt)
+                    .put("updated_at", g.updatedAt),
+            )
+        }
+        val dest = File(dataDir, "agent_groups.json")
+        dest.writeText(arr.toString(2))
+        return BackupManifest.CategoryStat(groups.size, dest.length(), encrypted = false)
+    }
     private fun exportMcpServers(dataDir: File): BackupManifest.CategoryStat? {
         val source = File(context.filesDir, "jarvis-global/mcp-servers/servers.json")
         if (!source.isFile) return null

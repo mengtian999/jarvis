@@ -60,6 +60,15 @@ struct ChatSession: Identifiable, Codable, Hashable {
     /// deleted) render via RoleStore.loadDefault() — same strategy as
     /// folderId. Defaulted so pre-refactor construction sites keep compiling.
     var roleId: String? = nil
+    /// [T-group-chat] The agent group this session belongs to. Non-nil marks
+    /// a GROUP session (multi-role round-robin chat) where per-message
+    /// `messages.role_id` carries the speaking persona; nil = ordinary
+    /// session with roleId's single-persona meaning. By convention a group
+    /// session is created with roleId = nil — not constraint-enforced, so an
+    /// odd future-sync state renders instead of crashing. Not a declared FK —
+    /// same orphan-tolerance rationale as folderId. Defaulted so existing
+    /// construction sites keep compiling.
+    var groupId: String? = nil
 
     /// Whether this session is from a remote device (read-only).
     var isRemote: Bool { remoteDeviceId != nil }
@@ -103,6 +112,10 @@ struct ChatSession: Identifiable, Codable, Hashable {
             // (avatar/name) changes the row's rendered identity without
             // bumping updatedAt, so compare the id too.
             && lhs.roleId == rhs.roleId
+            // [T-group-chat] Same rationale as folderId/roleId: group
+            // membership changes the row's rendered identity (stacked-avatar
+            // row, group screen) without bumping anything else compared here.
+            && lhs.groupId == rhs.groupId
             && lhs.title == rhs.title
             && lhs.category == rhs.category
             && lhs.source == rhs.source
@@ -658,6 +671,17 @@ actor ChatStore {
         // [T-role-message-level] Per-message generating persona for assistant
         // rows (NULL for user/system). Synced via iCloud. See RawMessage.roleId.
         addColumnIfMissing(table: "messages", column: "role_id", definition: "TEXT")
+        // [T-group-chat] The agent group this session belongs to. Non-nil =
+        // group session (multi-role round-robin chat); NULL = ordinary
+        // session. Intentionally NOT a declared FK — same orphan-tolerance
+        // rationale as folder_id/role_id (group records can arrive out of
+        // order via sync; deleting a group removes its sessions in an
+        // explicit transaction, not via cascade). Mirrors Android
+        // ChatSessionEntity.groupId (MIGRATION_1_2).
+        addColumnIfMissing(table: "sessions", column: "group_id", definition: "TEXT")
+        // Plain non-unique index — many sessions share one group, same shape
+        // as idx_sessions_folder-style membership indexes.
+        exec("CREATE INDEX IF NOT EXISTS idx_sessions_group ON sessions(group_id)")
         // Folder pinning (mirrors sessions.pinned_at). Also present in the
         // CREATE TABLE DDL above — per the add-column wipe trap, a new column
         // must exist in BOTH the initial DDL and the idempotent migration.
@@ -883,6 +907,37 @@ actor ChatStore {
                 os_version  TEXT NOT NULL DEFAULT ''
             )
         """)
+        // [T-group-chat] An agent group — a reusable roster of roles the user
+        // pulls into group-chat sessions ("评审团", "项目组"). The group owns NO
+        // messages; sessions bound via sessions.group_id hold the
+        // conversation. Column-for-column mirror of Android AgentGroupEntity
+        // (MIGRATION_1_2) so a future sync layer maps the two without a
+        // translation step (same rule as the folders table vs ChatFolder).
+        //
+        // members_json: `[{"roleId":"…","participatesInRound":true}]` — ARRAY
+        // ORDER IS the round-robin speaking order (host speaks last
+        // regardless). host_role_id NULL = no moderator (the default).
+        // model_override_json: `{"modelId":"…","providerInstanceId":"…"}` or
+        // NULL = unified-model override OFF (the default; design doc D4).
+        // max_rounds reserved for v3 agent-to-agent @mentions (always 1
+        // today, no reader yet).
+        //
+        // No FK to roles anywhere: roleIds reference RoleStore files, and
+        // orphan refs resolve through GroupStore.resolveMembers' fallback —
+        // same strategy as folder/role references on sessions.
+        exec("""
+            CREATE TABLE IF NOT EXISTS agent_groups (
+                id                  TEXT PRIMARY KEY,
+                name                TEXT NOT NULL,
+                instruction         TEXT,
+                members_json        TEXT NOT NULL,
+                host_role_id        TEXT,
+                model_override_json TEXT,
+                max_rounds          INTEGER NOT NULL DEFAULT 1,
+                created_at          REAL NOT NULL,
+                updated_at          REAL NOT NULL
+            )
+        """)
         exec("""
             CREATE TABLE IF NOT EXISTS remote_sessions (
                 id          TEXT NOT NULL,
@@ -1050,7 +1105,7 @@ actor ChatStore {
     // MARK: - Session CRUD
 
     @discardableResult
-    func createSession(modelId: String, title: String? = nil, source: String? = nil, roleId: String? = nil) -> ChatSession {
+    func createSession(modelId: String, title: String? = nil, source: String? = nil, roleId: String? = nil, groupId: String? = nil) -> ChatSession {
         invalidateSessionListCache()
         let now = Date()
         let session = ChatSession(
@@ -1065,7 +1120,11 @@ actor ChatStore {
             // so reloads + sync resolve it. Callers pass the global current
             // role for a plain new chat, or an explicit role for
             // role-scoped creation (fork / forward / top-bar entry).
-            roleId: roleId
+            roleId: roleId,
+            // [T-group-chat] Non-nil marks a group session (round-robin
+            // multi-role chat); by convention passed WITHOUT roleId — the
+            // per-message role_id carries the speaking persona there.
+            groupId: groupId
         )
 
         // [T-memory-enabled-new-session-bug] Explicitly write memory_enabled
@@ -1088,7 +1147,7 @@ actor ChatStore {
         let rawObj = UserDefaults.standard.object(forKey: "memory.global.enabled")
         memDiagLogger.info("[MemDiag] createSession sid=\(session.id.prefix(8)) rawDefaults=\(String(describing: rawObj)) resolved=\(globalMemoryEnabled) → bind memory_enabled=\(globalMemoryEnabled ? 1 : 0)")
 
-        let sql = "INSERT INTO sessions (id, title, model_id, created_at, updated_at, source, memory_enabled, role_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        let sql = "INSERT INTO sessions (id, title, model_id, created_at, updated_at, source, memory_enabled, role_id, group_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         var stmt: OpaquePointer?
         if sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK {
             sqlite3_bind_text(stmt, 1, (session.id as NSString).utf8String, -1, nil)
@@ -1100,6 +1159,8 @@ actor ChatStore {
             sqlite3_bind_int(stmt, 7, globalMemoryEnabled ? 1 : 0)
             // [T-role-session-bound] Persist the bound persona (nil = legacy).
             bindOptionalText(stmt, index: 8, value: session.roleId)
+            // [T-group-chat] Persist group membership (nil = ordinary session).
+            bindOptionalText(stmt, index: 9, value: session.groupId)
             let rc = sqlite3_step(stmt)
             memDiagLogger.info("[MemDiag] createSession INSERT step rc=\(rc) (101=DONE) sid=\(session.id.prefix(8))")
         } else {
@@ -1335,7 +1396,10 @@ actor ChatStore {
                    s.folder_id,
                    -- [T-role-session-bound] bound persona, appended after
                    -- folder_id under the same index discipline.
-                   s.role_id
+                   s.role_id,
+                   -- [T-group-chat] group membership, appended LAST under the
+                   -- same index discipline (column 16).
+                   s.group_id
             FROM sessions s ORDER BY s.updated_at DESC
             """
             // Note: `remote_tombstoned_at` column still exists on the
@@ -1410,13 +1474,15 @@ actor ChatStore {
                 let folderId = Self.colTextOpt(stmt, 14)
                 // [T-role-session-bound] bound persona (column 15).
                 let sessRoleId = Self.colTextOpt(stmt, 15)
+                // [T-group-chat] group membership (column 16).
+                let sessGroupId = Self.colTextOpt(stmt, 16)
 
                 sessions.append(ChatSession(
                     id: id, title: title, category: category, modelId: modelId,
                     createdAt: createdAt, updatedAt: updatedAt, lastMessage: lastMessage,
                     source: source, lastSyncedAt: lastSyncedAt,
                     remoteDeviceId: remoteDeviceId, pinnedAt: pinnedAt,
-                    folderId: folderId, roleId: sessRoleId
+                    folderId: folderId, roleId: sessRoleId, groupId: sessGroupId
                 ))
             }
         }
@@ -2006,7 +2072,7 @@ actor ChatStore {
     }
 
     func getSession(_ id: String) -> ChatSession? {
-        let sql = "SELECT id, title, model_id, created_at, updated_at, category, source, pinned_at, folder_id, role_id FROM sessions WHERE id = ?"
+        let sql = "SELECT id, title, model_id, created_at, updated_at, category, source, pinned_at, folder_id, role_id, group_id FROM sessions WHERE id = ?"
         var stmt: OpaquePointer?
         var session: ChatSession?
 
@@ -2024,11 +2090,14 @@ actor ChatStore {
                 let folderId = sqlite3_column_text(stmt, 8).map { String(cString: $0) }
                 // [T-role-session-bound] bound persona of the session.
                 let sessRoleId = sqlite3_column_text(stmt, 9).map { String(cString: $0) }
+                // [T-group-chat] group membership of the session.
+                let sessGroupId = sqlite3_column_text(stmt, 10).map { String(cString: $0) }
 
                 session = ChatSession(
                     id: id, title: title, category: category, modelId: modelId,
                     createdAt: createdAt, updatedAt: updatedAt, source: source,
-                    pinnedAt: pinnedAt, folderId: folderId, roleId: sessRoleId
+                    pinnedAt: pinnedAt, folderId: folderId, roleId: sessRoleId,
+                    groupId: sessGroupId
                 )
             }
         }
@@ -2333,6 +2402,152 @@ actor ChatStore {
             markDirty(recordType: "Session", recordId: sessionId)
         }
         return changed
+    }
+
+    // MARK: - Agent groups (multi-role group chat) [T-group-chat]
+    //
+    // CRUD over the `agent_groups` table (mirrors Android GroupStore /
+    // AgentGroupDao; column-for-column so a future sync layer maps the two
+    // without a translation step). The domain struct + JSON helpers live in
+    // GroupStore.swift; this section is raw SQL only, matching how the
+    // folders section owns folders SQL while ContentView owns folder UI.
+    //
+    // NOT marked dirty for sync yet — the AgentGroupV2 sync record arrives in
+    // the P4 sync phase; writing unknown recordTypes into sync_dirty_records
+    // before the V2 registry knows them would push rows no engine consumes.
+
+    /// All agent groups, most recently edited first (mirrors listFolders).
+    func listAgentGroups() -> [AgentGroupRecord] {
+        let sql = """
+            SELECT id, name, instruction, members_json, host_role_id,
+                   model_override_json, max_rounds, created_at, updated_at
+            FROM agent_groups ORDER BY updated_at DESC
+            """
+        var stmt: OpaquePointer?
+        var groups: [AgentGroupRecord] = []
+        if sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK {
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                let id = Self.colText(stmt, 0)
+                // Same guard as listFolders/listSessions: no primary key = unusable.
+                guard !id.isEmpty else { continue }
+                groups.append(AgentGroupRecord(
+                    id: id,
+                    name: Self.colText(stmt, 1),
+                    instruction: Self.colTextOpt(stmt, 2),
+                    membersJson: Self.colText(stmt, 3),
+                    hostRoleId: Self.colTextOpt(stmt, 4),
+                    modelOverrideJson: Self.colTextOpt(stmt, 5),
+                    maxRounds: Int(sqlite3_column_int64(stmt, 6)),
+                    createdAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 7)),
+                    updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 8))
+                ))
+            }
+        }
+        sqlite3_finalize(stmt)
+        return groups
+    }
+
+    /// Insert or replace a group row (full-row REPLACE semantics — mirrors
+    /// Android's OnConflictStrategy.REPLACE; no local-only columns to lose).
+    func upsertAgentGroup(_ group: AgentGroupRecord) {
+        let sql = """
+            INSERT OR REPLACE INTO agent_groups
+                (id, name, instruction, members_json, host_role_id,
+                 model_override_json, max_rounds, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+        var stmt: OpaquePointer?
+        if sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK {
+            sqlite3_bind_text(stmt, 1, (group.id as NSString).utf8String, -1, nil)
+            sqlite3_bind_text(stmt, 2, (group.name as NSString).utf8String, -1, nil)
+            bindOptionalText(stmt, index: 3, value: group.instruction)
+            sqlite3_bind_text(stmt, 4, (group.membersJson as NSString).utf8String, -1, nil)
+            bindOptionalText(stmt, index: 5, value: group.hostRoleId)
+            bindOptionalText(stmt, index: 6, value: group.modelOverrideJson)
+            sqlite3_bind_int64(stmt, 7, Int64(group.maxRounds))
+            sqlite3_bind_double(stmt, 8, group.createdAt.timeIntervalSince1970)
+            sqlite3_bind_double(stmt, 9, group.updatedAt.timeIntervalSince1970)
+            sqlite3_step(stmt)
+        }
+        sqlite3_finalize(stmt)
+    }
+
+    /// Session ids belonging to `groupId`, most recently updated first.
+    func sessionIdsInAgentGroup(_ groupId: String) -> [String] {
+        let sql = "SELECT id FROM sessions WHERE group_id = ? ORDER BY updated_at DESC"
+        var stmt: OpaquePointer?
+        var ids: [String] = []
+        if sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK {
+            sqlite3_bind_text(stmt, 1, (groupId as NSString).utf8String, -1, nil)
+            while sqlite3_step(stmt) == SQLITE_ROW {
+                let id = Self.colText(stmt, 0)
+                if !id.isEmpty { ids.append(id) }
+            }
+        }
+        sqlite3_finalize(stmt)
+        return ids
+    }
+
+    /// Delete a group AND all its sessions (design doc D6 — the caller's UI
+    /// must confirm; there is no "leave sessions behind" path, unlike the
+    /// folders' dissolve). One transaction so a crash mid-way can't strand
+    /// sessions without their group row.
+    ///
+    /// @return the deleted session ids, so the UI can navigate away when the
+    ///   currently-open chat was among them. Messages cascade via
+    ///   `messages.session_id REFERENCES sessions(id)` + `PRAGMA foreign_keys=ON`.
+    @discardableResult
+    func deleteAgentGroup(_ id: String) -> [String] {
+        invalidateSessionListCache()
+        let sessionIds = sessionIdsInAgentGroup(id)
+
+        guard sqlite3_exec(db, "BEGIN IMMEDIATE", nil, nil, nil) == SQLITE_OK else {
+            return []
+        }
+        var ok = true
+        var stmt: OpaquePointer?
+        if sqlite3_prepare_v2(db, "DELETE FROM sessions WHERE group_id = ?", -1, &stmt, nil) == SQLITE_OK {
+            sqlite3_bind_text(stmt, 1, (id as NSString).utf8String, -1, nil)
+            ok = sqlite3_step(stmt) == SQLITE_DONE
+        } else {
+            ok = false
+        }
+        sqlite3_finalize(stmt)
+        stmt = nil
+        if ok {
+            if sqlite3_prepare_v2(db, "DELETE FROM agent_groups WHERE id = ?", -1, &stmt, nil) == SQLITE_OK {
+                sqlite3_bind_text(stmt, 1, (id as NSString).utf8String, -1, nil)
+                ok = sqlite3_step(stmt) == SQLITE_DONE
+            } else {
+                ok = false
+            }
+        }
+        sqlite3_finalize(stmt)
+
+        if ok {
+            sqlite3_exec(db, "COMMIT", nil, nil, nil)
+        } else {
+            sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+            return []
+        }
+        return sessionIds
+    }
+
+    /// [T-group-chat] Peer-delete path (sync): drop ONLY the group row — the
+    /// sessions keep their group_id and degrade to ordinary chats until their
+    /// own tombstones arrive. Deliberately NOT the local user-facing delete
+    /// (deleteAgentGroup cascades sessions; a remote group deletion must not
+    /// destroy local conversations the peer may have kept).
+    @discardableResult
+    func deleteAgentGroupRowOnly(_ id: String) -> Bool {
+        invalidateSessionListCache()
+        var stmt: OpaquePointer?
+        if sqlite3_prepare_v2(db, "DELETE FROM agent_groups WHERE id = ?", -1, &stmt, nil) == SQLITE_OK {
+            sqlite3_bind_text(stmt, 1, (id as NSString).utf8String, -1, nil)
+            sqlite3_step(stmt)
+        }
+        sqlite3_finalize(stmt)
+        return true
     }
 
     /// Resolve a folder *name* to a folder, for the sub-model paths that emit

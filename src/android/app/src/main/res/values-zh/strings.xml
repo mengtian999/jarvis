@@ -1814,6 +1814,42 @@
     <string name="forward_select_at_least_one">请至少选择一条消息进行转发</string>
     <string name="chat_longpress_select">选择</string>
     <string name="role_picker_current">当前</string>
+    <!-- [T-group-chat] Agent 群聊（多角色） -->
+    <string name="agent_group_new_chat">发起群聊</string>
+    <string name="agent_group_create_title">创建群聊</string>
+    <string name="agent_group_name_label">群名称</string>
+    <string name="agent_group_name_hint">如：评审团、项目组</string>
+    <string name="agent_group_members_label">成员（点按添加，按发言顺序）</string>
+    <string name="agent_group_members_empty">请至少选择 2 个角色</string>
+    <string name="agent_group_instruction_label">群公告（可选）</string>
+    <string name="agent_group_instruction_hint">所有成员共享的上下文</string>
+    <string name="agent_group_host_label">主持角色（可选）</string>
+    <string name="agent_group_host_none">无</string>
+    <string name="agent_group_create">创建群聊</string>
+    <string name="agent_group_pick_title">群聊</string>
+    <string name="agent_group_new">新建群</string>
+    <string name="agent_group_settings">群管理</string>
+    <string name="agent_group_member_participates">参与 @全体 轮流</string>
+    <string name="agent_group_member_removed">角色已删除</string>
+    <string name="agent_group_cleanup">移除已删除成员</string>
+    <string name="agent_group_model_override">统一模型</string>
+    <string name="agent_group_model_override_off">关闭 — 成员使用各自模型</string>
+    <string name="agent_group_model_pick">选择模型</string>
+    <string name="agent_group_delete">删除群</string>
+    <string name="agent_group_delete_confirm">删除该群及其全部会话？此操作不可撤销。</string>
+    <string name="agent_group_delete_yes">删除</string>
+    <string name="agent_group_delete_no">取消</string>
+    <string name="agent_group_save">保存</string>
+    <string name="agent_group_member_count">%1$d 个成员</string>
+    <string name="role_default_model">默认模型</string>
+    <string name="agent_group_member_col">成员（发言顺序）</string>
+    <string name="agent_group_host_col">主持</string>
+    <string name="agent_group_order_hint">★ = 主持，点亮/点灭设置；↑↓ 调整发言顺序。</string>
+    <string name="forward_mode_role">角色</string>
+    <string name="forward_mode_group">群聊</string>
+    <string name="forward_select_group">选择目标群</string>
+    <string name="forward_new_group_session">新群聊</string>
+    <string name="forward_auto_respond_group">转发后让群成员立即回应</string>
     <!-- [T-role-filter] 会话列表角色过滤 chip -->
     <string name="role_filter_clear">清除角色筛选</string>
     <string name="split_no_conversation_title">未选择会话</string>

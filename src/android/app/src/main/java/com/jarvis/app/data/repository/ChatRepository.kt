@@ -29,6 +29,11 @@ class ChatRepository(internal val dao: ChatDao) {
         // role-specific new chat). Null = legacy/abnormal; new sessions
         // should always seed a role.
         roleId: String? = null,
+        // [T-group-chat] Non-null marks a GROUP session (multi-role
+        // round-robin chat bound to an AgentGroup). By convention passed
+        // WITHOUT roleId — the per-message role_id carries the speaking
+        // persona there.
+        groupId: String? = null,
     ): ChatSessionEntity {
         val now = System.currentTimeMillis()
         val session = ChatSessionEntity(
@@ -39,6 +44,7 @@ class ChatRepository(internal val dao: ChatDao) {
             updatedAt = now,
             memoryEnabled = if (memoryEnabled) 1 else 0,
             roleId = roleId,
+            groupId = groupId,
         )
         dao.insertSession(session)
         return session

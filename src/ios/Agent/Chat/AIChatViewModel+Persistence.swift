@@ -202,6 +202,11 @@ extension AIChatViewModel {
         // open and must not race the lazily-warmed snapshot.
         if let stored = await ChatStore.shared.getSession(sessionId) {
             sessionRole = stored.roleId.flatMap { RoleStore.load(roleId: $0) } ?? RoleStore.loadDefault()
+            // [T-group-chat] Hydrate group membership + reset the speaker to
+            // the session persona. A NULL group_id row renders as an ordinary
+            // chat; a stale group id (group deleted) degrades to ordinary.
+            agentGroupId = stored.groupId
+            speakerRole = sessionRole
         }
 
         // Clear stale compact/pending state from previous lifecycle
@@ -296,6 +301,18 @@ extension AIChatViewModel {
             }
 
             if raw.role == .assistant {
+                // [T-group-chat][P2-fix] A group round persists one assistant
+                // row per member back-to-back; a DIFFERENT-speaker row must
+                // START a new bubble (own header/avatar), not fold into the
+                // previous member's message. Ordinary sessions carry a single
+                // session roleId on every assistant row, so the chain never
+                // breaks there; legacy nil-roleId rows also keep merging.
+                if let assistant = currentAssistant,
+                   let prevSpeaker = assistant.roleId,
+                   let rowSpeaker = raw.roleId,
+                   prevSpeaker != rowSpeaker {
+                    currentAssistant = nil
+                }
                 if let assistant = currentAssistant {
                     // Continuation of an agent loop — append new blocks to
                     // existing assistant message AND extend the source-sort
@@ -343,7 +360,7 @@ extension AIChatViewModel {
                     // First assistant message in this turn
                     let msg = raw.toChatMessage(mediaResolver: resolver, showThinking: showThinking)
                     if msg.roleId == nil {
-                        msg.roleId = sessionRole.roleId
+                        msg.roleId = speakerRole.roleId
                     }
                     msg.sourceSortOrder = raw.sortOrder
                     msg.lastSourceSortOrder = raw.sortOrder
@@ -1042,11 +1059,28 @@ extension AIChatViewModel {
             } else {
                 sessionRole = RoleStore.currentRole()
             }
+            // [T-group-chat] Hydrate the draft's group binding + reset the
+            // speaker to the session persona (ordinary-chat default).
+            agentGroupId = initialAgentGroupId
+            speakerRole = sessionRole
         }
         let model = selectedModel
         // [T-role-session-bound] Persist the bound persona into the new row so
         // reloads + sync resolve it.
-        let session = await ChatStore.shared.createSession(modelId: model.id, source: sessionSource, roleId: sessionRole.roleId)
+        // [T-group-chat] Group sessions carry the group id and take the group
+        // name as their title (auto title generation is skipped for group
+        // chats, §4.6). A stale group id (group deleted between tap and open)
+        // degrades to a plain chat — GroupStore.groupById returns nil.
+        let gid = agentGroupId
+        let group = gid.flatMap { GroupStore.groupById($0) }
+        if gid != nil && group == nil { agentGroupId = nil }
+        let session = await ChatStore.shared.createSession(
+            modelId: model.id,
+            title: group?.name,
+            source: sessionSource,
+            roleId: sessionRole.roleId,
+            groupId: group == nil ? nil : gid,
+        )
         sessionId = session.id
         Self.activeSessionId = session.id
         // [T-memory-enabled-new-session-bug] Sync the @Published memoryEnabled
@@ -1682,7 +1716,8 @@ extension AIChatViewModel {
             // [T-role-message-level] Only assistant rows record the generating
             // persona (user/tool_result rows stay nil) so history renders each
             // role correctly even after the global current role changes.
-            roleId: msg.role == .user ? nil : sessionRole.roleId
+            // [T-group-chat] In a group round this is the CURRENT SPEAKER.
+            roleId: msg.role == .user ? nil : speakerRole.roleId
         )
         // [T-token-attribution-snapshot] Resolved from the entry the caller
         // says served this turn — the provider TYPE is stored as its rawValue

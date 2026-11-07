@@ -171,6 +171,22 @@ interface ChatDao {
     @Query("UPDATE sessions SET folder_id = NULL WHERE folder_id = :folderId")
     suspend fun clearFolderForSessions(folderId: String)
 
+    // ─── Agent groups (multi-role group chat) ─────────────────────────────
+    // [T-group-chat] sessions.group_id membership. Deleting a group deletes
+    // its sessions outright (design doc D6) — there is no "leave sessions
+    // behind" path, unlike folders' clearFolderForSessions.
+
+    @Query("SELECT * FROM sessions WHERE group_id = :groupId ORDER BY updated_at DESC")
+    suspend fun sessionsInGroup(groupId: String): List<ChatSessionEntity>
+
+    /**
+     * Delete-group half. Message and compact-marker rows go with their
+     * sessions via their own FK cascades; callers must run this inside the
+     * same transaction as AgentGroupDao.deleteGroup.
+     */
+    @Query("DELETE FROM sessions WHERE group_id = :groupId")
+    suspend fun deleteSessionsInGroup(groupId: String)
+
     // Messages
     @Query("SELECT * FROM messages WHERE session_id = :sessionId ORDER BY sort_order ASC")
     suspend fun loadMessages(sessionId: String): List<MessageEntity>

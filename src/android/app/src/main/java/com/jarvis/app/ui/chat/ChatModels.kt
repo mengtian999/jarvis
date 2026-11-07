@@ -154,6 +154,15 @@ data class ChatMessage(
     // RoleStore.resolveRole → per-message role rendering that stays correct
     // across global role switches and session re-loads.
     val roleId: String? = null,
+    /**
+     * [T-group-chat] §5 Which model produced this assistant message — the
+     * per-message attribution snapshot (`messages.model_display_name`). Set
+     * at placeholder creation from the live provider and at session load from
+     * the DB row. Rendered as a small model label in GROUP chats only
+     * (multi-model groups need per-bubble attribution); ordinary chats keep
+     * the header clean.
+     */
+    var modelDisplayName: String? = null,
 ) {
     /**
      * [T-bridge-message-ui-leak-android] True when this UI message is the
@@ -318,4 +327,16 @@ internal fun forwardExtractText(partsJson: String): String {
 internal fun draftInitialRoleId(sessionId: String): String? =
     sessionId.substringAfter("__role__", "")
         .substringBefore("__grp__").substringBefore("__fld__")
+        .takeIf { it.isNotEmpty() }
+
+/**
+ * [T-group-chat] Parse the agent group bound at draft creation out of a draft
+ * session id ("__new__<uuid>[…][__agrp__g]"). `__agrp__` is deliberately a
+ * different marker from `__grp__` (MODEL group, LLM fallback routing) so the
+ * two "group" features can never be confused in an id. Top-level for JVM
+ * tests; ChatViewModel.initialAgentGroupId delegates here.
+ */
+internal fun draftInitialAgentGroupId(sessionId: String): String? =
+    sessionId.substringAfter("__agrp__", "")
+        .substringBefore("__grp__").substringBefore("__fld__").substringBefore("__role__")
         .takeIf { it.isNotEmpty() }

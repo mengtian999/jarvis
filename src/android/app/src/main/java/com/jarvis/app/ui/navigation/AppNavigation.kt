@@ -1292,6 +1292,7 @@ fun AppNavigation(
         composable(Routes.ROLE) {
             com.jarvis.app.ui.settings.RoleSettingsScreen(
                 onBack = { navController.safePopBackStack() },
+                providerRepository = providerRepository,
             )
         }
 

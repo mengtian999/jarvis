@@ -1159,12 +1159,20 @@ class SessionListViewModel(
      *   ("以此角色新建会话"). Encoded in the draft id the same way; the draft
      *   seeds _sessionRole from it and ensureSession persists it on first send.
      */
-    fun createNewSession(groupId: String? = null, folderId: String? = null, roleId: String? = null): String? {
+    fun createNewSession(
+        groupId: String? = null,
+        folderId: String? = null,
+        roleId: String? = null,
+        // [T-group-chat] Agent group (multi-role chat). DISTINCT marker from
+        // [groupId] (MODEL group) — see ChatModels.draftInitialAgentGroupId.
+        agentGroupId: String? = null,
+    ): String? {
         if (providerRepository.allVisibleEntries().isEmpty()) return null
         var id = "__new__${java.util.UUID.randomUUID()}"
         if (groupId != null) id += "__grp__$groupId"
         if (folderId != null) id += "__fld__$folderId"
         if (roleId != null) id += "__role__$roleId"
+        if (agentGroupId != null) id += "__agrp__$agentGroupId"
         return id
     }
 

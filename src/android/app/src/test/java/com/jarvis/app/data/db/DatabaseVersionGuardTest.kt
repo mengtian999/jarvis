@@ -2,6 +2,7 @@ package com.jarvis.app.data.db
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -83,7 +84,10 @@ class DatabaseVersionGuardTest {
             // Nullability is load-bearing: NULL is how the Usage page tells a
             // pre-migration row apart from a measured one, and it is what lets
             // an older build INSERT without knowing these columns.
-            assertTrue("$col must be nullable", !f.getBoolean("notNull"))
+            // optBoolean, not getBoolean: Room omits the "notNull" key entirely
+            // for nullable columns — getBoolean throws on the key's absence,
+            // which is exactly the state this assertion wants to see as false.
+            assertFalse("$col must be nullable", f.optBoolean("notNull", false))
         }
     }
 }

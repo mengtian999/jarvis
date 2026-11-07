@@ -1986,6 +1986,42 @@
     <string name="forward_select_at_least_one">Select at least one message to forward</string>
     <string name="chat_longpress_select">Select</string>
     <string name="role_picker_current">Current</string>
+    <!-- [T-group-chat] Agent group chat (multi-role) -->
+    <string name="agent_group_new_chat">New group chat</string>
+    <string name="agent_group_create_title">Create group</string>
+    <string name="agent_group_name_label">Group name</string>
+    <string name="agent_group_name_hint">e.g. Review panel, Project team</string>
+    <string name="agent_group_members_label">Members (tap to add, in speaking order)</string>
+    <string name="agent_group_members_empty">Select at least 2 roles</string>
+    <string name="agent_group_instruction_label">Group instruction (optional)</string>
+    <string name="agent_group_instruction_hint">Shared context every member sees</string>
+    <string name="agent_group_host_label">Moderator (optional)</string>
+    <string name="agent_group_host_none">None</string>
+    <string name="agent_group_create">Create group</string>
+    <string name="agent_group_pick_title">Group chats</string>
+    <string name="agent_group_new">New group</string>
+    <string name="agent_group_settings">Group settings</string>
+    <string name="agent_group_member_participates">Joins @all rounds</string>
+    <string name="agent_group_member_removed">Deleted role</string>
+    <string name="agent_group_cleanup">Remove deleted members</string>
+    <string name="agent_group_model_override">Unified model</string>
+    <string name="agent_group_model_override_off">Off — members use their own models</string>
+    <string name="agent_group_model_pick">Choose model</string>
+    <string name="agent_group_delete">Delete group</string>
+    <string name="agent_group_delete_confirm">Delete this group and all its chats? This cannot be undone.</string>
+    <string name="agent_group_delete_yes">Delete</string>
+    <string name="agent_group_delete_no">Cancel</string>
+    <string name="agent_group_save">Save</string>
+    <string name="agent_group_member_count">%1$d members</string>
+    <string name="role_default_model">Default model</string>
+    <string name="agent_group_member_col">Members (speaking order)</string>
+    <string name="agent_group_host_col">Host</string>
+    <string name="agent_group_order_hint">★ = moderator (speaks last). ↑↓ change speaking order. Tap a member’s ★ to set or clear.</string>
+    <string name="forward_mode_role">Role</string>
+    <string name="forward_mode_group">Group chat</string>
+    <string name="forward_select_group">Select target group</string>
+    <string name="forward_new_group_session">New group chat</string>
+    <string name="forward_auto_respond_group">Have the group respond right away</string>
     <!-- [T-role-filter] Session-list role filter chip -->
     <string name="role_filter_clear">Clear role filter</string>
     <string name="split_no_conversation_title">No Conversation Selected</string>

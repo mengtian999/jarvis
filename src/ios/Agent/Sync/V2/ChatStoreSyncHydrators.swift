@@ -166,6 +166,13 @@ enum ChatStoreSyncHydrators {
             builder: { _ in await buildRolesCollection() },
             merger: { record in await mergeRolesCollection(record: record) }
         )
+        // [T-group-chat] P4: agent groups (multi-role chat rosters).
+        h.register(
+            recordType: "AgentGroupV2",
+            builder: { id in await buildAgentGroup(id: id) },
+            merger: { record in await mergeAgentGroup(record: record) },
+            deletionApplier: { id in await applyAgentGroupDeletion(id: id) }
+        )
 
         logger.info("[SyncCore] ChatStoreSyncHydrators registered: \(SyncCoreHydrators.shared.registeredRecordTypes.count) types")
     }

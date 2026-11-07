@@ -17,13 +17,21 @@ import com.jarvis.app.logging.AppLogger
  * destroy the user's entire chat history), so an unmatched downgrade means the
  * app throws at first database access and simply will not start.
  *
- * [AppDatabase.MIGRATION_12_11] handles the 12 → 11 case, and the same no-op
- * pattern extends to any future ADD COLUMN / ADD TABLE change. But it cannot
- * cover everything: renames, drops, type changes and — most dangerously —
- * changes to the MEANING of existing data have no safe automatic downgrade,
- * and a missing link anywhere in the chain (12 → 11 → 10) breaks the whole
- * path. This guard is the backstop for those, and for the plain human case of
- * forgetting to add the downgrade migration at all.
+ * A registered no-op downgrade migration can make a specific jump safe to
+ * open normally (see [isHandledDowngrade]). But the pattern cannot cover
+ * everything: renames, drops, type changes and — most dangerously — changes
+ * to the MEANING of existing data have no safe automatic downgrade, and a
+ * missing link anywhere in a multi-step chain breaks the whole path. This
+ * guard is the backstop for those, and for the plain human case of forgetting
+ * to add the downgrade migration at all.
+ *
+ * [T-group-chat] NOTE: the pre-role-refactor chain (ending at 12, with its
+ * MIGRATION_12_11) no longer exists — [AppDatabase] was reset to version 1 by
+ * the role refactor and now carries MIGRATION_1_2. No downgrade is "handled"
+ * today: v2→v1 adds a column to `sessions`, and a no-op downgrade would fail
+ * the v1 build's schema identity check (an extra column is a mismatch, not a
+ * harmless extra). Pure ADD TABLE jumps can be registered in
+ * [isHandledDowngrade] again when one appears.
  *
  * ## Why a pre-check instead of catching Room's exception
  *
@@ -46,11 +54,15 @@ object DatabaseVersionGuard {
      * [AppDatabase]'s `@Database` annotation.
      *
      * Kept as a separate constant because the annotation value is not readable
-     * at runtime without reflection. [AppDatabaseVersionTest] asserts the two
+     * at runtime without reflection. [DatabaseVersionGuardTest] asserts the two
      * agree, so they cannot drift apart silently — a stale copy here would
      * either disable the guard or trip it on every launch.
+     *
+     * History: this sat at 12 long after the role refactor reset the DB to
+     * v1 (both constants drifted together with the deleted migration chain);
+     * [T-group-chat] re-synced it when the v1→v2 chain was introduced.
      */
-    const val CODE_DB_VERSION = 12
+    const val CODE_DB_VERSION = 2
 
     /** Filename must match the one passed to `Room.databaseBuilder`. */
     private const val DB_NAME = "jarvis.db"
@@ -107,9 +119,13 @@ object DatabaseVersionGuard {
      * optimistically opened — being wrong in that direction costs the user a
      * screen they can dismiss by upgrading; being wrong the other way costs
      * them a crash.
+     *
+     * Currently NONE: v2→v1 adds `sessions.group_id`, and an added column
+     * trips a v1 build's schema identity check (extra column = mismatch), so
+     * the no-op pattern does not apply. A future pure ADD TABLE bump can be
+     * registered here again.
      */
-    fun isHandledDowngrade(onDiskVersion: Int): Boolean =
-        onDiskVersion == 12 && CODE_DB_VERSION == 11
+    fun isHandledDowngrade(onDiskVersion: Int): Boolean = false
 
     /** Result of the launch-time check. */
     enum class Decision {

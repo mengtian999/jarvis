@@ -2,6 +2,7 @@ package com.jarvis.app.backup
 
 import android.content.Context
 import com.jarvis.app.data.db.AppDatabase
+import com.jarvis.app.data.db.AgentGroupEntity
 import com.jarvis.app.data.db.ChatSessionEntity
 import com.jarvis.app.data.db.CompactMarkerEntity
 import com.jarvis.app.data.db.FolderEntity
@@ -210,6 +211,7 @@ class BackupImporter(
                         BackupCategory.SKILLS -> importSkills(work, fileIndex)
                         BackupCategory.MEMORY -> importMemory(work)
                         BackupCategory.ROLES -> importRoles(work)
+                        BackupCategory.GROUPS -> importAgentGroups(work)
                         BackupCategory.MCP_SERVERS -> importMcpServers(work)
                         BackupCategory.PROVIDERS -> importProviders(work)
                         BackupCategory.ENVIRONMENT_VARIABLES -> importEnvironmentVariables(work)
@@ -685,6 +687,45 @@ class BackupImporter(
         return report
     }
 
+
+    /**
+     * [T-group-chat] Restore agent groups from data/agent_groups.json (one
+     * JSON object per group — the raw DB row shape). Rows are UPSERTED by id
+     * so re-restoring the same package is idempotent; member rosters
+     * referencing roles missing on this device simply stay unresolved
+     * (GroupStore.resolveMembers drops them — same orphan policy as sync).
+     */
+    private suspend fun importAgentGroups(root: File): CategoryReport {
+        val report = CategoryReport(BackupCategory.GROUPS.key)
+        val src = File(root, "data/agent_groups.json")
+        if (!src.isFile) return report
+        val arr = runCatching { org.json.JSONArray(src.readText()) }.getOrElse {
+            report.failed = "malformed agent_groups.json: ${it.message}"
+            return report
+        }
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            val id = o.optString("id", "").trim()
+            if (id.isEmpty()) { report.skipped += 1; continue }
+            db.agentGroupDao().upsertGroup(
+                AgentGroupEntity(
+                    id = id,
+                    name = o.optString("name", "").ifEmpty { "Group" },
+                    instruction = o.optString("instruction", "").ifEmpty { null },
+                    membersJson = o.optString("members_json", "[]"),
+                    hostRoleId = o.optString("host_role_id", "").ifEmpty { null },
+                    modelOverrideJson = o.optString("model_override_json", "").ifEmpty { null },
+                    maxRounds = o.optInt("max_rounds", 1),
+                    createdAt = o.optLong("created_at", System.currentTimeMillis()),
+                    updatedAt = o.optLong("updated_at", System.currentTimeMillis()),
+                ),
+            )
+            report.imported += 1
+        }
+        // Rebuild the render-path snapshot (mirrors RoleStore.refreshAfterRestore).
+        com.jarvis.app.agent.GroupStore.refreshAfterRestore()
+        return report
+    }
     private fun importMcpServers(root: File): CategoryReport {
         val report = CategoryReport(BackupCategory.MCP_SERVERS.key)
         val src = File(root, "data/mcp_servers.json")
@@ -1064,6 +1105,9 @@ class BackupImporter(
             // role restore must not race a memory tree copy into the same
             // directory. Mirrors the export order.
             BackupCategory.ROLES,
+            // [T-group-chat] Groups after roles: group rosters reference role
+            // ids, so resolveMembers on the restored snapshot needs roles in.
+            BackupCategory.GROUPS,
             BackupCategory.MCP_SERVERS,
             // Providers before env-vars: both pull VALUES from secrets.json, but
             // provider import is where credentials for BOTH are applied on iOS.

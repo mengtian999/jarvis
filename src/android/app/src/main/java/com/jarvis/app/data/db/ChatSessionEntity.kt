@@ -20,6 +20,10 @@ import androidx.room.PrimaryKey
         // query and the per-role history view. Plain non-unique index — many
         // sessions share one role, same shape as folder_id.
         androidx.room.Index(value = ["role_id"], name = "index_sessions_role_id"),
+        // [T-group-chat] Backs sessionsInGroup / deleteSessionsInGroup and the
+        // session-list join that renders group rows. Non-unique, same shape as
+        // folder_id / role_id.
+        androidx.room.Index(value = ["group_id"], name = "index_sessions_group_id"),
     ],
 )
 data class ChatSessionEntity(
@@ -74,4 +78,20 @@ data class ChatSessionEntity(
      * role. Mirrors folderId's equality requirement above.
      */
     @ColumnInfo(name = "role_id") val roleId: String? = null,
+    /**
+     * [T-group-chat] The agent group this session belongs to. Non-null marks
+     * a GROUP session (multi-role round-robin chat); null = ordinary session
+     * where roleId keeps its single-persona meaning. By convention a group
+     * session is created with roleId = null and only per-message role_id is
+     * used — NOT enforced by a constraint, so an odd future-sync state
+     * renders (roleId wins) instead of crashing.
+     *
+     * Deliberately NOT a @ForeignKey — same rationale as folderId/roleId:
+     * orphan refs are legitimate transient states. Deleting a group removes
+     * its sessions in an explicit transaction (GroupStore), not via cascade.
+     *
+     * NOTE for list diffing: MUST participate in equality (data class ==
+     * covers it) — same rule as folderId/roleId above.
+     */
+    @ColumnInfo(name = "group_id") val groupId: String? = null,
 )

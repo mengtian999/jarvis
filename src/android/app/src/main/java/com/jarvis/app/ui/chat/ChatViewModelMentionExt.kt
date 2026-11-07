@@ -150,19 +150,92 @@ internal fun ChatViewModel.dismissMentionMenu() {
     _mentionSelectedIndex.value = -1
 }
 
+// ─── [T-group-chat] §6 Member mentions ─────────────────────────────────────
+// In a group chat the SAME `@` popup lists group MEMBERS instead of files
+// (the file picker is a context feature; in a group the question "who should
+// answer" dominates). Parsing of the inserted `@名字` happens at send time
+// (ChatViewModel.selectGroupSpeakers) — here we only insert text.
+
+/**
+ * Live member candidates for the open mention popup: the group's resolved
+ * roster filtered by the active token. Empty when not a group chat — the
+ * popup renders the file picker in that case. Computed per recomposition
+ * (roster is tiny) instead of kept in a flow, so filter changes reflect
+ * immediately without another state channel.
+ */
+internal fun ChatViewModel.groupMentionCandidates(): List<com.jarvis.app.agent.ResolvedGroupMember> {
+    val gid = _agentGroupId.value ?: return emptyList()
+    val group = com.jarvis.app.agent.GroupStore.groupById(gid) ?: return emptyList()
+    // Snapshot-only (sync) resolution: the popup recomposes per keystroke and
+    // the snapshot is primed at startup — no disk fallback, no suspend. A
+    // member whose role is missing from the snapshot is dropped, mirroring
+    // GroupStore.resolveMembers' orphan policy.
+    val resolved = group.members.mapNotNull { m ->
+        com.jarvis.app.agent.RoleStore.roleById(m.roleId)
+            ?.let { com.jarvis.app.agent.ResolvedGroupMember(it, m.participatesInRound) }
+    }
+    val filter = _mentionFilter.value.trim()
+    if (filter.isEmpty()) return resolved
+    return resolved.filter {
+        it.role.metadata.name.contains(filter, ignoreCase = true)
+    }
+}
+
+/**
+ * Replace the active `@<token>` with `@<成员名> ` and return (newText, caret),
+ * mirroring [selectMention]'s span logic.
+ */
+internal fun ChatViewModel.selectGroupMention(
+    member: com.jarvis.app.agent.ResolvedGroupMember,
+    currentText: String,
+    currentCaret: Int,
+): Pair<String, Int> {
+    val anchor = _mentionAnchor.value
+    if (anchor < 0 || anchor > currentText.length) {
+        dismissMentionMenu()
+        return currentText to currentCaret
+    }
+    var endOffset = anchor + 1
+    while (endOffset < currentText.length && !currentText[endOffset].isWhitespace()) {
+        endOffset++
+    }
+    val name = member.role.metadata.name.ifEmpty { "Agent" }
+    val replacement = "@$name "
+    val newText = currentText.substring(0, anchor) +
+        replacement +
+        currentText.substring(endOffset)
+    val newCaret = anchor + replacement.length
+    dismissMentionMenu()
+    return newText to newCaret
+}
+
+/** Keyboard commit for the member popup (mirrors executeSelectedMention). */
+internal fun ChatViewModel.executeSelectedGroupMention(
+    currentText: String,
+    currentCaret: Int,
+): Pair<String, Int>? {
+    val candidates = groupMentionCandidates()
+    if (candidates.isEmpty()) return null
+    val idx = _mentionSelectedIndex.value.let {
+        if (it in candidates.indices) it else 0
+    }
+    return selectGroupMention(candidates[idx], currentText, currentCaret)
+}
+
 /**
  * T-at-filepicker-keyboard: hardware-keyboard navigation helpers. Wraparound
  * matches iOS so Up at row 0 lands at the last row and vice versa.
+ * [T-group-chat] In a group chat the member candidates are the list.
  */
 internal fun ChatViewModel.mentionMenuUp() {
-    val count = mentionEntries.value.size
+    val count = if (isGroupChat) groupMentionCandidates().size else mentionEntries.value.size
     if (count <= 0) return
     val idx = _mentionSelectedIndex.value
     _mentionSelectedIndex.value = if (idx <= 0) count - 1 else idx - 1
 }
 
 internal fun ChatViewModel.mentionMenuDown() {
-    val count = mentionEntries.value.size
+    val count = if (isGroupChat) groupMentionCandidates().size else mentionEntries.value.size
     if (count <= 0) return
     val idx = _mentionSelectedIndex.value
     _mentionSelectedIndex.value = if (idx >= count - 1) 0 else idx + 1

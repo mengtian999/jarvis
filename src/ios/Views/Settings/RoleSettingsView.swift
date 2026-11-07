@@ -253,6 +253,23 @@ struct RoleEditorView: View {
     @State private var lang: String = "auto"
     @State private var body: String = ""
     @State private var avatarImage: UIImage? = nil
+    /// [T-group-chat] §5 默认模型选择器状态。"" = 跟随默认（model 为 nil）；
+    /// 否则为 ModelEntry 的 compositeKey（"{providerInstanceId}/{baseModel.id}"）。
+    @State private var modelSelection: String = ""
+
+    /// compositeKey → ref（nil = 跟随默认）。选择器的 tag 空间是 String，
+    /// ref 的存取集中在这里做双向转换。
+    private static func modelRef(for selection: String) -> AgentGroupModelRef? {
+        guard !selection.isEmpty, let entry = ProviderConfigStore.shared.entry(for: selection) else {
+            return nil
+        }
+        return AgentGroupModelRef(modelId: entry.baseModel.id, providerInstanceId: entry.providerInstanceId)
+    }
+
+    private static func selectionId(for ref: AgentGroupModelRef?) -> String {
+        guard let ref else { return "" }
+        return "\(ref.providerInstanceId)/\(ref.modelId)"
+    }
     
     var body: some View {
         NavigationStack {
@@ -281,11 +298,20 @@ struct RoleEditorView: View {
                     TextField("角色名称", text: $name)
                     TextField("风格描述", text: $style, axis: .vertical)
                         .submitLabel(.done)
-                    
+
                     Picker("语言", selection: $lang) {
                         Text("自动").tag("auto")
                         Text("中文").tag("zh")
                         Text("英文").tag("en")
+                    }
+
+                    // [T-group-chat] §5 默认模型 — 群覆盖 > 角色模型 > 会话默认。
+                    // 跟随默认 = 现有行为不变。
+                    Picker("默认模型", selection: $modelSelection) {
+                        Text("跟随默认").tag("")
+                        ForEach(ProviderConfigStore.shared.resolvedAgentLoopEntries) { entry in
+                            Text(entry.model.displayName).tag(entry.id)
+                        }
                     }
                 }
                 
@@ -363,11 +389,16 @@ struct RoleEditorView: View {
             lang = role.metadata.lang
             body = role.body
             avatarImage = role.avatarData.flatMap { UIImage(data: $0) }
+            modelSelection = Self.selectionId(for: role.metadata.model)
         }
     }
-    
+
     private func saveRole() {
-        let metadata = RoleMetadata(name: name, style: style, lang: lang)
+        let metadata = RoleMetadata(
+            name: name, style: style, lang: lang,
+            isDefault: role?.metadata.isDefault ?? false,
+            model: Self.modelRef(for: modelSelection),
+        )
         let newRole = RoleFile(
             metadata: metadata,
             body: body,

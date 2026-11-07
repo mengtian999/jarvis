@@ -2482,5 +2482,12 @@
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
     },
-    "jarvis": "Jarvis"
+    "jarvis": "Jarvis",
+    "appSubtitle": "Criptografia de ponta a ponta, descentralizado",
+    "appDescription": "Suas conversas podem ser lidas apenas por vocês dois, sem olhos de terceiros.",
+    "signIn": "Entrar",
+    "createNewAccount": "Criar nova conta",
+    "searchOrEnterHomeserverAddress": "Pesquisar ou inserir o endereço do servidor",
+    "signInGreeting": "Já tem uma conta no Matrix? Bem-vindo de volta! Selecione seu servidor e entre.",
+    "signUpGreeting": "O Bit Jarvis é descentralizado! Selecione um servidor onde deseja criar sua conta e vamos lá!"
 }

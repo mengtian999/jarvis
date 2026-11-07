@@ -111,6 +111,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -144,6 +145,7 @@ import androidx.compose.material3.Switch
 // [T-role-forward] Forward sheet controls.
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.RadioButton
 import com.jarvis.app.ui.settings.SettingsSwitch
 import com.jarvis.app.BuildConfig
@@ -543,6 +545,9 @@ fun ChatScreen(
      *  keep the list pane / scroll / sidebar state, and the tap is not dropped
      *  by the safeNavigate RESUMED guard while the RolePickerSheet is open. */
     onNewChatWithRole: (roleId: String) -> Unit = {},
+    /** [T-group-chat] 发起群聊确认后回调（携带群 id）——与 onNewChatWithRole
+     *  同一条 pane 导航链：创建 __agrp__ 草稿并跳转，当前会话不受影响。 */
+    onNewAgentGroupChat: (agentGroupId: String) -> Unit = {},
     onOpenTerminal: () -> Unit = {},
     /** Open the in-app terminal with [command] pre-filled at the prompt
      *  (no trailing newline — the user reviews and presses Enter manually).
@@ -890,6 +895,8 @@ fun ChatScreen(
     // actions. Never switches THIS session's persona.
     var showRoleEntrySheet by remember { mutableStateOf(false) }
     var showRolePickerSheet by remember { mutableStateOf(false) }
+    // [T-group-chat] 发起群聊 sheet（本地承载，确认后经 onNewAgentGroupChat 跳转）。
+    var showAgentGroupSheet by remember { mutableStateOf(false) }
     // [T-role-forward] Message multi-select → forward-to-role flow state.
     // forwardSelecting = selection mode (rows toggle on tap); the ids are UI
     // ChatMessage ids, flattened to DB row ids (sourceDbIds) at forward time.
@@ -901,6 +908,9 @@ fun ChatScreen(
     var forwardRoleId by remember { mutableStateOf<String?>(null) }
     var forwardTargetSessionId by remember { mutableStateOf<String?>(null) }
     var forwardAutoRespond by remember { mutableStateOf(true) }
+    // [T-group-chat] 转发目标模式：false = 角色（原行为），true = 群聊。
+    var forwardTargetIsGroup by remember { mutableStateOf(false) }
+    var forwardGroupId by remember { mutableStateOf<String?>(null) }
     // [T-forward-note] Optional user note appended to the forwarded block.
     var forwardNote by remember { mutableStateOf("") }
     // [T-android-modelpicker-stuck-ripple] Interaction source for the navbar
@@ -3004,6 +3014,20 @@ fun ChatScreen(
                                     Icon(Icons.Outlined.Forum, contentDescription = null)
                                 },
                             )
+                            // [T-group-chat] 发起群聊 — right below 新建对话 per
+                            // user feedback; opens the same group picker/creator
+                            // as the session list, then jumps to the new group
+                            // chat via the pane navigator.
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.agent_group_new_chat)) },
+                                onClick = {
+                                    showChatMenu = false
+                                    showAgentGroupSheet = true
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Group, contentDescription = null)
+                                },
+                            )
                             MinisMenuDivider()
                             // [T-role-forward] Forward to another role's session.
                             // No selection yet -> toast + enter select mode; selection
@@ -4257,7 +4281,13 @@ fun ChatScreen(
                             // [T-role-message-level] Per-message persona: pass the
                             // header flat item's roleId through so each turn's
                             // header renders its generating role.
-                            is FlatChatItem.AssistantHeader -> AssistantHeader(roleId = item.roleId)
+                            // [T-group-chat] Group chats also carry the
+                            // per-bubble model label; ordinary chats pass null
+                            // and keep the header clean.
+                            is FlatChatItem.AssistantHeader -> AssistantHeader(
+                                roleId = item.roleId,
+                                modelDisplayName = if (viewModel.isGroupChat) item.modelDisplayName else null,
+                            )
                             is FlatChatItem.AssistantText -> BoundsTrackedBlock(
                                 messageId = item.messageId,
                                 slotKey = "text:${item.block.id}",
@@ -4391,7 +4421,7 @@ fun ChatScreen(
                                 } else null,
                             )
                             is FlatChatItem.AssistantTyping -> TypingIndicator(
-                                roleName = sessionRole.metadata.name,
+                                roleId = item.roleId,
                             )
                             is FlatChatItem.AssistantError -> InlineErrorBanner(
                                 error = item.error,
@@ -4889,6 +4919,8 @@ fun ChatScreen(
                                     forwardRoleId = null
                                     forwardTargetSessionId = null
                                     forwardAutoRespond = true
+                                    forwardTargetIsGroup = false
+                                    forwardGroupId = null
                                     showForwardSheet = true
                                 },
                             ) { Text(stringResource(R.string.forward_to_role)) }
@@ -5183,7 +5215,83 @@ fun ChatScreen(
                                 .background(ChatColors.inputBg, RoundedCornerShape(10.dp))
                                 .border(0.5.dp, ChatColors.toolBorder, RoundedCornerShape(10.dp)),
                         ) {
-                            if (mentionEntries.isEmpty()) {
+                            // [T-group-chat] §6 In a group chat the @ popup
+                            // lists MEMBERS (avatar + name + model label) —
+                            // the file picker below is an ordinary-chat feature.
+                            if (viewModel.isGroupChat) {
+                                val groupCandidates = viewModel.groupMentionCandidates()
+                                if (groupCandidates.isEmpty()) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.mention_no_match),
+                                            fontSize = 13.sp,
+                                            color = ChatColors.secondaryText,
+                                        )
+                                    }
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxWidth().height(192.dp),
+                                    ) {
+                                        itemsIndexed(groupCandidates) { i, member ->
+                                            val name = member.role.metadata.name.ifEmpty { "Agent" }
+                                            val modelLabel = member.role.metadata.model?.modelId
+                                            val isSelected = i == mentionSelectedIndex
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .background(
+                                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                        else Color.Transparent,
+                                                    )
+                                                    .clickable {
+                                                        val (newText, newCaret) = viewModel.selectGroupMention(
+                                                            member,
+                                                            currentText = inputFieldValue.text,
+                                                            currentCaret = inputFieldValue.selection.end,
+                                                        )
+                                                        viewModel.setInputText(newText)
+                                                        inputFieldValue = androidx.compose.ui.text.input.TextFieldValue(
+                                                            text = newText,
+                                                            selection = androidx.compose.ui.text.TextRange(newCaret),
+                                                        )
+                                                    }
+                                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                com.jarvis.app.ui.chat.GroupAvatarStack(listOf(member.role.roleId), avatarSize = 22)
+                                                Spacer(modifier = Modifier.width(10.dp))
+                                                Text(
+                                                    text = name,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = ChatColors.primaryText,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f),
+                                                )
+                                                if (modelLabel != null) {
+                                                    Text(
+                                                        text = modelLabel,
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = ChatColors.secondaryText,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        modifier = Modifier
+                                                            .background(ChatColors.toolCapsuleBg, RoundedCornerShape(8.dp))
+                                                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if (mentionEntries.isEmpty()) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -6100,10 +6208,20 @@ fun ChatScreen(
                                             // cursor, so Tab takes the selected
                                             // row rather than the first.
                                             Key.Enter, Key.Tab -> {
-                                                val result = viewModel.executeSelectedMention(
-                                                    currentText = inputFieldValue.text,
-                                                    currentCaret = inputFieldValue.selection.end,
-                                                )
+                                                // [T-group-chat] In group chats
+                                                // the popup lists members — the
+                                                // commit inserts @名字.
+                                                val result = if (viewModel.isGroupChat) {
+                                                    viewModel.executeSelectedGroupMention(
+                                                        currentText = inputFieldValue.text,
+                                                        currentCaret = inputFieldValue.selection.end,
+                                                    )
+                                                } else {
+                                                    viewModel.executeSelectedMention(
+                                                        currentText = inputFieldValue.text,
+                                                        currentCaret = inputFieldValue.selection.end,
+                                                    )
+                                                }
                                                 if (result != null) {
                                                     val (newText, newCaret) = result
                                                     viewModel.setInputText(newText)
@@ -6978,6 +7096,19 @@ fun ChatScreen(
                     onDismiss = { showRolePickerSheet = false },
                 )
             }
+            // [T-group-chat] 发起群聊 sheet — same picker/creator as the session
+            // list; confirm navigates to the new group chat via the pane
+            // navigator (onNewAgentGroupChat), leaving this session untouched.
+            if (showAgentGroupSheet) {
+                com.jarvis.app.ui.chat.AgentGroupSheet(
+                    providerRepository = providerRepository,
+                    onDismiss = { showAgentGroupSheet = false },
+                    onOpenGroupChat = { gid ->
+                        showAgentGroupSheet = false
+                        onNewAgentGroupChat(gid)
+                    },
+                )
+            }
             // [T-role-forward] Forward-to-role sheet. Two steps: pick the
             // target role, then pick the destination (new chat / one of that
             // role's existing chats) + the auto-respond toggle. Confirm
@@ -7008,7 +7139,30 @@ fun ChatScreen(
                             .padding(bottom = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        if (chosenRole == null) {
+                        // [T-group-chat] 目标模式切换：角色（原行为）/ 群聊。
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        ) {
+                            FilterChip(
+                                selected = !forwardTargetIsGroup,
+                                onClick = {
+                                    forwardTargetIsGroup = false
+                                    forwardGroupId = null
+                                },
+                                label = { Text(stringResource(R.string.forward_mode_role)) },
+                            )
+                            FilterChip(
+                                selected = forwardTargetIsGroup,
+                                onClick = {
+                                    forwardTargetIsGroup = true
+                                    forwardRoleId = null
+                                },
+                                label = { Text(stringResource(R.string.forward_mode_group)) },
+                            )
+                        }
+                        if (!forwardTargetIsGroup && chosenRole == null) {
                             // Step 1: target role
                             Text(
                                 text = stringResource(R.string.forward_select_role),
@@ -7074,7 +7228,180 @@ fun ChatScreen(
                                     }
                                 }
                             }
-                        } else {
+                        } else if (forwardTargetIsGroup && forwardGroupId == null) {
+                            // [T-group-chat] Step 1（群模式）：选择目标群。
+                            val groups by com.jarvis.app.agent.GroupStore.groupsSnapshot.collectAsState()
+                            Text(
+                                text = stringResource(R.string.forward_select_group),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            )
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                            ) {
+                                items(
+                                    items = groups,
+                                    key = { it.id },
+                                ) { group ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { forwardGroupId = group.id }
+                                            .padding(vertical = 10.dp),
+                                    ) {
+                                        com.jarvis.app.ui.chat.GroupAvatarStack(
+                                            group.members.map { it.roleId },
+                                            avatarSize = 22,
+                                        )
+                                        Column {
+                                            Text(
+                                                text = group.name,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.agent_group_member_count, group.members.size),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        } else if (forwardTargetIsGroup) {
+                            // [T-group-chat] Step 2（群模式）：目标群会话 + 自动回应。
+                            val chosenGroup = forwardGroupId
+                                ?.let { id -> com.jarvis.app.agent.GroupStore.groupById(id) }
+                            Text(
+                                text = stringResource(R.string.forward_select_target),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            )
+                            val groupSessions = allSessions
+                                .filter { it.groupId == forwardGroupId }
+                                .sortedByDescending { it.updatedAt }
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                            ) {
+                                item {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { forwardTargetSessionId = null }
+                                            .padding(vertical = 8.dp),
+                                    ) {
+                                        RadioButton(
+                                            selected = forwardTargetSessionId == null,
+                                            onClick = { forwardTargetSessionId = null },
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.forward_new_group_session),
+                                            style = MaterialTheme.typography.bodyLarge,
+                                        )
+                                    }
+                                }
+                                items(
+                                    items = groupSessions,
+                                    key = { s -> s.id },
+                                ) { s ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { forwardTargetSessionId = s.id }
+                                            .padding(vertical = 8.dp),
+                                    ) {
+                                        RadioButton(
+                                            selected = forwardTargetSessionId == s.id,
+                                            onClick = { forwardTargetSessionId = s.id },
+                                        )
+                                        Column {
+                                            Text(
+                                                text = s.title ?: chosenGroup?.name ?: "Group",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                            s.lastMessage?.let {
+                                                Text(
+                                                    text = it,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                            ) {
+                                Checkbox(
+                                    checked = forwardAutoRespond,
+                                    onCheckedChange = { forwardAutoRespond = it },
+                                )
+                                Text(
+                                    text = stringResource(R.string.forward_auto_respond_group),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                            OutlinedTextField(
+                                value = forwardNote,
+                                onValueChange = { forwardNote = it },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp),
+                                label = { Text(stringResource(R.string.forward_note_label)) },
+                                placeholder = { Text(stringResource(R.string.forward_note_placeholder)) },
+                                singleLine = false,
+                                minLines = 1,
+                                maxLines = 4,
+                            )
+                            Button(
+                                onClick = {
+                                    val gid = forwardGroupId ?: return@Button
+                                    val dbIds = viewModel.dbIdsForUiMessageIds(forwardSelectionIds)
+                                    val noteText = forwardNote
+                                    showForwardSheet = false
+                                    forwardSelecting = false
+                                    forwardSelectionIds = emptySet()
+                                    forwardNote = ""
+                                    if (dbIds.isEmpty()) return@Button
+                                    viewModel.forwardMessagesToGroup(
+                                        messageIds = dbIds,
+                                        groupId = gid,
+                                        targetSessionId = forwardTargetSessionId,
+                                        autoRespond = forwardAutoRespond,
+                                        note = noteText,
+                                    ) { targetId ->
+                                        if (targetId != null) {
+                                            onMoveToSession(targetId)
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp),
+                            ) {
+                                Text(stringResource(R.string.forward_confirm))
+                            }
+                        } else if (!forwardTargetIsGroup && chosenRole != null) {
                             // Step 2: destination + auto-respond
                             Text(
                                 text = stringResource(R.string.forward_select_target),

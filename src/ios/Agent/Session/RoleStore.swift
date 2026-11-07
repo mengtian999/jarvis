@@ -137,7 +137,10 @@ enum RoleStore {
             name: json["name"] as? String ?? "Jarvis",
             style: json["style"] as? String ?? "",
             lang: json["lang"] as? String ?? "auto",
-            isDefault: roleId == `defaultRoleId`
+            isDefault: roleId == `defaultRoleId`,
+            // [T-group-chat] §2.3 Optional model ref — absent on pre-group
+            // role.json files; malformed values degrade to nil (default model).
+            model: Self.parseModelRef(json["model"] as? [String: Any])
         )
         
         let body = json["body"] as? String ?? ""
@@ -151,6 +154,16 @@ enum RoleStore {
         let avatarURL = rolesDir.appendingPathComponent(roleId).appendingPathComponent("avatar.png")
         return try? Data(contentsOf: avatarURL)
     }
+
+    /// [T-group-chat] §2.3 `{"modelId":"…","providerInstanceId":"…"}` → ref, or nil.
+    private static func parseModelRef(_ dict: [String: Any]?) -> AgentGroupModelRef? {
+        guard let dict,
+              let modelId = dict["modelId"] as? String, !modelId.isEmpty,
+              let instanceId = dict["providerInstanceId"] as? String, !instanceId.isEmpty else {
+            return nil
+        }
+        return AgentGroupModelRef(modelId: modelId, providerInstanceId: instanceId)
+    }
     
     /// 保存角色
     static func save(_ role: RoleFile) throws {
@@ -162,12 +175,17 @@ enum RoleStore {
         
         // 保存 role.json
         let fileURL = roleDir.appendingPathComponent("role.json")
-        let json: [String: Any] = [
+        var json: [String: Any] = [
             "name": role.metadata.name,
             "style": role.metadata.style,
             "lang": role.metadata.lang,
             "body": role.body
         ]
+        // [T-group-chat] §2.3 Optional — omitted entirely when unset so
+        // role.json stays byte-compatible with pre-group installs.
+        if let ref = role.metadata.model {
+            json["model"] = ["modelId": ref.modelId, "providerInstanceId": ref.providerInstanceId]
+        }
         
         let data = try JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys])
         try data.write(to: fileURL, options: .atomic)
@@ -350,9 +368,29 @@ struct RoleMetadata: Equatable, Hashable {
     var style: String
     var lang: String
     var isDefault: Bool  // 是否为默认角色
-    
+
+    /// [T-group-chat] §2.3 The role's default model — a COMPLETE reference
+    /// ({modelId, providerInstanceId}, same shape as the message attribution
+    /// snapshot columns). Nil = follow the current default model, which keeps
+    /// every pre-existing behavior identical. Resolution chain at speak time:
+    /// group unified-model override > this > session default.
+    var model: AgentGroupModelRef?
+
     /// 显示头像
     var displayEmoji: String { "✨" }
+
+    static func == (lhs: RoleMetadata, rhs: RoleMetadata) -> Bool {
+        lhs.name == rhs.name && lhs.style == rhs.style && lhs.lang == rhs.lang &&
+        lhs.isDefault == rhs.isDefault && lhs.model == rhs.model
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
+        hasher.combine(style)
+        hasher.combine(lang)
+        hasher.combine(isDefault)
+        hasher.combine(model)
+    }
 }
 
 /// 角色文件
@@ -361,17 +399,18 @@ struct RoleFile: Equatable, Hashable {
     var body: String
     var avatarData: Data?
     var roleId: String
-    
+
     /// 哈希支持
     func hash(into hasher: inout Hasher) {
         hasher.combine(roleId)
     }
-    
+
     static func == (lhs: RoleFile, rhs: RoleFile) -> Bool {
         lhs.roleId == rhs.roleId &&
         lhs.metadata.name == rhs.metadata.name &&
         lhs.metadata.style == rhs.metadata.style &&
-        lhs.metadata.lang == rhs.metadata.lang
+        lhs.metadata.lang == rhs.metadata.lang &&
+        lhs.metadata.model == rhs.metadata.model
     }
 }
 

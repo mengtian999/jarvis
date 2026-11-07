@@ -2205,5 +2205,15 @@
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
     },
-    "jarvis": "Jarvis"
+    "jarvis": "Jarvis",
+    "appSubtitle": "Criptare de la capăt la capăt, descentralizat",
+    "appDescription": "Conversațiile voastre pot fi citite doar de voi doi, fără ochi străini.",
+    "continueText": "Continuare",
+    "createNewAccount": "Creează un cont nou",
+    "loginWithMatrixId": "Conectați-vă cu BitJarvis-ID",
+    "searchOrEnterHomeserverAddress": "Căutați sau introduceți adresa homeserver-ului",
+    "signIn": "Conectați-vă",
+    "signInGreeting": "Aveți deja un cont pe Matrix? Bine ați revenit! Selectați homeserver-ul și conectați-vă.",
+    "signUpGreeting": "Bit Jarvis este descentralizat! Selectați un server pe care să vă creați contul și hai la treabă!",
+    "website": "Site web"
 }

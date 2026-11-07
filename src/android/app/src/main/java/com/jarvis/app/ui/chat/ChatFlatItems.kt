@@ -310,7 +310,13 @@ internal sealed class FlatChatItem {
     // persona that generated THIS message (snapshot → default), not the
     // global current role. Included in equals/hashCode so a role change on
     // the source rows recomposes the header.
-    data class AssistantHeader(val messageId: String, val roleId: String? = null) : FlatChatItem() {
+    // [T-group-chat] modelDisplayName rides along for the per-bubble model
+    // label (group chats only); null in ordinary chats.
+    data class AssistantHeader(
+        val messageId: String,
+        val roleId: String? = null,
+        val modelDisplayName: String? = null,
+    ) : FlatChatItem() {
         override val key = "header:$messageId"
         override val contentType = "header"
     }
@@ -447,7 +453,9 @@ internal sealed class FlatChatItem {
         override val contentType = "info"
     }
 
-    data class AssistantTyping(val messageId: String) : FlatChatItem() {
+    // [T-group-chat] roleId rides along so the typing indicator resolves the
+    // CURRENT SPEAKER's name (relabels per member in a group round).
+    data class AssistantTyping(val messageId: String, val roleId: String? = null) : FlatChatItem() {
         override val key = "typing:$messageId"
         override val contentType = "typing"
     }
@@ -612,9 +620,16 @@ internal fun buildFlatChatItems(
         val prevNonSystem = (idx - 1 downTo 0).asSequence()
             .map { messages[it] }
             .firstOrNull { it.role != "system" }
-        val isResumeContinuation = prevNonSystem?.role == "assistant"
+        // [T-group-chat][P2-fix] The T83 header suppression exists so a RESUMED
+        // turn reads as one continuous turn of the SAME persona. In a group
+        // round member B's reply directly follows member A's assistant message
+        // — a DIFFERENT speaker — and must carry its own header/avatar.
+        // Ordinary sessions: every assistant row has the same session roleId,
+        // so the suppression is preserved byte-for-byte.
+        val isResumeContinuation = prevNonSystem?.role == "assistant" &&
+            prevNonSystem.roleId == message.roleId
         if (!isSystem && !isResumeContinuation) {
-            out.add(dedupe(FlatChatItem.AssistantHeader(message.id, message.roleId)))
+            out.add(dedupe(FlatChatItem.AssistantHeader(message.id, message.roleId, message.modelDisplayName)))
         }
 
         val blocks = message.toolBlocks
@@ -764,7 +779,7 @@ internal fun buildFlatChatItems(
             }
         }
         if (message.isStreaming && (!hasVisibleContent || message.isAwaitingModelResponse)) {
-            out.add(dedupe(FlatChatItem.AssistantTyping(message.id)))
+            out.add(dedupe(FlatChatItem.AssistantTyping(message.id, message.roleId)))
         }
 
         // Legacy fallback: pre-migration sessions stored all text in message.content

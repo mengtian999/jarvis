@@ -276,7 +276,7 @@ import com.jarvis.app.ui.theme.ChatColors
 import com.jarvis.app.ui.components.MinisTextButton
 
 @Composable
-internal fun AssistantHeader(roleId: String? = null) {
+internal fun AssistantHeader(roleId: String? = null, modelDisplayName: String? = null) {
     // [T-role-message-level] Per-message persona: resolve the roleId carried
     // by THIS message's header flat item against the live snapshot (→ default
     // on orphan refs / legacy null). Reading snapshotRoles makes the header
@@ -339,6 +339,26 @@ internal fun AssistantHeader(roleId: String? = null) {
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface,
         )
+        // [T-group-chat] §5 Per-bubble model label — GROUP chats only (the
+        // call site passes non-null just there). Multi-model groups need to
+        // see which brain produced each bubble; ordinary chats stay clean.
+        if (!modelDisplayName.isNullOrBlank()) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = modelDisplayName,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(6.dp),
+                    )
+                    .padding(horizontal = 5.dp, vertical = 1.dp),
+            )
+        }
     }
 }
 
@@ -422,7 +442,10 @@ internal fun AssistantMessageView(message: ChatMessage, onRetry: (() -> Unit)? =
         // Typing indicator when streaming with no content yet (info-only blocks don't count)
         val hasRealBlocks = message.toolBlocks.any { it.kind != "info" }
         if (message.isStreaming && message.content.isEmpty() && !hasRealBlocks) {
-            TypingIndicator()
+            // [T-group-chat] The message's own roleId — in a group round the
+            // placeholder carries the CURRENT SPEAKER, so the indicator reads
+            // "<成员名> 正在思考" instead of the session persona.
+            TypingIndicator(roleId = message.roleId)
         }
 
         // Legacy fallback: render message.content when no text blocks exist (old sessions).

@@ -185,7 +185,8 @@ extension AIChatViewModel {
     }
 
     func mentionMenuUp() {
-        let count = filteredMentionEntries.count
+        // [T-group-chat] In group chats the member candidates are the list.
+        let count = isGroupChat ? groupMentionCandidates.count : filteredMentionEntries.count
         guard count > 0 else { return }
         if mentionSelectedIndex <= 0 {
             mentionSelectedIndex = count - 1
@@ -195,7 +196,7 @@ extension AIChatViewModel {
     }
 
     func mentionMenuDown() {
-        let count = filteredMentionEntries.count
+        let count = isGroupChat ? groupMentionCandidates.count : filteredMentionEntries.count
         guard count > 0 else { return }
         if mentionSelectedIndex >= count - 1 {
             mentionSelectedIndex = 0
@@ -241,6 +242,56 @@ extension AIChatViewModel {
         dismissMentionMenu()
         inputText = newText
         pendingCaret = newCaret
+    }
+
+
+    // MARK: - [T-group-chat] §6 Member mentions
+    // In a group chat the SAME @ popup lists group MEMBERS instead of files.
+    // Parsing of the inserted "@名字" happens at send time
+    // (selectGroupSpeakers) — here we only insert text. Snapshot-only
+    // (sync) resolution, mirroring Android groupMentionCandidates.
+
+    var groupMentionCandidates: [ResolvedGroupMember] {
+        guard let gid = agentGroupId,
+              let group = GroupStore.groupById(gid) else { return [] }
+        let resolved = group.members.compactMap { m -> ResolvedGroupMember? in
+            guard let role = RoleStore.roleById(m.roleId) else { return nil }
+            return ResolvedGroupMember(role: role, participatesInRound: m.participatesInRound)
+        }
+        let f = mentionFilter.trimmingCharacters(in: .whitespaces)
+        guard !f.isEmpty else { return resolved }
+        return resolved.filter { $0.role.metadata.name.range(of: f, options: .caseInsensitive) != nil }
+    }
+
+    func selectGroupMention(_ member: ResolvedGroupMember) {
+        guard mentionAnchor >= 0 else { return }
+        let nsText = inputText as NSString
+        let anchor = min(mentionAnchor, nsText.length)
+        var endOffset = anchor + 1
+        while endOffset < nsText.length {
+            let ch = nsText.character(at: endOffset)
+            if let s = UnicodeScalar(ch), CharacterSet.whitespacesAndNewlines.contains(s) { break }
+            endOffset += 1
+        }
+        let name = member.role.metadata.name.isEmpty ? "Agent" : member.role.metadata.name
+        let replacement = "@\(name) "
+        let newText = nsText.replacingCharacters(
+            in: NSRange(location: anchor, length: endOffset - anchor),
+            with: replacement
+        )
+        let newCaret = anchor + (replacement as NSString).length
+        dismissMentionMenu()
+        inputText = newText
+        pendingCaret = newCaret
+    }
+
+    func executeSelectedGroupMention() -> Bool {
+        let candidates = groupMentionCandidates
+        guard !candidates.isEmpty else { return false }
+        let idx = (mentionSelectedIndex >= 0 && mentionSelectedIndex < candidates.count)
+            ? mentionSelectedIndex : 0
+        selectGroupMention(candidates[idx])
+        return true
     }
 
 }

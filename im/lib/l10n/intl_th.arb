@@ -1877,5 +1877,25 @@
     "@changeAccountProvider": {
         "description": "Label for the button to change the account provider (homeserver)."
     },
-    "jarvis": "Jarvis"
+    "jarvis": "Jarvis",
+    "addAccount": "เพิ่มบัญชี",
+    "appSubtitle": "เข้ารหัสแบบ end-to-end ไร้ศูนย์กลาง",
+    "appDescription": "บทสนทนาของคุณอ่านได้เฉพาะคุณทั้งสองเท่านั้น ไม่มีตาคนที่สาม",
+    "continueText": "ดำเนินการต่อ",
+    "createNewAccount": "สร้างบัญชีใหม่",
+    "hydrate": "กู้คืนจากไฟล์สำรอง",
+    "logInTo": "เข้าสู่ระบบ {homeserver}",
+    "login": "เข้าสู่ระบบ",
+    "loginWithMatrixId": "เข้าสู่ระบบด้วย BitJarvis-ID",
+    "password": "รหัสผ่าน",
+    "passwordForgotten": "ลืมรหัสผ่าน",
+    "pleaseEnterYourPassword": "กรุณาใส่รหัสผ่าน",
+    "pleaseEnterYourUsername": "กรุณาใส่ชื่อผู้ใช้",
+    "privacy": "ความเป็นส่วนตัว",
+    "searchOrEnterHomeserverAddress": "ค้นหาหรือป้อนที่อยู่ homeserver",
+    "signIn": "ลงชื่อเข้าใช้",
+    "signInGreeting": "มีบัญชี Matrix อยู่แล้วใช่ไหม ยินดีต้อนรับกลับ! เลือก homeserver ของคุณแล้วลงชื่อเข้าใช้",
+    "signUpGreeting": "Bit Jarvis เป็นแบบไร้ศูนย์กลาง! เลือกเซิร์ฟเวอร์ที่ต้องการสร้างบัญชี แล้วเริ่มกันเลย!",
+    "theyDontMatch": "ไม่ตรงกัน",
+    "website": "เว็บไซต์"
 }

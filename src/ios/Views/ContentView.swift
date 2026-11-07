@@ -922,6 +922,21 @@ struct ContentView: View {
         return roleId.isEmpty ? nil : roleId
     }
 
+    // [T-group-chat] Agent group binding rides in the draft id exactly like
+    // the role binding (__agrp__ — distinct from __grp__ = MODEL group).
+    private static let agentGroupSeparator = "__agrp__"
+
+    private static func makeNewSessionId(agentGroupId: String) -> String {
+        "\(newSessionPrefix)\(UUID().uuidString)\(agentGroupSeparator)\(agentGroupId)"
+    }
+
+    private static func extractAgentGroupId(from id: String) -> String? {
+        guard let range = id.range(of: agentGroupSeparator) else { return nil }
+        let raw = String(id[range.upperBound...])
+        let gid = raw.components(separatedBy: groupSeparator).first ?? raw
+        return gid.isEmpty ? nil : gid
+    }
+
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject var shareCoordinator: ShareCoordinator
     @ObservedObject private var deepLink = DeepLinkCoordinator.shared
@@ -1064,6 +1079,8 @@ struct ContentView: View {
     @State private var showAlarmList = false
     @State private var hasAlarms = false
     @State private var activeToolSheet: ToolSheet?
+    // [T-group-chat] 发起群聊 sheet.
+    @State private var showAgentGroupSheet = false
     #if DEBUG
     // [debug] Keep the screen awake (disable the idle/auto-lock timer) while the
     // app is in the foreground. Memory-only on purpose — NOT persisted, so it
@@ -2160,7 +2177,7 @@ struct ContentView: View {
                                 .id(id)
                         }
                     } else {
-                        AIChatView(sessionId: Self.isNewSessionId(id) ? nil : id, draftId: Self.isNewSessionId(id) ? id : nil, initialGroupId: Self.extractGroupId(from: id), initialRoleId: Self.extractRoleId(from: id))
+                        AIChatView(sessionId: Self.isNewSessionId(id) ? nil : id, draftId: Self.isNewSessionId(id) ? id : nil, initialGroupId: Self.extractGroupId(from: id), initialRoleId: Self.extractRoleId(from: id), initialAgentGroupId: Self.extractAgentGroupId(from: id))
                             .id(id)
                             .onAppear {
                                 if currentStackSessionId != id {
@@ -2201,7 +2218,7 @@ struct ContentView: View {
             // on first send. The .id() ensures each draft gets its own View lifecycle.
             let isDraft = Self.isNewSessionId(id)
             let effectiveId: String? = isDraft ? nil : id
-            AIChatView(sessionId: effectiveId, draftId: isDraft ? id : nil, initialGroupId: Self.extractGroupId(from: id), initialRoleId: Self.extractRoleId(from: id))
+            AIChatView(sessionId: effectiveId, draftId: isDraft ? id : nil, initialGroupId: Self.extractGroupId(from: id), initialRoleId: Self.extractRoleId(from: id), initialAgentGroupId: Self.extractAgentGroupId(from: id))
                 .id(id)
                 .onAppear {
                     draftLog.info("🔑DRAFT detailView APPEAR id=\(id) effectiveId=\(effectiveId ?? "nil") isDraft=\(isDraft)")
@@ -2992,6 +3009,24 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sidebarToolbarContent }
+        // [T-group-chat] 发起群聊 — pick an existing agent group
+        // (→ new group chat) or create/edit one. Confirm in create mode
+        // navigates straight into the new group session via the same
+        // draft-id path as a plain new chat.
+        .sheet(isPresented: $showAgentGroupSheet) {
+            AgentGroupSheet(
+                onOpenGroupChat: { gid in
+                    let draftId = Self.makeNewSessionId(agentGroupId: gid)
+                    if isWideLayout {
+                        openSession(draftId)
+                    } else {
+                        commitNavigationPath(NavigationPath([draftId]))
+                        currentStackSessionId = draftId
+                    }
+                },
+                onDismiss: { showAgentGroupSheet = false },
+            )
+        }
         }
     }
 
@@ -3170,6 +3205,21 @@ struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: showSearchBar ? [] : .bottom)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { sidebarToolbarContent }
+        // [T-group-chat] Same sheet as splitList — iPhone stack list.
+        .sheet(isPresented: $showAgentGroupSheet) {
+            AgentGroupSheet(
+                onOpenGroupChat: { gid in
+                    let draftId = Self.makeNewSessionId(agentGroupId: gid)
+                    if isWideLayout {
+                        openSession(draftId)
+                    } else {
+                        commitNavigationPath(NavigationPath([draftId]))
+                        currentStackSessionId = draftId
+                    }
+                },
+                onDismiss: { showAgentGroupSheet = false },
+            )
+        }
         }
     }
     // MARK: - Sidebar Toolbar
@@ -3488,6 +3538,12 @@ struct ContentView: View {
                         activeToolSheet = .browser
                     } label: {
                         Label("Open Browser", systemImage: "globe")
+                    }
+                    // [T-group-chat] 发起群聊 — opens the group picker/­creator.
+                    Button {
+                        showAgentGroupSheet = true
+                    } label: {
+                        Label(AppLocalized("New Group Chat"), systemImage: "person.3")
                     }
                     Button {
                         activeToolSheet = .browserManagement
@@ -6737,7 +6793,12 @@ private struct SessionRow: View, Equatable {
         // glyph. RoleAvatarImage observes .rolesChanged so role edits/deletes
         // re-render rows live. Falls through to the category glyph only when
         // even the default avatar has no image bytes.
-        if RoleStore.resolveRole(session.roleId).avatarData != nil {
+        // [T-group-chat] Group sessions lead with the stacked-member
+        // cluster; a stale groupId (group deleted) falls through to the
+        // ordinary role avatar — same orphan-tolerance as the chat screen.
+        if let agentGroup = GroupStore.groupById(session.groupId) {
+            AgentGroupAvatarStack(roleIds: agentGroup.members.map(\.roleId))
+        } else if RoleStore.resolveRole(session.roleId).avatarData != nil {
             RoleAvatarImage(roleId: session.roleId, size: 28)
         } else {
             let icon = categoryIcon
@@ -6873,7 +6934,12 @@ private struct RemoteSessionRow: View {
     @ViewBuilder
     private var providerIcon: some View {
         // [T-role-avatar] Same role-avatar swap as SessionRow.
-        if RoleStore.resolveRole(session.roleId).avatarData != nil {
+        // [T-group-chat] Group sessions lead with the stacked-member
+        // cluster; a stale groupId (group deleted) falls through to the
+        // ordinary role avatar — same orphan-tolerance as the chat screen.
+        if let agentGroup = GroupStore.groupById(session.groupId) {
+            AgentGroupAvatarStack(roleIds: agentGroup.members.map(\.roleId))
+        } else if RoleStore.resolveRole(session.roleId).avatarData != nil {
             RoleAvatarImage(roleId: session.roleId, size: 28)
         } else {
             let icon = categoryIcon

@@ -3616,6 +3616,12 @@ class ChatViewModel(
     // lives in ChatModels.draftInitialRoleId (top-level, JVM-tested).
     private val initialRoleId: String? = draftInitialRoleId(sessionId)
 
+    // [T-group-chat] Agent group bound at draft creation ("发起群聊"), encoded
+    // in the draft id via __agrp__ (distinct from __grp__ = MODEL group).
+    // Seeded into _agentGroupId at loadSession; ensureSession persists it into
+    // the session row on first send, together with title = group name.
+    private val initialAgentGroupId: String? = draftInitialAgentGroupId(sessionId)
+
     // [T-role-session-bound] The persona bound to this session. Immutable
     // in-session. Seeded at loadSession: drafts take the global current
     // role, existing sessions take the persisted session.roleId (falling
@@ -3625,6 +3631,33 @@ class ChatViewModel(
     // global current role.
     private val _sessionRole = MutableStateFlow(com.jarvis.app.agent.RoleStore.loadDefault())
     val sessionRole: StateFlow<com.jarvis.app.agent.RoleFile> = _sessionRole.asStateFlow()
+
+    // [T-group-chat] The agent group this chat belongs to. Non-null marks a
+    // GROUP session: send goes through the round-robin scheduler (§4.3) and
+    // per-message role_id carries the speaking persona. Null = ordinary chat.
+    internal val _agentGroupId = MutableStateFlow<String?>(null)
+    val agentGroupId: StateFlow<String?> = _agentGroupId.asStateFlow()
+
+    /** True when this chat is an agent-group session (multi-role round-robin). */
+    val isGroupChat: Boolean get() = _agentGroupId.value != null
+
+    /**
+     * [T-group-chat] §4.1 The CURRENT SPEAKER — the persona whose identity
+     * drives the in-flight agent loop: provider/model resolution, the system
+     * prompt's identitySection, the roleId stamped onto assistant rows, and
+     * per-speaker memory attribution all read THIS, not [_sessionRole].
+     *
+     * Ordinary chats: always equal to _sessionRole (kept in sync at both load
+     * paths) — every existing behavior is byte-identical. Group chats: the
+     * round-robin scheduler retargets it per member before invoking the loop;
+     * it resets to _sessionRole when the round ends.
+     */
+    private val _speakerRole = MutableStateFlow(com.jarvis.app.agent.RoleStore.loadDefault())
+
+    /** Reset speaker to the session persona (call at load + after a group round). */
+    private fun resetSpeakerRole() {
+        _speakerRole.value = _sessionRole.value
+    }
 
     /** Resolve a roleId to a RoleFile, falling back to the default role on
      *  orphan refs (role deleted) — same strategy as folderId.
@@ -3864,11 +3897,18 @@ class ChatViewModel(
         // before first send, that choice wins.
         val session = chatRepository.createSession(
             modelId = modelId,
+            // [T-group-chat] Group chats take the group name as their title
+            // (no auto title generation, §4.6).
+            title = _agentGroupId.value?.let { gid ->
+                com.jarvis.app.agent.GroupStore.groupById(gid)?.name
+            },
             memoryEnabled = _memoryEnabled.value,
             // [T-role-session-bound] Seed the draft's bound role into the new
             // row. _sessionRole was set at loadSession (draft → global current
             // role); the row now carries it so reloads + sync resolve it.
             roleId = _sessionRole.value.roleId,
+            // [T-group-chat] Persist group membership on first send.
+            groupId = _agentGroupId.value,
         )
         realSessionId = session.id
         // "New Chat in Group": file the just-promoted draft into its folder.
@@ -4029,6 +4069,18 @@ class ChatViewModel(
                 // Draft session: just set up provider using default group or first entry
                 _sessionTitle.value = "New Chat"
                 _sessionCategory.value = null
+                // [T-group-chat] Draft group seed: the group name becomes the
+                // chat title (auto-title generation is skipped for group
+                // chats, §4.6). An unresolvable group id (group deleted
+                // between tap and open) degrades to a plain chat — same
+                // orphan-tolerance as roles.
+                initialAgentGroupId?.let { gid ->
+                    val group = com.jarvis.app.agent.GroupStore.groupById(gid)
+                    if (group != null) {
+                        _agentGroupId.value = gid
+                        _sessionTitle.value = group.name
+                    }
+                }
                 // [T-role-session-bound] Draft role seed: an explicit
                 // initialRoleId ("以此角色新建会话") wins; otherwise the draft
                 // follows the global current role (the "current role" the user
@@ -4042,6 +4094,7 @@ class ChatViewModel(
                         ?: com.jarvis.app.agent.RoleStore.loadDefault()
                     else -> com.jarvis.app.agent.RoleStore.currentRole()
                 }
+                resetSpeakerRole()
                 val effectiveGroupId = initialGroupId ?: providerRepository.defaultPrimaryGroupId
                 var resolved = false
                 if (effectiveGroupId != null) {
@@ -4072,6 +4125,11 @@ class ChatViewModel(
             // persisted row. Orphan refs (role deleted) fall back to the
             // default role via resolveSessionRole — never crash on a stale id.
             _sessionRole.value = resolveSessionRole(session.roleId)
+            // [T-group-chat] Hydrate group membership. A NULL group_id row
+            // renders as an ordinary chat; a stale group id (group deleted)
+            // also degrades to ordinary — GroupStore.groupById returns null.
+            _agentGroupId.value = session.groupId
+            resetSpeakerRole()
             // T239: hydrate persisted thinking-mode override. null = unset
             // (use OFF as the legacy default); non-null = explicit user
             // choice persisted across cold-start. runCatching guards against
@@ -5519,7 +5577,15 @@ class ChatViewModel(
                 agentHistory.add(entity.toLLMMessage())
             }
 
-            streamLaunched = runRerunStreamTail(provider, "retryFromMessage")
+            // [T-group-chat][P2-fix] Group retry = re-run the ROUND with the
+            // same user text (the row survives the truncation above). Going
+            // through the ordinary tail made every group retry answer as the
+            // session default persona (Jarvis) regardless of who spoke.
+            streamLaunched = if (isGroupChat) {
+                runGroupStreamTail(label = "retryFromMessage", userText = message.content)
+            } else {
+                runRerunStreamTail(provider, "retryFromMessage")
+            }
             } finally {
                 if (!streamLaunched) {
                     AppLogger.info(TAG_STREAM, "retry _isStreaming=false (setup aborted)")
@@ -5783,6 +5849,49 @@ class ChatViewModel(
                 AppLogger.info(TAG_STREAM, "$label _isStreaming SKIPPED (stale job; current=${streamJob?.hashCode()} this=${coroutineContext[Job]?.hashCode()})")
             }
             AppLogger.info(TAG_STREAM, "$label streamJob EXIT")
+        }
+        return true
+    }
+
+    /**
+     * [T-group-chat][P2-fix] Group variant of [runRerunStreamTail]: same job
+     * skeleton (slot acquire/release, stale-job streaming-flag guard) but the
+     * body runs a full GROUP ROUND for [userText] instead of a single
+     * persona's loop. Callers: retryFromMessage (the user row survives the
+     * truncation, so each member's rebuilt history sees it).
+     */
+    private suspend fun runGroupStreamTail(label: String, userText: String): Boolean {
+        streamJob = viewModelScope.launch(Dispatchers.IO) {
+            AppLogger.info(TAG_STREAM, "$label group streamJob ENTER sid=$activeSessionId")
+            try {
+                SessionConcurrencyManager.acquireSlot(activeSessionId)
+                SessionActivityTracker.setActive(activeSessionId, onStop = { cancelStream() })
+                try {
+                    AppLogger.info(TAG_STREAM, "$label runGroupRound CALL (retry)")
+                    runGroupRound(userText = userText)
+                    drainQueuedGroupPrompts()
+                    AppLogger.info(TAG_STREAM, "$label runGroupRound RETURN normal (retry)")
+                } catch (e: CancellationException) {
+                    AppLogger.info(TAG_STREAM, "$label runGroupRound CANCELLED")
+                    Log.d(TAG, "Group round cancelled")
+                } catch (e: Exception) {
+                    AppLogger.error(TAG_STREAM, "$label runGroupRound EXCEPTION ${e.javaClass.simpleName}: ${e.message}")
+                    setInlineError(e)
+                    SessionActivityTracker.markStreamError(activeSessionId)
+                } finally {
+                    publishOverlayReplyExcerpt(activeSessionId)
+                    SessionActivityTracker.setInactive(activeSessionId)
+                    SessionConcurrencyManager.releaseSlot(activeSessionId)
+                }
+            } catch (e: CancellationException) {
+                AppLogger.info(TAG_STREAM, "$label group streamJob CANCELLED waiting for slot")
+                Log.d(TAG, "Cancelled while waiting for concurrency slot")
+            }
+            // Same stale-job discipline as runRerunStreamTail.
+            if (streamJob === coroutineContext[Job]) {
+                _isStreaming.value = false
+            }
+            AppLogger.info(TAG_STREAM, "$label group streamJob EXIT")
         }
         return true
     }
@@ -6392,6 +6501,105 @@ class ChatViewModel(
         }
     }
 
+    /**
+     * [T-group-chat] 转发到群：与 [forwardMessagesToRole] 同一套拷贝语义
+     * （源消息摊平为 user 行、源会话不动），目标是一个 agent 群的会话。
+     * autoRespond 借用 [ChatViewModelStore.PendingForwardRespond] 标记——
+     * 目标会话打开后 respondToForwardedHistory 走群回合（全员回应材料）。
+     */
+    fun forwardMessagesToGroup(
+        messageIds: List<String>,
+        groupId: String,
+        targetSessionId: String?,
+        autoRespond: Boolean = true,
+        note: String? = null,
+        onDone: (String?) -> Unit,
+    ) {
+        viewModelScope.launch {
+            val targetId = withContext(Dispatchers.IO) {
+                runCatching {
+                    forwardMessagesToGroupInternal(messageIds, groupId, targetSessionId, autoRespond, note)
+                }.getOrElse { e ->
+                    AppLogger.error(TAG, "forwardMessagesToGroup failed: ${e.message}")
+                    null
+                }
+            }
+            onDone(targetId)
+        }
+    }
+
+    private suspend fun forwardMessagesToGroupInternal(
+        messageIds: List<String>,
+        groupId: String,
+        targetSessionId: String?,
+        autoRespond: Boolean,
+        note: String?,
+    ): String? {
+        if (messageIds.isEmpty()) return null
+        val sourceId = realSessionId.ifEmpty { return null }
+        val group = com.jarvis.app.agent.GroupStore.groupById(groupId) ?: return null
+        val selected = chatRepository.loadMessages(sourceId)
+            .filter { it.id in messageIds }
+            .sortedBy { it.sortOrder }
+        if (selected.isEmpty()) return null
+
+        val existing = targetSessionId?.let { chatRepository.getSession(it) }
+            ?.takeIf { it.groupId == groupId } // 目标必须是该群的会话（防陈旧 id 串群）
+        val targetId = if (existing != null) {
+            existing.id
+        } else {
+            val sourceSession = chatRepository.getSession(sourceId)
+            val modelId = sourceSession?.modelId
+                ?.takeIf { it.isNotBlank() && it != "unknown" }
+                ?: currentModel?.id
+                ?: providerRepository.allVisibleEntries().firstOrNull()?.model?.id
+                ?: "unknown"
+            chatRepository.createSession(
+                modelId = modelId,
+                // 标题 = 群名（与发起群聊一致；群会话不走 AI 标题生成）。
+                title = group.name,
+                // 群会话的 session 级 roleId 只是兜底（渲染按消息级 role_id）。
+                roleId = com.jarvis.app.agent.RoleStore.loadDefault().roleId,
+                groupId = group.id,
+            ).id
+        }
+
+        for (msg in selected) {
+            val text = forwardExtractText(msg.partsJson)
+            if (text.isBlank()) continue
+            val injected = org.json.JSONArray()
+                .put(org.json.JSONObject().put("type", "text").put("value", text))
+                .toString()
+            chatRepository.appendMessage(targetId, "user", injected, roleId = null)
+        }
+        val trimmedNote = note?.trim()
+        if (!trimmedNote.isNullOrEmpty()) {
+            val noteJson = org.json.JSONArray()
+                .put(org.json.JSONObject().put("type", "text").put("value", trimmedNote))
+                .toString()
+            chatRepository.appendMessage(targetId, "user", noteJson, roleId = null)
+        }
+
+        if (autoRespond) {
+            val targetStreaming = com.jarvis.app.service.SessionActivityTracker
+                .activeSessions.value.contains(targetId)
+            if (!targetStreaming) {
+                if (existing != null) {
+                    ChatViewModelStore.release(targetId)
+                }
+                ChatViewModelStore.stashPendingForwardRespond(
+                    ChatViewModelStore.PendingForwardRespond(targetId = targetId),
+                )
+            }
+        }
+        AppLogger.info(
+            TAG,
+            "forwardMessagesToGroup: ${selected.size} msg(s) → session=$targetId group=${group.id} " +
+                "existing=${existing != null} autoRespond=$autoRespond",
+        )
+        return targetId
+    }
+
     private suspend fun forwardMessagesToRoleInternal(
         messageIds: List<String>,
         targetRoleId: String,
@@ -6596,12 +6804,20 @@ class ChatViewModel(
                         }
                         val fallbackProviders = buildFallbackProviders(provider)
                         try {
-                            runAgentLoop(
-                                provider = provider,
-                                systemPrompt = systemPrompt,
-                                fallbackProviders = fallbackProviders,
-                                fallbackStrategy = activeFallbackStrategy,
-                            )
+                            if (isGroupChat) {
+                                // [T-group-chat] 转发到群的自动回应：跑群回合。
+                                // userText 为空 → 无 @ → 全员轮流（D2）——每个
+                                // 成员各自重建历史，看到刚摊平进来的转发材料。
+                                runGroupRound(userText = "")
+                                drainQueuedGroupPrompts()
+                            } else {
+                                runAgentLoop(
+                                    provider = provider,
+                                    systemPrompt = systemPrompt,
+                                    fallbackProviders = fallbackProviders,
+                                    fallbackStrategy = activeFallbackStrategy,
+                                )
+                            }
                         } catch (e: CancellationException) {
                             Log.d(TAG, "Forward-respond loop cancelled")
                         } catch (e: Exception) {
@@ -6907,6 +7123,20 @@ class ChatViewModel(
                     val fallbackProviders = buildFallbackProviders(provider)
 
                     try {
+                        if (isGroupChat) {
+                            // [T-group-chat] §4.3 Group round: the user turn is
+                            // already persisted + in agentHistory; the scheduler
+                            // rebuilds per-speaker history from the DB anyway.
+                            // modelBody carries the paste-expanded text — the
+                            // DB row is identical in text content, and history
+                            // rebuild reads the DB, so pass the raw trimmed text
+                            // for mention parsing.
+                            AppLogger.info(TAG_STREAM, "send runGroupRound CALL")
+                            runGroupRound(userText = trimmed)
+                            AppLogger.info(TAG_STREAM, "send runGroupRound RETURN normal")
+                            // Each queued prompt gets its own round (§4.6).
+                            drainQueuedGroupPrompts()
+                        } else {
                         AppLogger.info(TAG_STREAM, "send runAgentLoop CALL")
                         runAgentLoop(
                             provider = provider,
@@ -6919,6 +7149,7 @@ class ChatViewModel(
                         // Skipped on cancel: cancelled job won't reach here.
                         drainQueuedPrompts(provider, systemPrompt, fallbackProviders, activeFallbackStrategy)
                         AppLogger.info(TAG_STREAM, "send drainQueuedPrompts RETURN")
+                        }
                     } catch (e: CancellationException) {
                         AppLogger.info(TAG_STREAM, "send runAgentLoop CANCELLED")
                         Log.d(TAG, "Agent loop cancelled")
@@ -7717,6 +7948,338 @@ class ChatViewModel(
         }
     }
 
+    // ─── [T-group-chat] §4 Group-chat round scheduler ──────────────────────
+    // Design doc: docs/agent-group-chat-design.md. One group round = sequential
+    // per-member agent loops (invariant: ONE loop per session at a time — D5).
+    // Later speakers rebuild history from the DB and therefore SEE earlier
+    // members' replies from the same round (A drafts, B reviews — for free).
+
+    /** @全体 trigger markers (D2). Case-insensitive for the ASCII one. */
+    private val GROUP_ALL_MARKERS = listOf("@全体", "@所有人", "@all")
+
+    /**
+     * §4.2 Select the speakers for one round.
+     *
+     *  - any @全体 marker → every member with participatesInRound, roster
+     *    order, host last (host is repositioned even when @-named directly).
+     *  - else @-mentions → named members only (roster order; host last; a
+     *    direct @mention bypasses the participation toggle). Longest name
+     *    wins at a shared @-position ("@小艾二号" does not also summon 小艾).
+     *  - no marker, no mention → speak to all (D2: an unaddressed message is
+     *    addressed to the room).
+     *
+     * @return the speaking order, resolved members only.
+     */
+    internal fun selectGroupSpeakers(
+        userText: String,
+        group: com.jarvis.app.agent.AgentGroup,
+        resolved: List<com.jarvis.app.agent.ResolvedGroupMember>,
+    ): List<com.jarvis.app.agent.ResolvedGroupMember> {
+        val roundEligible = resolved.filter { it.participatesInRound }
+        // Longest-name-first scan: at each '@', the longest member name that
+        // prefix-matches wins, so "@小艾二号" never also triggers 小艾.
+        val byName = resolved
+            .map { it.role.metadata.name.ifEmpty { "Agent" } to it }
+            .sortedByDescending { it.first.length }
+        val mentionedIds = LinkedHashSet<String>()
+        var idx = userText.indexOf('@')
+        while (idx >= 0) {
+            val rest = userText.substring(idx + 1)
+            byName.firstOrNull { (name, _) -> name.isNotEmpty() && rest.startsWith(name) }
+                ?.let { (_, member) -> mentionedIds.add(member.role.roleId) }
+            idx = userText.indexOf('@', idx + 1)
+        }
+        // [T-group-chat][P2-fix] D2, implemented correctly this time: @全体
+        // marker OR a PLAIN unaddressed message (no @mention at all) → the
+        // whole round-eligible roster. The first cut only honored the markers,
+        // so "大家好呀" selected NOBODY and the round silently produced zero
+        // replies. Only an explicit @mention narrows the target set.
+        val targets = if (GROUP_ALL_MARKERS.any { userText.contains(it, ignoreCase = true) } ||
+            mentionedIds.isEmpty()
+        ) {
+            roundEligible
+        } else {
+            // Preserve roster order.
+            resolved.filter { it.role.roleId in mentionedIds }
+        }
+        // Host speaks last (D3) — regardless of roster position.
+        val hostId = group.hostRoleId
+        return if (hostId == null) targets
+        else targets.sortedBy { if (it.role.roleId == hostId) 1 else 0 }
+    }
+
+    /**
+     * §5 Model resolution chain: group unified-model override > role.model >
+     * session default (null → caller falls back to the session's current
+     * provider). A dead entry (instance deleted / model gone) degrades to the
+     * NEXT level, not an error — one member's stale config must never fail
+     * the whole round; the caller surfaces a banner.
+     */
+    private fun resolveSpeakerModelEntry(
+        group: com.jarvis.app.agent.AgentGroup,
+        role: com.jarvis.app.agent.RoleFile,
+    ): com.jarvis.app.data.model.ModelEntry? {
+        val entries = providerRepository.allVisibleEntries()
+        fun find(ref: com.jarvis.app.agent.AgentGroupModelRef?): com.jarvis.app.data.model.ModelEntry? {
+            if (ref == null) return null
+            return entries.firstOrNull {
+                it.providerInstanceId == ref.providerInstanceId && it.baseModel.id == ref.modelId
+            }
+        }
+        return find(group.modelOverride)
+            ?: find(role.metadata.model)
+    }
+
+    /** Build an LLMProvider for a concrete model entry (mirrors the OAuth-refresh path in sendMessage). */
+    private fun providerForModelEntry(entry: com.jarvis.app.data.model.ModelEntry): LLMProvider? {
+        return runCatching {
+            val instance = providerRepository.config.value.instances
+                .find { it.id == entry.providerInstanceId } ?: return null
+            // loadApiKey is nullable (gateway instances carry no key); the
+            // factory takes a non-null String and treats "" as keyless.
+            val apiKey = providerRepository.loadApiKey(instance.id).orEmpty()
+            com.jarvis.app.provider.ProviderFactory.create(instance, apiKey, entry.baseModel, context)
+        }.getOrNull()
+    }
+
+    /**
+     * §4.4 Rebuild [agentHistory] from the DB **from this speaker's point of
+     * view**: their own assistant turns keep their full parts (tools intact);
+     * other members' turns are flattened to author-labeled user turns
+     * (`[作者名]: …` — text only, tool internals stay private to their own
+     * loop). Consecutive flattened turns merge into one user message so
+     * providers never see a broken alternation. Loop-internal user rows
+     * (tool results, bridge reminders) are skipped: they belong to the loop
+     * that produced them, not to the group transcript.
+     */
+    private suspend fun rebuildAgentHistoryForSpeaker(
+        selfRoleId: String?,
+        members: List<com.jarvis.app.agent.ResolvedGroupMember>,
+    ) {
+        agentHistory.clear()
+        if (realSessionId.isEmpty()) return
+        val rows = chatRepository.loadMessages(realSessionId)
+        val nameByRoleId = members.associate {
+            it.role.roleId to it.role.metadata.name.ifEmpty { "Agent" }
+        }
+        var pending = StringBuilder()
+        fun flushPending() {
+            if (pending.isNotBlank()) {
+                agentHistory.add(LLMMessage(role = LLMMessage.Role.USER, content = pending.toString().trim()))
+            }
+            pending = StringBuilder()
+        }
+        for (row in rows) {
+            when (row.role) {
+                "user" -> {
+                    // Skip loop-internal user rows (tool results / reminders):
+                    // every part a toolResult → not user-visible speech.
+                    val isInternal = runCatching {
+                        val arr = org.json.JSONArray(row.partsJson)
+                        arr.length() > 0 && (0 until arr.length()).all { i ->
+                            arr.optJSONObject(i)?.optString("type") == "toolResult"
+                        }
+                    }.getOrDefault(false)
+                    if (isInternal) continue
+                    flushPending()
+                    agentHistory.add(row.toLLMMessage())
+                }
+                "assistant" -> {
+                    if (row.roleId == selfRoleId) {
+                        flushPending()
+                        agentHistory.add(row.toLLMMessage())
+                    } else {
+                        val author = nameByRoleId[row.roleId] ?: "Assistant"
+                        val text = forwardExtractText(row.partsJson)
+                            .replace("[图片未转发]", "[图片]")
+                        if (text.isNotBlank()) {
+                            pending.append("[").append(author).append("]: ").append(text).append("\n\n")
+                        }
+                    }
+                }
+            }
+        }
+        flushPending()
+        // [T-group-chat][P2-fix] Merge consecutive USER entries (raw user rows
+        // and/or flattened foreign turns) into ONE user message: strict
+        // OpenAI-compatible upstreams reject non-alternating roles with a 400
+        // (observed on the gateway: [user "大家好呀", user "@小花 你好"] → 400).
+        // The design doc §4.4 merge was meant to cover this — the first cut
+        // only merged flattened foreign turns, not raw user rows.
+        if (agentHistory.size > 1) {
+            val merged = ArrayList<LLMMessage>(agentHistory.size)
+            for (m in agentHistory) {
+                val prev = merged.lastOrNull()
+                if (m.role == LLMMessage.Role.USER && prev?.role == LLMMessage.Role.USER) {
+                    merged[merged.size - 1] = LLMMessage(
+                        role = LLMMessage.Role.USER,
+                        content = listOf(prev.content, m.content)
+                            .filter { it.isNotBlank() }.joinToString("\n\n"),
+                        imageParts = prev.imageParts + m.imageParts,
+                        audioParts = prev.audioParts + m.audioParts,
+                        contentParts = prev.contentParts + m.contentParts,
+                    )
+                } else {
+                    merged.add(m)
+                }
+            }
+            if (merged.size != agentHistory.size) {
+                agentHistory.clear()
+                agentHistory.addAll(merged)
+            }
+        }
+    }
+
+    /**
+     * §4.5 Group context appended to each speaker's system prompt (after the
+     * identity section — see buildGroupSystemPrompt). Kept here rather than
+     * in SystemPromptBuilder because it needs the resolved member list.
+     */
+    private fun buildGroupSection(
+        group: com.jarvis.app.agent.AgentGroup,
+        self: com.jarvis.app.agent.RoleFile,
+        resolved: List<com.jarvis.app.agent.ResolvedGroupMember>,
+    ): String {
+        val selfId = self.roleId
+        val lines = StringBuilder()
+        lines.append("\n\n## Group chat context\n")
+        lines.append("You are speaking in a group chat \"${group.name}\". Members (round-robin order):\n")
+        for (m in resolved) {
+            val name = m.role.metadata.name.ifEmpty { "Agent" }
+            val blurb = m.role.metadata.style.ifBlank { null }?.lineSequence()?.firstOrNull()?.take(60)
+            val roleTag = when {
+                m.role.roleId == selfId -> " (you)"
+                m.role.roleId == group.hostRoleId -> " (moderator)"
+                else -> ""
+            }
+            lines.append("- ").append(name).append(roleTag)
+            if (!blurb.isNullOrBlank()) lines.append(" — ").append(blurb)
+            lines.append('\n')
+        }
+        lines.append("The human user runs this room; their messages are plain user turns. ")
+        lines.append("Other members' replies appear as user turns prefixed \"[name]:\". ")
+        lines.append("Your own previous replies appear as your assistant turns.\n")
+        group.instruction?.takeIf { it.isNotBlank() }?.let {
+            lines.append("Group instruction from the user (always applies):\n").append(it).append('\n')
+        }
+        if (self.roleId == group.hostRoleId) {
+            lines.append(
+                "You are the moderator of this group. After others have spoken, summarize " +
+                    "the discussion so far, surface disagreements, and propose concrete next steps. Keep it concise.\n",
+            )
+        }
+        return lines.toString()
+    }
+
+    private fun buildGroupSystemPrompt(
+        group: com.jarvis.app.agent.AgentGroup,
+        speaker: com.jarvis.app.agent.RoleFile,
+        resolved: List<com.jarvis.app.agent.ResolvedGroupMember>,
+    ): String? {
+        // Base prompt is built for the CURRENT SPEAKER (buildSystemPrompt reads
+        // _speakerRole); append the group context.
+        val base = buildSystemPrompt()
+        val groupSection = buildGroupSection(group, speaker, resolved)
+        return (base?.plus(groupSection)) ?: groupSection
+    }
+
+    /** SystemInfo row helper for group-round notices. */
+    private fun groupNotice(text: String) {
+        appendSystemInfo(text = text, iconKind = "group")
+    }
+
+    /**
+     * §4.3 One group round: persist nothing (the caller already persisted the
+     * user turn), select speakers, then run each member's loop sequentially.
+     * A member failure appends a systemInfo row and continues; cancellation
+     * aborts the whole round.
+     */
+    private suspend fun runGroupRound(userText: String) {
+        val gid = _agentGroupId.value
+        val group = gid?.let { com.jarvis.app.agent.GroupStore.groupById(it) }
+        if (group == null) {
+            groupNotice("Group unavailable — falling back to a plain chat.")
+            return
+        }
+        val resolved = com.jarvis.app.agent.GroupStore.resolveMembers(group)
+        if (resolved.isEmpty()) {
+            groupNotice("No available members in this group.")
+            return
+        }
+        // Stale members (role deleted) surface once per round.
+        val staleCount = group.members.size - resolved.size
+        if (staleCount > 0) groupNotice("$staleCount member(s) skipped (role deleted).")
+
+        val targets = selectGroupSpeakers(userText, group, resolved)
+        if (targets.isEmpty()) {
+            groupNotice("No member addressed.")
+            return
+        }
+
+        for (member in targets) {
+            if (!_isStreaming.value) break // cancelled — abort the whole round (D5)
+            _speakerRole.value = member.role
+            val name = member.role.metadata.name.ifEmpty { "Agent" }
+            try {
+                val entry = resolveSpeakerModelEntry(group, member.role)
+                val provider = when {
+                    entry != null -> providerForModelEntry(entry)
+                        ?: run { groupNotice("“$name” model unavailable — using the default model."); currentProvider }
+                    else -> currentProvider
+                }
+                if (provider == null) {
+                    groupNotice("“$name” skipped: no provider configured.")
+                    continue
+                }
+                val systemPrompt = buildGroupSystemPrompt(group, member.role, resolved)
+                rebuildAgentHistoryForSpeaker(member.role.roleId, resolved)
+                runAgentLoop(
+                    provider = provider,
+                    systemPrompt = systemPrompt,
+                    // Per-member fallback list is deliberately empty in v1:
+                    // fallback groups are a session-level concept; a member's
+                    // failure is isolated by the catch below instead.
+                    fallbackProviders = emptyList(),
+                )
+            } catch (e: CancellationException) {
+                throw e // cancel aborts the whole round
+            } catch (e: Exception) {
+                AppLogger.error(TAG_STREAM, "group round: member $name failed: ${e.message}")
+                groupNotice("“$name” failed to reply: ${e.message ?: "unknown error"}")
+            }
+        }
+        resetSpeakerRole()
+    }
+
+    /** §4.6 Group variant of drainQueuedPrompts: each queued text = its own round. */
+    private suspend fun drainQueuedGroupPrompts() {
+        while (_promptQueue.value.isNotEmpty()) {
+            val queued = _promptQueue.value
+            _promptQueue.value = emptyList()
+            val queuedIds = queued.map { it.id }.toSet()
+            _messages.value = _messages.value.map { m ->
+                if (m.queuedPromptId != null && m.queuedPromptId in queuedIds) {
+                    m.copy(isQueued = false, queuedPromptId = null)
+                } else m
+            }
+            val sid = ensureSession()
+            for (q in queued) {
+                if (!_isStreaming.value) return
+                val entity = chatRepository.appendMessage(sid, "user",
+                    buildUserPartsJson(q.text, mediaRefPartsJson = emptyList(), attachedFilesXml = null))
+                agentHistory.add(LLMMessage(
+                    role = LLMMessage.Role.USER,
+                    content = q.text,
+                    dbMessageId = entity.id,
+                ))
+                _messages.value = _messages.value + ChatMessage(
+                    id = entity.id, role = "user", content = q.text,
+                )
+                runGroupRound(userText = q.text)
+            }
+        }
+    }
+
     private suspend fun runAgentLoop(
         provider: LLMProvider,
         systemPrompt: String?,
@@ -7861,7 +8424,12 @@ class ChatViewModel(
                 // [T-role-message-level] Live placeholder carries the session's
                 // bound role so the header renders the right persona while
                 // streaming; persisted identically at turn end.
-                roleId = _sessionRole.value.roleId,
+                // [T-group-chat] In a group round this is the CURRENT SPEAKER
+                // (retargeted per member), not the session persona.
+                roleId = _speakerRole.value.roleId,
+                // [T-group-chat] §5 Live model badge from the provider actually
+                // in flight (group rounds may use a different model per member).
+                modelDisplayName = provider.model.displayName,
             )
         }
 
@@ -9994,7 +10562,7 @@ class ChatViewModel(
             val msg = "Memory writes are disabled for this session (user toggled /memory off). Reads remain available."
             return ToolExecutionResult(msg, false, toolTitle = "Memory (disabled)")
         }
-        val result = MemoryTools.executeMemoryWrite(argsJson, repo, _sessionRole.value.roleId)
+        val result = MemoryTools.executeMemoryWrite(argsJson, repo, _speakerRole.value.roleId)
         // Record for SessionMemorySheet
         val content = try {
             JSONObject(argsJson).optString("content", "")
@@ -10011,7 +10579,7 @@ class ChatViewModel(
 
     private fun executeMemoryGetTool(argsJson: String): ToolExecutionResult {
         val repo = memoryRepository ?: return ToolExecutionResult("Error: Memory not available", false)
-        val result = MemoryTools.executeMemoryGet(argsJson, repo, _sessionRole.value.roleId)
+        val result = MemoryTools.executeMemoryGet(argsJson, repo, _speakerRole.value.roleId)
         val keywords = try {
             JSONObject(argsJson).optString("keywords", "")
         } catch (_: Exception) { "" }
@@ -10354,7 +10922,9 @@ class ChatViewModel(
             // [T-role-message-level] Stamp this assistant turn with the
             // session's bound role so history renders the right persona per
             // message even after the global current role changes.
-            roleId = _sessionRole.value.roleId,
+            // [T-group-chat] In a group round, the CURRENT SPEAKER — each
+            // member's reply carries its own persona.
+            roleId = _speakerRole.value.roleId,
             // [T-token-attribution-snapshot] From the live request context, not
             // the session row — see currentModelSnapshot().
             modelSnapshot = currentModelSnapshot(),
@@ -10405,7 +10975,8 @@ class ChatViewModel(
             reasoningContent = reasoningContent,
             // [T-role-message-level] Stamp this assistant turn with the
             // session's bound role (deprecated path — kept for parity).
-            roleId = _sessionRole.value.roleId,
+            // [T-group-chat] Reads the CURRENT SPEAKER, same as the main path.
+            roleId = _speakerRole.value.roleId,
             modelSnapshot = currentModelSnapshot(),
         )
     }
@@ -10455,7 +11026,7 @@ class ChatViewModel(
         // has no personality body, identitySection() returns the identity
         // sentence with its original single trailing space — the full
         // assembled prompt then matches the pre-SOUL prompt byte-for-byte.
-        val identitySection = com.jarvis.app.agent.SystemPromptBuilder.identitySection(context, _sessionRole.value)
+        val identitySection = com.jarvis.app.agent.SystemPromptBuilder.identitySection(context, _speakerRole.value)
         // [T-memory-toggle-gates-injection-and-tools-android] Mirror the iOS
         // gate: when memory is disabled for this session, replace the
         // "memory_write / memory_get" tool bullets and the "Memory system:"
@@ -10615,7 +11186,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
         // [T-role-memory-isolation] Daily logs are scoped per role: only the
         // session's bound role's notes are injected, so personas stay isolated.
         // GLOBAL.md above is shared and unaffected. Mirrors iOS.
-        val dailyMemoryFragment = if (memoryOn) memoryRepository?.loadRecentDailyMemoryFragment(_sessionRole.value.roleId) else null
+        val dailyMemoryFragment = if (memoryOn) memoryRepository?.loadRecentDailyMemoryFragment(_speakerRole.value.roleId) else null
         // [XSessionDiag] Hypothesis 3: ties the memory-injection sizes to a
         // SESSION id. MemoryRepository itself has no session context, so its own
         // `memory/daily-inject` line (which names the source files) cannot say who
@@ -10667,7 +11238,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                 false,
             )
         }
-        val result = MemoryTools.executeMemoryWrite(argsJson, repo, _sessionRole.value.roleId)
+        val result = MemoryTools.executeMemoryWrite(argsJson, repo, _speakerRole.value.roleId)
         val content = try {
             JSONObject(argsJson).optString("content", "")
         } catch (_: Exception) { "" }
@@ -10683,7 +11254,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
 
     fun executeMemoryGet(argsJson: String): MemoryTools.ToolResult {
         val repo = memoryRepository ?: return MemoryTools.ToolResult("Error: Memory not available", false)
-        val result = MemoryTools.executeMemoryGet(argsJson, repo, _sessionRole.value.roleId)
+        val result = MemoryTools.executeMemoryGet(argsJson, repo, _speakerRole.value.roleId)
         val keywords = try {
             JSONObject(argsJson).optString("keywords", "")
         } catch (_: Exception) { "" }
@@ -11983,7 +12554,7 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
             )
             viewModelScope.launch(Dispatchers.IO) {
                 val partsJson = buildAssistantPartsJson(parts)
-                chatRepository.appendMessage(activeSessionId, "assistant", partsJson, roleId = _sessionRole.value.roleId)
+                chatRepository.appendMessage(activeSessionId, "assistant", partsJson, roleId = _speakerRole.value.roleId)
             }
             // [T-android-group-pause-badge-restamp] A LIVE interruption just
             // happened: this is a real entry into the paused state, so the
@@ -12477,6 +13048,8 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                 // Fall back to sessionRoleId for assistant rows if null (legacy
                 // or restored package) so bubbles render the correct persona.
                 roleId = entity.roleId ?: if (entity.role == "assistant") sessionRoleId else null,
+                // [T-group-chat] Per-message model attribution snapshot.
+                modelDisplayName = entity.modelDisplayName,
                 // [T-error-persist-android] Restore the persisted terminal error
                 // so the inline error banner + Retry button survive a reload.
                 // Coalesce a blank value to null: the UI gate is `error?.let`, so
@@ -12490,7 +13063,14 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
             val merged = mutableListOf<ChatMessage>()
             for (msg in messages) {
                 val prev = merged.lastOrNull()
-                if (msg.role == "assistant" && prev?.role == "assistant") {
+                // [T-group-chat][P2-fix] Only fold consecutive assistant rows
+                // from the SAME speaker. A group round persists one assistant
+                // row per member back-to-back; without the roleId guard the
+                // loader merged member B's reply into member A's bubble (one
+                // header, two personas). Ordinary sessions: every assistant
+                // row carries the session's single roleId, so behavior is
+                // byte-identical.
+                if (msg.role == "assistant" && prev?.role == "assistant" && prev.roleId == msg.roleId) {
                     // Merge: combine tool blocks, append text, keep the last id.
                     // Deduplicate by block.id — the agent loop may persist the same tool
                     // use in multiple consecutive turns (as it carries tool state across),
@@ -12518,6 +13098,8 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                         // assistant turn).
                         sourceDbIds = prev.sourceDbIds + msg.sourceDbIds,
                         roleId = prev.roleId ?: msg.roleId,
+                        // [T-group-chat] Merged bubble shows the newest turn's model.
+                        modelDisplayName = msg.modelDisplayName ?: prev.modelDisplayName,
                         // [T-error-persist-android] The error sticker is written
                         // to the LAST assistant row of the turn, so the later row
                         // (`msg`) wins; fall back to `prev` if only it carried one.
