@@ -43,6 +43,7 @@ Jarvis 已从「单 Agent」进化为**多角色**：一个 App 里可以同时�
 - **会话绑定角色** — 新建对话时选择一个角色，这个会话就由 Ta 负责；随时可以切换到另一个角色继续聊。
 - **角色之间接力** — 一个角色没做完的事，可以把消息 / 任务转发给另一个角色，跨角色分工协作。
 - **云端同步** — 角色（含头像与说话风格）通过 CloudKit 在你的设备之间保持一致，一处修改、全端生效。
+- **Agent 群聊** — 多个角色可以在同一个会话里一起对话，各自保留独立人格，用户可同时与多位 Ta 交流。
 
 ## 它能做什么
 
@@ -74,7 +75,12 @@ Jarvis 已从「单 Agent」进化为**多角色**：一个 App 里可以同时�
 Jarvis 有自己的工具体系，但不要求技能必须为它专门编写：**为 Claude、Codex、OpenClaw 或 Hermes Agent 编写的技能一般可以直接运行在 Jarvis 中。** 适配了 Jarvis 工具的技能运行得更好——能直接触达 Linux 壳、设备集成和原生卸载。
 
 
-Android 的 APK 始终在 [releases 页面](https://github.com/mengtian999/jarvis/releases) 提供最新版。
+Android 的 APK 在以下 releases 页面提供最新版：
+
+- [GitHub Releases](https://github.com/mengtian999/jarvis/releases)
+- [Gitee Releases（国内加速）](https://gitee.com/dreamsky111333/jarvis/releases)
+
+应用内置双源更新检查：海外优先 GitHub，国内自动回退 Gitee，无需手动切换。
 
 ---
 

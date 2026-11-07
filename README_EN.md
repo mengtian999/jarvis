@@ -46,6 +46,7 @@ Jarvis has evolved from a *single agent* to **multiple roles**: one app can hold
 - **Sessions bound to a role** — pick a role when you start a chat and that session belongs to them; switch to another role whenever you like.
 - **Handoffs between roles** — when one role is halfway through something, forward the messages / task to another role for cross-role collaboration.
 - **Cloud sync** — roles (including avatar and style) stay consistent across your devices via CloudKit — change once, updated everywhere.
+- **Agent group chat** — multiple roles can converse together in the same session, each retaining their own personality, so you can talk to several of them at once.
 
 ## What it does
 
@@ -93,7 +94,12 @@ App Store releases can lag behind: every update waits on review, and we hold bui
 
 **→ [Join the TestFlight beta](https://testflight.apple.com/join/3BdkA5c3)**
 
-On Android, the [releases page](https://github.com/mengtian999/jarvis/releases) always carries the latest APK.
+On Android, the latest APK is available from:
+
+- [GitHub Releases](https://github.com/mengtian999/jarvis/releases)
+- [Gitee Releases (CN mirror)](https://gitee.com/dreamsky111333/jarvis/releases)
+
+The app ships a dual-source update check: GitHub is tried first for overseas users and automatically falls back to Gitee in China — no manual switching needed.
 
 ---
 
