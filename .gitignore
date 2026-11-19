@@ -58,3 +58,5 @@ ui_dump.xml
 # Flutter generated
 flutter_assets/
 *.lock
+# App Store marketing screenshots (force-tracked)
+!asc/screenshots/**/*.png

@@ -77,7 +77,7 @@ struct AIDataSharingConsentView: View {
                         }
                     }
 
-                    Link("Read our full Privacy Policy", destination: URL(string: "https://www.bitjarvis.chat/privacy.html")!)
+                    Link("Read our full Privacy Policy", destination: BitJarvisBrand.privacyPolicyURL)
                         .font(.footnote)
 
                     Spacer(minLength: 80)

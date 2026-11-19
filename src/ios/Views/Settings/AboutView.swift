@@ -43,7 +43,7 @@ struct AboutView: View {
                                     .stroke(Color(UIColor.separator), lineWidth: 0.5)
                             )
                     }
-                    Text("Jarvis")
+                    Text(BitJarvisBrand.displayName)
                         .font(.title2.bold())
                     Text("Version \(appVersion)")
                         .font(.subheadline)
@@ -53,9 +53,10 @@ struct AboutView: View {
                         .foregroundStyle(.tertiary)
                         // Selectable so it can be copied into a bug report.
                         .textSelection(.enabled)
-                    Text("Jarvis is Your Fully Local, Fully Private On-Device Agent.")
+                    Text(BitJarvisBrand.taglineEN)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
@@ -64,6 +65,51 @@ struct AboutView: View {
 
             // MARK: - Links
             Section("Links") {
+                Link(destination: BitJarvisBrand.websiteURL) {
+                    Label {
+                        HStack {
+                            Text("Website")
+                                .foregroundStyle(Color(UIColor.label))
+                            Spacer()
+                            Text("www.bitjarvis.chat")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "globe")
+                    }
+                }
+                Link(destination: BitJarvisBrand.privacyPolicyURL) {
+                    Label {
+                        HStack {
+                            Text("Privacy Policy")
+                                .foregroundStyle(Color(UIColor.label))
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "hand.raised.fill")
+                    }
+                }
+                Link(destination: BitJarvisBrand.termsOfUseURL) {
+                    Label {
+                        HStack {
+                            Text("Terms of Use")
+                                .foregroundStyle(Color(UIColor.label))
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "doc.plaintext")
+                    }
+                }
                 Link(destination: URL(string: "https://github.com/mengtian999/jarvis")!) {
                     Label {
                         HStack {

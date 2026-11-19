@@ -1,0 +1,12 @@
+{
+  "locale": "en-US",
+  "name": "Bit Jarvis",
+  "subtitle": "Private on-device agent toolkit",
+  "privacyPolicyUrl": "https://www.bitjarvis.chat/privacy.html",
+  "supportUrl": "https://www.bitjarvis.chat",
+  "marketingUrl": "https://www.bitjarvis.chat",
+  "description": "Bit Jarvis is a local-first, privacy-first on-device agent toolkit.\n\nPOSITIONING\nUtility software: orchestrate tasks on your device, work in a sandbox, and call model APIs you configure (BYOK). It is not a consumer generative-AI content service and does not require a mandatory account.\n\nHIGHLIGHTS\n• Multi-persona agents with separate memory\n• Local-first storage in the app sandbox\n• BYOK or optional gateway models\n• On-device tools with OS permission prompts\n• Optional E2E IM (can stay off)\n\nPRIVACY\nNo default analytics, no data selling. Sensitive actions require confirmation. Privacy policy: https://www.bitjarvis.chat/privacy.html\n\nCOMPLIANCE\nThis app is a tool. Model output comes from providers/models you choose. Do not rely on automated output for medical, legal, or financial decisions without human review.\n\nWebsite: https://www.bitjarvis.chat\nSupport: bit@bitjarvis.chat",
+  "keywords": "agent,productivity,local AI,privacy,BYOK,automation,assistant,toolkit,open source",
+  "promotionalText": "Private on-device agent toolkit. Your keys, your device.",
+  "whatsNew": "Rebranded to Bit Jarvis, refreshed app icon, clearer privacy/terms entry points, and App Store copy aligned to a utility (non-AIGC-service) positioning."
+}

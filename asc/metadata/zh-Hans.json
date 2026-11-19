@@ -1,0 +1,12 @@
+{
+  "locale": "zh-Hans",
+  "name": "Bit Jarvis",
+  "subtitle": "本地私密的端侧 Agent 工具",
+  "privacyPolicyUrl": "https://www.bitjarvis.chat/privacy.html",
+  "supportUrl": "https://www.bitjarvis.chat",
+  "marketingUrl": "https://www.bitjarvis.chat",
+  "description": "Bit Jarvis 是一款本地优先、隐私优先的端侧 Agent 效率工具。\n\n【产品定位】\n工具类应用：在你的设备上编排任务、读写受控目录、调用你自行配置的模型接口（BYOK）。不是向公众提供的生成式 AI 内容平台，也不依赖强制注册。\n\n【你能做什么】\n• 多角色 Agent：不同场景用不同助手，记忆与人格分离\n• 本地优先：对话与文件默认留在本机沙盒\n• BYOK / 可选网关：用你自己的 API Key，或使用内置免费模型入口\n• 端侧能力：文件、脚本沙盒、系统权限按需授权\n• 可选 IM：端到端加密沟通（可关闭）\n\n【隐私】\n不默认埋点、不卖数据。敏感操作需确认。详见隐私政策：https://www.bitjarvis.chat/privacy.html\n\n【合规说明】\n本应用以工具能力为主；模型输出由你所选 Provider / 本机模型产生。请勿将自动输出直接用于医疗、法律、金融等需专业判断的场景。\n\n官网：https://www.bitjarvis.chat\n支持：bit@bitjarvis.chat",
+  "keywords": "Agent,效率工具,本地AI,隐私,BYOK,自动化,助手,文件管理,开源,BitJarvis",
+  "promotionalText": "本地私密的端侧 Agent 工具，安装即用，密钥你自管。",
+  "whatsNew": "品牌升级为 Bit Jarvis；更新应用图标；完善隐私政策与用户协议入口；商店信息与合规说明对齐工具类定位。"
+}

@@ -7885,7 +7885,7 @@ private struct SettingsSheet: View {
                         AboutView()
                     } label: {
                         Label {
-                            Text("About Jarvis")
+                            Text("About Bit Jarvis")
                         } icon: {
                             Image(systemName: "info")
                                 .font(.system(size: 9))
@@ -7894,7 +7894,7 @@ private struct SettingsSheet: View {
                                 .background(.indigo, in: Circle())
                         }
                     }
-                    Link(destination: URL(string: "https://www.bitjarvis.chat/privacy.html")!) {
+                    Link(destination: BitJarvisBrand.privacyPolicyURL) {
                         Label {
                             Text("Privacy Policy")
                         } icon: {
@@ -7903,6 +7903,28 @@ private struct SettingsSheet: View {
                                 .foregroundStyle(.white)
                                 .frame(width: 21, height: 21)
                                 .background(.teal, in: Circle())
+                        }
+                    }
+                    Link(destination: BitJarvisBrand.termsOfUseURL) {
+                        Label {
+                            Text("Terms of Use")
+                        } icon: {
+                            Image(systemName: "doc.plaintext")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.white)
+                                .frame(width: 21, height: 21)
+                                .background(.blue, in: Circle())
+                        }
+                    }
+                    Link(destination: BitJarvisBrand.websiteURL) {
+                        Label {
+                            Text("Website")
+                        } icon: {
+                            Image(systemName: "globe")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.white)
+                                .frame(width: 21, height: 21)
+                                .background(.cyan, in: Circle())
                         }
                     }
                     Button {
@@ -7923,8 +7945,8 @@ private struct SettingsSheet: View {
                         Button("Report a Bug (GitHub)") {
                             if let url = Self.makeBugReportURL() { UIApplication.shared.open(url) }
                         }
-                        Button("Feedback (Jarvis IM)") {
-                            if let url = URL(string: "https://www.bitjarvis.chat/invite.html?id=!r5PjhfZnf2BsDxysbJ:bitjarvis.chat") { UIApplication.shared.open(url) }
+                        Button("Feedback (Bit Jarvis IM)") {
+                            UIApplication.shared.open(BitJarvisBrand.feedbackIMURL)
                         }
                         Button("Feedback (Email)") {
                             if let url = Self.makeFeedbackEmailURL() { UIApplication.shared.open(url) }
