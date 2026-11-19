@@ -71,11 +71,8 @@ def api(method: str, path: str, body: dict | None = None):
 
 def latest_version_id(app_id: str) -> str:
     # Prefer editable versions (PREPARE_FOR_SUBMISSION / DEVELOPER_REJECTED / REJECTED / METADATA_REJECTED)
-    q = (
-        f"/v1/apps/{app_id}/appStoreVersions"
-        "?filter[platform]=IOS&limit=10"
-        "&sort=-createdDate"
-    )
+    # Note: appStoreVersions does not accept `sort`.
+    q = f"/v1/apps/{app_id}/appStoreVersions?filter[platform]=IOS&limit=10"
     data = api("GET", q).get("data") or []
     if not data:
         raise SystemExit("No appStoreVersions found")
@@ -91,11 +88,11 @@ def latest_version_id(app_id: str) -> str:
         st = (v.get("attributes") or {}).get("appStoreState")
         if st in preferred:
             print("using version", v["id"], st, (v.get("attributes") or {}).get("versionString"))
-            return v["id"]
+            return v["id"], st
     v = data[0]
-    print("fallback version", v["id"], (v.get("attributes") or {}).get("appStoreState"),
-          (v.get("attributes") or {}).get("versionString"))
-    return v["id"]
+    st = (v.get("attributes") or {}).get("appStoreState")
+    print("fallback version", v["id"], st, (v.get("attributes") or {}).get("versionString"))
+    return v["id"], st
 
 
 def localization_map(version_id: str) -> dict[str, str]:
@@ -106,18 +103,18 @@ def localization_map(version_id: str) -> dict[str, str]:
     return {(x.get("attributes") or {}).get("locale"): x["id"] for x in data}
 
 
-def upsert_locale(version_id: str, loc_id: str | None, meta: dict):
+def upsert_locale(version_id: str, loc_id: str | None, meta: dict, *, allow_whats_new: bool):
+    # name/subtitle belong on appInfoLocalizations, not version localizations.
     attrs = {
         "description": meta["description"],
         "keywords": meta["keywords"][:100],
         "marketingUrl": meta["marketingUrl"],
         "promotionalText": meta.get("promotionalText", "")[:170],
         "supportUrl": meta["supportUrl"],
-        "whatsNew": meta.get("whatsNew", "")[:4000],
     }
-    # name/subtitle are on appInfo localization for some states; try version loc first
-    if meta.get("subtitle"):
-        attrs["subtitle"] = meta["subtitle"][:30]
+    # First App Store version cannot set whatsNew.
+    if allow_whats_new and meta.get("whatsNew"):
+        attrs["whatsNew"] = meta["whatsNew"][:4000]
     body = {"data": {"type": "appStoreVersionLocalizations", "attributes": attrs}}
     if loc_id:
         body["data"]["id"] = loc_id
@@ -132,45 +129,77 @@ def upsert_locale(version_id: str, loc_id: str | None, meta: dict):
         print("created", meta["locale"], created.get("data", {}).get("id"))
 
 
-def sync_app_info_urls(app_id: str, privacy_url: str):
-    # App-level privacy policy URL lives on appInfos -> appInfoLocalizations
+def sync_app_info(app_id: str, metas: list[dict]):
+    # App name / subtitle / privacyPolicyUrl live on appInfos -> appInfoLocalizations
     infos = api("GET", f"/v1/apps/{app_id}/appInfos?limit=5").get("data") or []
     if not infos:
         print("no appInfos")
         return
     info_id = infos[0]["id"]
     locs = api("GET", f"/v1/appInfos/{info_id}/appInfoLocalizations?limit=50").get("data") or []
-    for loc in locs:
-        lid = loc["id"]
-        locale = (loc.get("attributes") or {}).get("locale")
-        name = "Bit Jarvis" if locale and locale.startswith("zh") else "Bit Jarvis"
-        subtitle = "本地私密的端侧 Agent 工具" if locale and locale.startswith("zh") else "Private on-device agent toolkit"
-        body = {
-            "data": {
-                "type": "appInfoLocalizations",
-                "id": lid,
-                "attributes": {
-                    "name": name[:30],
-                    "subtitle": subtitle[:30],
-                    "privacyPolicyUrl": privacy_url,
-                },
-            }
+    by_locale = {(x.get("attributes") or {}).get("locale"): x for x in locs}
+    for meta in metas:
+        locale = meta["locale"]
+        attrs = {
+            "name": meta.get("name", "Bit Jarvis")[:30],
+            "subtitle": meta.get("subtitle", "")[:30],
+            "privacyPolicyUrl": meta.get(
+                "privacyPolicyUrl", "https://www.bitjarvis.chat/privacy.html"
+            ),
         }
-        try:
-            api("PATCH", f"/v1/appInfoLocalizations/{lid}", body)
-            print("appInfoLocalization", locale, "ok")
-        except SystemExit as e:
-            print("appInfoLocalization skip", locale, e)
+        if locale in by_locale:
+            lid = by_locale[locale]["id"]
+            body = {
+                "data": {
+                    "type": "appInfoLocalizations",
+                    "id": lid,
+                    "attributes": attrs,
+                }
+            }
+            try:
+                api("PATCH", f"/v1/appInfoLocalizations/{lid}", body)
+                print("appInfoLocalization", locale, "ok")
+            except SystemExit as e:
+                print("appInfoLocalization skip", locale, e)
+        else:
+            body = {
+                "data": {
+                    "type": "appInfoLocalizations",
+                    "attributes": {"locale": locale, **attrs},
+                    "relationships": {
+                        "appInfo": {"data": {"type": "appInfos", "id": info_id}}
+                    },
+                }
+            }
+            try:
+                created = api("POST", "/v1/appInfoLocalizations", body)
+                print("appInfoLocalization created", locale, created.get("data", {}).get("id"))
+            except SystemExit as e:
+                print("appInfoLocalization create skip", locale, e)
 
 
 def main():
-    version_id = latest_version_id(APP_ID)
+    version_id, state = latest_version_id(APP_ID)
+    # First App Store version cannot edit whatsNew; keep off for PREPARE_FOR_SUBMISSION.
+    allow_whats_new = state not in {
+        "PREPARE_FOR_SUBMISSION",
+        "WAITING_FOR_REVIEW",
+        "IN_REVIEW",
+        "PENDING_DEVELOPER_RELEASE",
+        "READY_FOR_SALE",
+    }
     existing = localization_map(version_id)
+    metas: list[dict] = []
     for path in sorted(META_DIR.glob("*.json")):
         meta = json.loads(path.read_text())
-        upsert_locale(version_id, existing.get(meta["locale"]), meta)
-    privacy = "https://www.bitjarvis.chat/privacy.html"
-    sync_app_info_urls(APP_ID, privacy)
+        metas.append(meta)
+        upsert_locale(
+            version_id,
+            existing.get(meta["locale"]),
+            meta,
+            allow_whats_new=allow_whats_new,
+        )
+    sync_app_info(APP_ID, metas)
     print("ASC listing sync done — no AIGC content-service declaration added.")
 
 
