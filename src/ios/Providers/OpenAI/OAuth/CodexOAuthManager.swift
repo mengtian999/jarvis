@@ -93,7 +93,7 @@ final class CodexOAuthManager: NSObject, ObservableObject {
             URLQueryItem(name: "state", value: state),
             URLQueryItem(name: "id_token_add_organizations", value: "true"),
             URLQueryItem(name: "codex_cli_simplified_flow", value: "true"),
-            URLQueryItem(name: "originator", value: "codex_cli_rs"),
+            URLQueryItem(name: "originator", value: "codex_cli_rs")
         ]
         let authorizationURL = components.url!
         logger.info("Authorization URL: \(authorizationURL.absoluteString)")
@@ -198,7 +198,7 @@ final class CodexOAuthManager: NSObject, ObservableObject {
             kSecAttrService as String: legacyKeychainService,
             kSecAttrAccount as String: legacyKeychainAccount,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
@@ -210,7 +210,7 @@ final class CodexOAuthManager: NSObject, ObservableObject {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: legacyKeychainService,
-            kSecAttrAccount as String: legacyKeychainAccount,
+            kSecAttrAccount as String: legacyKeychainAccount
         ]
         SecItemDelete(query as CFDictionary)
     }
@@ -242,7 +242,7 @@ final class CodexOAuthManager: NSObject, ObservableObject {
             "client_id": clientID,
             "code": code,
             "redirect_uri": redirectURI,
-            "code_verifier": verifier,
+            "code_verifier": verifier
         ]
 
         return try await postTokenRequest(body: body, context: "Token exchange")
@@ -253,7 +253,7 @@ final class CodexOAuthManager: NSObject, ObservableObject {
             "grant_type": "refresh_token",
             "client_id": clientID,
             "refresh_token": refreshToken,
-            "scope": scopes,
+            "scope": scopes
         ]
 
         var storage = try await postTokenRequest(body: body, context: "Token refresh")

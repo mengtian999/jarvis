@@ -218,7 +218,7 @@ final class ImagePreviewContentView: UIView, UIScrollViewDelegate, UIGestureReco
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
 
         // Single-finger dismiss pan. `maximumNumberOfTouches = 1` so

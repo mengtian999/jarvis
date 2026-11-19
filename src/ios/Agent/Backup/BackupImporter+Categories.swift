@@ -189,7 +189,8 @@ extension BackupImporter {
                 report.unreadable += 1
                 continue
             }
-            let effectiveRoleId = msg.roleId ?? (msg.role == .assistant ? (sessionRoleMap[msg.sessionId] ?? await store.getSession(msg.sessionId)?.roleId) : nil)
+            let sessionRoleId = await store.getSession(msg.sessionId)?.roleId
+            let effectiveRoleId = msg.roleId ?? (msg.role == .assistant ? (sessionRoleMap[msg.sessionId] ?? sessionRoleId) : nil)
             let outcome = await store.restoreMessage(
                 id: msg.id, sessionId: msg.sessionId, role: msg.role.rawValue,
                 partsJson: partsJson, createdAt: msg.createdAt,

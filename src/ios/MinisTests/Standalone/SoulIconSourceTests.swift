@@ -162,7 +162,7 @@ for (label, s, want) in [
     ("absolute path", "/var/jarvis/attachments/icon.png", true),
     ("tilde path", "~/icon.png", true),
     ("long bare base64", String(repeating: "A", count: 100), true),
-    ("short base64-ish text", "AAAA", false),
+    ("short base64-ish text", "AAAA", false)
 ] as [(String, String, Bool)] {
     checkEq("\(label)", looksLikeImageSource(s), want)
 }

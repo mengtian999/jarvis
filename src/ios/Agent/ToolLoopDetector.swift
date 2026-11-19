@@ -255,7 +255,7 @@ final class ToolLoopDetector {
     /// titles like "Read /etc/hostname #1") and which must NOT contribute to the
     /// args hash — otherwise identical logical calls look unique to the detector.
     private static let argsHashIgnoredKeys: Set<String> = [
-        "tool_title",
+        "tool_title"
     ]
 
     private func argsHashFor(_ toolName: String, _ params: [String: Any]) -> String {
@@ -304,7 +304,7 @@ final class ToolLoopDetector {
         guard let msg = errorMessage, !msg.isEmpty else { return nil }
         let patterns = [
             #"unknown tool[:\s]+["']?([a-zA-Z0-9_.-]+)["']?"#,
-            #"tool\s+["']?([a-zA-Z0-9_.-]+)["']?\s+(?:not found|is not available)"#,
+            #"tool\s+["']?([a-zA-Z0-9_.-]+)["']?\s+(?:not found|is not available)"#
         ]
         for pattern in patterns {
             if let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) {

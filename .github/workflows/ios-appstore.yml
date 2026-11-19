@@ -1,0 +1,197 @@
+# Free path: public repo + GitHub-hosted macos-26 (Xcode 26) — no local Sequoia needed.
+# Trigger: Actions → "iOS App Store" → Run workflow
+#
+# Required GitHub Secrets:
+#   BUILD_CERTIFICATE_BASE64  — Apple Distribution .p12 (team 4VPXQ6C88H) base64
+#   P12_PASSWORD              — .p12 password
+#   KEYCHAIN_PASSWORD         — any random string
+#   PROVISION_APP             — "Jarvis AppStore".mobileprovision base64
+#   PROVISION_SHARE           — "Jarvis ShareExtension AppStore" base64
+#   PROVISION_FILEPROVIDER    — "Jarvis FileProvider AppStore" base64
+#   PROVISION_WIDGET          — "Jarvis AgentWidget AppStore" base64
+#   APP_STORE_CONNECT_KEY_ID  — CPTT4KYUQY
+#   APP_STORE_CONNECT_ISSUER_ID — 836c0ea0-1e2e-4473-9128-ce229766e00f
+#   APP_STORE_CONNECT_API_KEY — AuthKey_*.p8 file contents
+#
+# Prebuilt native deps (frameworks/libs/rootfs) must exist as Release asset:
+#   tag:  ci-prebuilt-deps
+#   file: ios-prebuilt-deps.tar.gz
+# Create once:  ./scripts/upload-ios-prebuilt-deps.sh
+
+name: iOS App Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Upload IPA to App Store Connect after export"
+        type: boolean
+        default: true
+      xcode_version:
+        description: "Xcode app under /Applications (macos-26 image)"
+        type: string
+        default: "26.3"
+
+concurrency:
+  group: ios-appstore
+  cancel-in-progress: true
+
+jobs:
+  archive-export-upload:
+    name: Archive → IPA → Upload
+    runs-on: macos-26
+    timeout-minutes: 180
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ inputs.xcode_version }}.app/Contents/Developer
+      TEAM_ID: 4VPXQ6C88H
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          if [[ ! -d "$DEVELOPER_DIR" ]]; then
+            echo "Missing $DEVELOPER_DIR — available:"
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          sudo xcode-select -s "$DEVELOPER_DIR"
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Restore prebuilt iOS deps
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ -d deps/frameworks/FFmpeg.framework && -f deps/libs/libish.a ]]; then
+            echo "deps already present in checkout"
+            exit 0
+          fi
+          ASSET="ios-prebuilt-deps.tar.gz"
+          URL="https://github.com/${{ github.repository }}/releases/download/ci-prebuilt-deps/${ASSET}"
+          echo "Downloading $URL"
+          curl -fL -H "Authorization: Bearer $GH_TOKEN" -o /tmp/"$ASSET" "$URL"
+          mkdir -p deps
+          tar -xzf /tmp/"$ASSET" -C deps
+          test -d deps/frameworks/FFmpeg.framework
+          test -f deps/libs/libish.a
+          du -sh deps/frameworks deps/libs deps/resources
+
+      - name: Import signing assets
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          PROVISION_APP: ${{ secrets.PROVISION_APP }}
+          PROVISION_SHARE: ${{ secrets.PROVISION_SHARE }}
+          PROVISION_FILEPROVIDER: ${{ secrets.PROVISION_FILEPROVIDER }}
+          PROVISION_WIDGET: ${{ secrets.PROVISION_WIDGET }}
+        run: |
+          set -euo pipefail
+          for v in BUILD_CERTIFICATE_BASE64 P12_PASSWORD KEYCHAIN_PASSWORD \
+                   PROVISION_APP PROVISION_SHARE PROVISION_FILEPROVIDER PROVISION_WIDGET; do
+            if [[ -z "${!v}" ]]; then
+              echo "Missing secret: $v"
+              exit 1
+            fi
+          done
+
+          CERT_PATH="$RUNNER_TEMP/dist.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+          echo "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$CERT_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERT_PATH" -P "$P12_PASSWORD" -A -t cert -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH" $(security list-keychain -d user | sed -e s/\"//g)
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          install_profile() {
+            local b64="$1" name="$2"
+            local path="$RUNNER_TEMP/${name}.mobileprovision"
+            echo "$b64" | base64 --decode > "$path"
+            local uuid
+            uuid=$(security cms -D -i "$path" | plutil -extract UUID raw -)
+            cp "$path" "$HOME/Library/MobileDevice/Provisioning Profiles/${uuid}.mobileprovision"
+            echo "Installed $name → $uuid"
+          }
+          install_profile "$PROVISION_APP" app
+          install_profile "$PROVISION_SHARE" share
+          install_profile "$PROVISION_FILEPROVIDER" fileprovider
+          install_profile "$PROVISION_WIDGET" widget
+
+      - name: Prepare iOS config
+        run: |
+          set -euo pipefail
+          # Local-only file (see BUILDING.md); CI uses the checked-in example.
+          if [[ ! -f src/ios/Configs/ProviderCustomization.xcconfig ]]; then
+            cp src/ios/Configs/ProviderCustomization.xcconfig.example \
+              src/ios/Configs/ProviderCustomization.xcconfig
+          fi
+          test -f src/ios/Configs/ProviderCustomization.xcconfig
+          # Sanity: App Store profiles are for com.bitjarvis.app (宣城比特).
+          grep -q 'PRODUCT_BUNDLE_IDENTIFIER = com.bitjarvis.app;' \
+            src/ios/Minis.xcodeproj/project.pbxproj
+          grep -q 'group.com.bitjarvis.app' src/ios/Minis.entitlements
+
+      - name: Archive
+        run: |
+          set -euo pipefail
+          set -o pipefail
+          xcodebuild archive \
+            -project src/ios/Minis.xcodeproj \
+            -scheme Minis \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Minis.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY='Apple Distribution' \
+            | tee "$RUNNER_TEMP/archive.log"
+          if [[ ! -d "$RUNNER_TEMP/Minis.xcarchive" ]]; then
+              echo "---- archive log (tail) ----"
+              tail -n 120 "$RUNNER_TEMP/archive.log"
+              exit 1
+          fi
+
+      - name: Export IPA
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Minis.xcarchive" \
+            -exportPath "$RUNNER_TEMP/ipa" \
+            -exportOptionsPlist src/ios/ExportOptions-AppStore.plist
+          ls -lh "$RUNNER_TEMP/ipa"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Minis-AppStore-IPA
+          path: ${{ runner.temp }}/ipa/*.ipa
+          if-no-files-found: error
+
+      - name: Upload to App Store Connect
+        if: ${{ inputs.upload }}
+        env:
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: |
+          set -euo pipefail
+          for v in APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY; do
+            [[ -n "${!v}" ]] || { echo "Missing secret: $v"; exit 1; }
+          done
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$APP_STORE_CONNECT_API_KEY" \
+            > "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+          IPA=$(ls "$RUNNER_TEMP"/ipa/*.ipa | head -1)
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$APP_STORE_CONNECT_KEY_ID" \
+            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
+            --verbose

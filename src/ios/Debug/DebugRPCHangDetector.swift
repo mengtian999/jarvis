@@ -15,7 +15,7 @@ enum DebugRPCHangDetector {
         return [
             "ok": started,
             "isRunning": HangDetector.isRunning,
-            "thresholdMs": HangDetector.thresholdMs,
+            "thresholdMs": HangDetector.thresholdMs
         ]
     }
 
@@ -24,7 +24,7 @@ enum DebugRPCHangDetector {
         HangDetector.stop()
         return [
             "ok": true,
-            "isRunning": HangDetector.isRunning,
+            "isRunning": HangDetector.isRunning
         ]
     }
 
@@ -39,7 +39,7 @@ enum DebugRPCHangDetector {
             let frames: [[String: Any]] = event.frames.map { frame -> [String: Any] in
                 var out: [String: Any] = [
                     "address": String(format: "0x%lx", frame.address),
-                    "offset": String(format: "0x%lx", frame.imageOffset),
+                    "offset": String(format: "0x%lx", frame.imageOffset)
                 ]
                 if let img = frame.imageName { out["image"] = img }
                 if let sym = frame.symbol { out["symbol"] = sym }
@@ -49,7 +49,7 @@ enum DebugRPCHangDetector {
                 "timestamp": event.timestamp,
                 "durationMs": event.durationMs,
                 "runLoopActivity": event.runLoopActivity,
-                "frames": frames,
+                "frames": frames
             ]
         }
 
@@ -57,7 +57,7 @@ enum DebugRPCHangDetector {
             "count": serializedEvents.count,
             "isRunning": HangDetector.isRunning,
             "thresholdMs": HangDetector.thresholdMs,
-            "events": serializedEvents,
+            "events": serializedEvents
         ]
     }
 

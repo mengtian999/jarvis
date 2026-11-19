@@ -97,7 +97,7 @@ enum MinisToast {
             capsule.centerXAnchor.constraint(equalTo: window.centerXAnchor),
             capsule.bottomAnchor.constraint(equalTo: window.safeAreaLayoutGuide.bottomAnchor, constant: -48),
             capsule.leadingAnchor.constraint(greaterThanOrEqualTo: window.leadingAnchor, constant: 24),
-            capsule.trailingAnchor.constraint(lessThanOrEqualTo: window.trailingAnchor, constant: -24),
+            capsule.trailingAnchor.constraint(lessThanOrEqualTo: window.trailingAnchor, constant: -24)
         ])
 
         UIView.animate(withDuration: 0.25) { capsule.alpha = 1 }
@@ -243,7 +243,7 @@ func downsampleImageData(_ data: Data, maxPixelSize: CGFloat = 2048) -> UIImage?
         kCGImageSourceCreateThumbnailFromImageAlways: true,
         kCGImageSourceShouldCacheImmediately: true,
         kCGImageSourceCreateThumbnailWithTransform: true,
-        kCGImageSourceThumbnailMaxPixelSize: maxPixelSize,
+        kCGImageSourceThumbnailMaxPixelSize: maxPixelSize
     ]
     guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, downsampleOpts as CFDictionary) else {
         return UIImage(data: data)
@@ -576,7 +576,7 @@ fileprivate final class MarkdownNSRenderer {
         style.lineSpacing = 0
         separator.addAttributes([
             .font: UIFont.systemFont(ofSize: 0.01),
-            .paragraphStyle: style,
+            .paragraphStyle: style
         ], range: NSRange(location: 0, length: 1))
         return separator
     }
@@ -1013,7 +1013,7 @@ fileprivate final class MarkdownNSRenderer {
         // theme.baseFont (16.5pt), which ate ~20pt above and below every table.
         let sepAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 0.01),
-            .paragraphStyle: separatorPara,
+            .paragraphStyle: separatorPara
         ]
         result.append(NSAttributedString(string: "\u{2028}", attributes: sepAttrs))
         let attachPart = NSMutableAttributedString(attachment: attachment)
@@ -1306,7 +1306,7 @@ fileprivate final class MarkdownNSRenderer {
     private func baseAttributes(quoteDepth: Int) -> [NSAttributedString.Key: Any] {
         var attrs: [NSAttributedString.Key: Any] = [
             .font: theme.baseFont,
-            .foregroundColor: quoteDepth > 0 ? theme.secondaryLabelColor : theme.labelColor,
+            .foregroundColor: quoteDepth > 0 ? theme.secondaryLabelColor : theme.labelColor
         ]
         if quoteDepth > 0 {
             attrs[.blockquoteDepth] = quoteDepth
@@ -1456,7 +1456,7 @@ final class CodeBlockAttachment: NSTextAttachment {
         codeStyle.lineBreakMode = .byClipping
         let attrStr = NSAttributedString(string: code, attributes: [
             .font: theme.codeBlockFont,
-            .paragraphStyle: codeStyle,
+            .paragraphStyle: codeStyle
         ])
         let tv = UITextView()
         tv.isScrollEnabled = false
@@ -1529,7 +1529,7 @@ final class CodeBlockAttachment: NSTextAttachment {
         let codeAttr = NSAttributedString(string: code, attributes: [
             .font: theme.codeBlockFont,
             .foregroundColor: theme.codeBlockTextColor,
-            .paragraphStyle: codeStyle,
+            .paragraphStyle: codeStyle
         ])
         codeTextView.attributedText = codeAttr
 
@@ -1630,7 +1630,7 @@ final class CodeBlockAttachment: NSTextAttachment {
         let codeAttr = NSAttributedString(string: code, attributes: [
             .font: theme.codeBlockFont,
             .foregroundColor: theme.codeBlockTextColor,
-            .paragraphStyle: codeStyle,
+            .paragraphStyle: codeStyle
         ])
         codeTextView.attributedText = codeAttr
 
@@ -2541,7 +2541,7 @@ final class TableAttachment: NSTextAttachment {
                     tv.textContainer.lineFragmentPadding = 0
                     tv.linkTextAttributes = [
                         .foregroundColor: theme.linkColor,
-                        .underlineStyle: NSUnderlineStyle.single.rawValue,
+                        .underlineStyle: NSUnderlineStyle.single.rawValue
                     ]
                     tv.attributedText = attrStr
 
@@ -2607,7 +2607,7 @@ final class TableAttachment: NSTextAttachment {
             stack.addArrangedSubview(rowView)
             NSLayoutConstraint.activate([
                 rowView.heightAnchor.constraint(equalToConstant: rowHeight),
-                rowView.widthAnchor.constraint(equalToConstant: tableWidth),
+                rowView.widthAnchor.constraint(equalToConstant: tableWidth)
             ])
             yOffset += rowHeight
         }
@@ -3179,7 +3179,7 @@ private final class TableCellLabel: UILabel, UIGestureRecognizerDelegate, UICont
             UIMenuItem(title: AppLocalized("Add to Chat Input"), action: #selector(TableCellTextView.addSelectionToChatInput(_:))),
             UIMenuItem(title: AppLocalized("Copy Table"), action: #selector(TableCellTextView.copyTable)),
             // [T-ios-copy-table-image]
-            UIMenuItem(title: AppLocalized("Copy Table Image"), action: #selector(TableCellTextView.copyTableImage)),
+            UIMenuItem(title: AppLocalized("Copy Table Image"), action: #selector(TableCellTextView.copyTableImage))
         ]
 
         // Select all text after a run-loop turn so TextKit finishes layout.
@@ -5171,7 +5171,7 @@ final class SelectableMarkdownTextView: UITextView, UIGestureRecognizerDelegate 
         textDragInteraction?.isEnabled = false
         linkTextAttributes = [
             .foregroundColor: SelectableMarkdownTheme().linkColor,
-            .underlineStyle: NSUnderlineStyle.single.rawValue,
+            .underlineStyle: NSUnderlineStyle.single.rawValue
         ]
 
         // Tap gesture for inline code copy
@@ -7877,7 +7877,7 @@ struct SelectableMarkdownView: UIViewRepresentable {
                 let mut = NSMutableAttributedString(attributedString: renderedBody)
                 let suffixAttrs: [NSAttributedString.Key: Any] = [
                     .font: UIFont.systemFont(ofSize: FontSettings.shared.scaledMessage(16.5)),
-                    .foregroundColor: UIColor.label,
+                    .foregroundColor: UIColor.label
                 ]
                 mut.append(NSAttributedString(string: _splitForUpdate.plainSuffix, attributes: suffixAttrs))
                 attributed = mut
@@ -8420,7 +8420,7 @@ struct SelectableMarkdownView: UIViewRepresentable {
                     let mut = NSMutableAttributedString(attributedString: rendered)
                     let suffixAttrs: [NSAttributedString.Key: Any] = [
                         .font: UIFont.systemFont(ofSize: FontSettings.shared.scaledMessage(16.5)),
-                        .foregroundColor: UIColor.label,
+                        .foregroundColor: UIColor.label
                     ]
                     mut.append(NSAttributedString(string: split.plainSuffix, attributes: suffixAttrs))
                     pending = mut

@@ -112,7 +112,7 @@ final class CookieBackupStore {
                 .name: name,
                 .value: value,
                 .domain: domain,
-                .path: path,
+                .path: path
             ]
             if secure { properties[.secure] = "TRUE" }
             if httpOnly { properties[HTTPCookiePropertyKey("HttpOnly")] = "TRUE" }

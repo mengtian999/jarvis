@@ -141,7 +141,7 @@ final class BrowserResourceMonitor {
                 "app_avail_mem=\(appAvailableMemoryMB)MB",
                 "app_cpu=\(String(format: "%.1f", appCPUPercent))%",
                 "thermal=\(thermalState)",
-                "low_power=\(lowPowerMode)",
+                "low_power=\(lowPowerMode)"
             ]
             if let remaining = backgroundTimeRemaining {
                 parts.append("bg_time_left=\(String(format: "%.0f", remaining))s")
@@ -368,7 +368,7 @@ final class BrowserResourceMonitor {
             (UIApplication.didEnterBackgroundNotification, "didEnterBackground"),
             (UIApplication.willEnterForegroundNotification, "willEnterForeground"),
             (UIApplication.didBecomeActiveNotification, "didBecomeActive"),
-            (UIApplication.willResignActiveNotification, "willResignActive"),
+            (UIApplication.willResignActiveNotification, "willResignActive")
         ]
         for (name, label) in transitions {
             let token = center.addObserver(forName: name, object: nil, queue: .main) { _ in

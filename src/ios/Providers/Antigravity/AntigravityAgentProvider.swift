@@ -200,7 +200,7 @@ final class AntigravityAgentProvider: AgentProvider {
             for (name, param) in tool.parameters {
                 var prop: [String: Any] = [
                     "type": param.type.geminiType,
-                    "description": param.description,
+                    "description": param.description
                 ]
                 if let enumValues = param.enumValues {
                     prop["description"] = "\(param.description) (values: \(enumValues.joined(separator: ", ")))"
@@ -211,7 +211,7 @@ final class AntigravityAgentProvider: AgentProvider {
             var params: [String: Any] = [
                 "type": "OBJECT",
                 "properties": properties,
-                "required": tool.required,
+                "required": tool.required
             ]
             if let ordering = tool.propertyOrdering {
                 params["propertyOrdering"] = ordering

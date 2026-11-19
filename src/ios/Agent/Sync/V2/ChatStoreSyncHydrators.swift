@@ -155,24 +155,9 @@ enum ChatStoreSyncHydrators {
             builder: { id in await buildMemoryDaily(dateKey: id) },
             merger: { record in await mergeMemoryDaily(record: record) }
         )
-        // 角色同步
-        h.register(
-            recordType: "RoleV2",
-            builder: { id in await buildRole(id: id) },
-            merger: { record in await mergeRole(record: record) }
-        )
-        h.register(
-            recordType: "RolesCollectionV2",
-            builder: { _ in await buildRolesCollection() },
-            merger: { record in await mergeRolesCollection(record: record) }
-        )
-        // [T-group-chat] P4: agent groups (multi-role chat rosters).
-        h.register(
-            recordType: "AgentGroupV2",
-            builder: { id in await buildAgentGroup(id: id) },
-            merger: { record in await mergeAgentGroup(record: record) },
-            deletionApplier: { id in await applyAgentGroupDeletion(id: id) }
-        )
+        // RoleV2 / RolesCollectionV2 / AgentGroupV2 hydrators live in
+        // RoleSyncExtensions.swift (WIP) — not linked for this Xcode 16.2
+        // App Store build. Re-enable when that file compiles cleanly.
 
         logger.info("[SyncCore] ChatStoreSyncHydrators registered: \(SyncCoreHydrators.shared.registeredRecordTypes.count) types")
     }
@@ -314,7 +299,7 @@ enum ChatStoreSyncHydrators {
             streamInterruptCount: streamInterruptCount,
             updatedAt: updatedAt,
             // [T-role-message-level] additive optional: old peers decode nil.
-            roleId: optionalStringField(record, "roleId")
+            roleId: optionalStringField(record, "roleId"),
             modelId: optionalStringField(record, "modelId"),
             modelDisplayName: optionalStringField(record, "modelDisplayName"),
             providerType: optionalStringField(record, "providerType"),

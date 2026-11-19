@@ -29,14 +29,14 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
     private let setupClientMetadata: [String: String] = [
         "ideType": "IDE_UNSPECIFIED",
         "platform": "PLATFORM_UNSPECIFIED",
-        "pluginType": "GEMINI",
+        "pluginType": "GEMINI"
     ]
 
     // MARK: - Cloud Code Base URLs (daily sandbox preferred, prod fallback)
 
     nonisolated static let cloudCodeBaseURLs = [
         "https://daily-cloudcode-pa.sandbox.googleapis.com",
-        "https://cloudcode-pa.googleapis.com",
+        "https://cloudcode-pa.googleapis.com"
     ]
 
     // MARK: - Published State
@@ -112,7 +112,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
             URLQueryItem(name: "access_type", value: "offline"),
             URLQueryItem(name: "prompt", value: "consent"),
             URLQueryItem(name: "code_challenge", value: pkce.challenge),
-            URLQueryItem(name: "code_challenge_method", value: "S256"),
+            URLQueryItem(name: "code_challenge_method", value: "S256")
         ]
         let authorizationURL = components.url!
         logger.info("Authorization URL: \(authorizationURL.absoluteString)")
@@ -251,7 +251,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
             "client_secret": clientSecret,
             "code": code,
             "redirect_uri": redirectURI,
-            "code_verifier": codeVerifier,
+            "code_verifier": codeVerifier
         ]
         return try await postTokenRequest(body: body, context: "Token exchange")
     }
@@ -261,7 +261,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
             "grant_type": "refresh_token",
             "client_id": clientID,
             "client_secret": clientSecret,
-            "refresh_token": refreshToken,
+            "refresh_token": refreshToken
         ]
 
         var storage = try await postTokenRequest(body: body, context: "Token refresh")
@@ -409,7 +409,7 @@ final class AntigravityOAuthManager: NSObject, ObservableObject {
 
         let onboardBody: [String: Any] = [
             "tierId": "FREE",
-            "metadata": setupClientMetadata,
+            "metadata": setupClientMetadata
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: onboardBody)
 

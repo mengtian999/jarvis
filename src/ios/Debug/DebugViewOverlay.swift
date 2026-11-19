@@ -192,7 +192,7 @@ private final class OverlayLayer: CALayer {
             "bounds": NSNull(),
             "frame": NSNull(),
             "backgroundColor": NSNull(),
-            "borderColor": NSNull(),
+            "borderColor": NSNull()
         ]
         borderWidth = 1
         textLayer.fontSize = 9
@@ -224,7 +224,7 @@ private final class OverlayLayer: CALayer {
             typeName,
             addr,
             String(format: "x=%.0f y=%.0f", f.origin.x, f.origin.y),
-            String(format: "w=%.0f h=%.0f", f.size.width, f.size.height),
+            String(format: "w=%.0f h=%.0f", f.size.width, f.size.height)
         ]
         textLayer.string = lines.joined(separator: "\n")
         // Anchor label to top-left with small padding; cap to view bounds.

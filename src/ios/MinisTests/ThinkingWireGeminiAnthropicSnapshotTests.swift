@@ -59,12 +59,12 @@ final class ThinkingWireGeminiAnthropicSnapshotTests: XCTestCase {
         // The plain `gemini-2.0-tts` above never caught this: it matches no family.
         "gemini-3.1-flash-tts-preview", "gemini-2.5-flash-preview-tts",
         "gemini-2.5-pro-preview-tts", "gemini-3-pro-image-preview",
-        "unknown-gemini-model",
+        "unknown-gemini-model"
     ]
 
     private let anthropicModels = [
         "claude-opus-4-8", "claude-opus-4.8", "claude-sonnet-4-6", "claude-sonnet-4-5",
-        "claude-haiku-4-5", "claude-opus-4-1", "claude-3-7-sonnet", "not-a-claude",
+        "claude-haiku-4-5", "claude-opus-4-1", "claude-3-7-sonnet", "not-a-claude"
     ]
 
     private let levels: [ThinkingLevel] = [.off, .low, .medium, .high, .xhigh, .max, .ultra]

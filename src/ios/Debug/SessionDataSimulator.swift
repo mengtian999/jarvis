@@ -241,7 +241,7 @@ final class SessionDataSimulator: ObservableObject {
                 Let me apply the fix:
                 """),
                 ParsedBlock(kind: .fileEditTool(path: "src/ios/Providers/AnthropicProvider.swift"), content: "{\"path\": \"src/ios/Providers/AnthropicProvider.swift\"}", toolStatus: .success),
-                tb("The build error should now be resolved."),
+                tb("The build error should now be resolved.")
             ], usage: nil),
 
             // 3. User asks for more
@@ -287,7 +287,7 @@ final class SessionDataSimulator: ObservableObject {
                 ```
 
                 Test file and error handling are both complete.
-                """),
+                """)
             ], usage: nil),
 
             // 5. User asks about performance
@@ -344,7 +344,7 @@ final class SessionDataSimulator: ObservableObject {
                 3. Image blocks are not yet lazy-loaded (TODO)
 
                 Overall the performance is solid for typical usage. The main bottleneck would be extremely long conversations (200+ messages), where we might want to consider virtualization of off-screen messages.
-                """),
+                """)
             ], usage: nil),
 
             // 7. User asks to run tests
@@ -370,7 +370,7 @@ final class SessionDataSimulator: ObservableObject {
                 | testStreamingWithUserScrollHover | 15.3s | Pass |
                 | testScrollDecelerationStability | 4.8s | Pass |
                 | testResetAndReload | 1.4s | Pass |
-                """),
+                """)
             ], usage: nil),
 
             // 9. User wraps up
@@ -378,8 +378,8 @@ final class SessionDataSimulator: ObservableObject {
 
             // 10. Short closing response
             ParsedMessage(role: .assistant, blocks: [
-                tb("You're welcome! The V3 message list is looking solid with proper error handling, comprehensive tests, and good scroll performance. Let me know if you need anything else."),
-            ], usage: nil),
+                tb("You're welcome! The V3 message list is looking solid with proper error handling, comprehensive tests, and good scroll performance. Let me know if you need anything else.")
+            ], usage: nil)
         ]
     }
 
@@ -408,7 +408,7 @@ final class SessionDataSimulator: ObservableObject {
         return ParsedMessage(role: .assistant, blocks: [
             tb("Looking at feature \(i)..."),
             ParsedBlock(kind: toolKind, content: "{}", toolStatus: status),
-            tb(text),
+            tb(text)
         ], usage: nil)
     }
 
@@ -674,14 +674,14 @@ final class SessionDataSimulator: ObservableObject {
 
                     snapshot.appendItems([
                         Item(title: "Featured 1", subtitle: "Description", imageName: "star"),
-                        Item(title: "Featured 2", subtitle: "Description", imageName: "heart"),
+                        Item(title: "Featured 2", subtitle: "Description", imageName: "heart")
                     ], toSection: .featured)
 
                     snapshot.appendItems([
                         Item(title: "Item 1", subtitle: "Regular", imageName: "folder"),
                         Item(title: "Item 2", subtitle: "Regular", imageName: "doc"),
                         Item(title: "Item 3", subtitle: "Regular", imageName: "photo"),
-                        Item(title: "Item 4", subtitle: "Regular", imageName: "video"),
+                        Item(title: "Item 4", subtitle: "Regular", imageName: "video")
                     ], toSection: .regular)
 
                     snapshot.appendItems((1...10).map {
@@ -725,8 +725,8 @@ final class SessionDataSimulator: ObservableObject {
                 ---
 
                 That covers the complete guide! The compositional layout API is extremely powerful and handles most layout patterns without custom layout subclasses.
-                """),
-            ], usage: nil),
+                """)
+            ], usage: nil)
         ]
     }
 
@@ -747,7 +747,7 @@ final class SessionDataSimulator: ObservableObject {
                 ParsedBlock(kind: .browserTool(action: "navigate"), content: "https://auth.example.com/.well-known/openid-configuration", toolStatus: .success),
                 tb("And check the API docs:"),
                 ParsedBlock(kind: .readImageTool(path: "docs/auth-flow-diagram.png"), content: "{}", toolStatus: .success),
-                tb("Now I have a clear picture. The current auth module has several issues..."),
+                tb("Now I have a clear picture. The current auth module has several issues...")
             ], usage: nil),
 
             msg(.user, "Go ahead with the rewrite"),
@@ -781,7 +781,7 @@ final class SessionDataSimulator: ObservableObject {
                 | `AuthManager.swift` | Modified | +45 / -67 |
                 | `TokenStoreTests.swift` | Fixed | +12 / -8 |
                 | `OAuthFlowTests.swift` | Fixed | +6 / -4 |
-                """),
+                """)
             ], usage: nil),
 
             msg(.user, "What about the old files? Can we clean them up?"),
@@ -794,8 +794,8 @@ final class SessionDataSimulator: ObservableObject {
                 tb("The legacy files can be safely removed:"),
                 ParsedBlock(kind: .shellTool(command: "rm src/ios/Auth/LegacyTokenStore.swift src/ios/Auth/OldOAuthFlow.swift"), content: "rm ...", toolStatus: .success),
                 ParsedBlock(kind: .shellTool(command: "git add -A && git status"), content: "git status", toolStatus: .success),
-                tb("Cleanup complete. The auth module is now fully migrated to the new architecture."),
-            ], usage: nil),
+                tb("Cleanup complete. The auth module is now fully migrated to the new architecture.")
+            ], usage: nil)
         ]
     }
 

@@ -230,7 +230,7 @@ struct BrowserManagementView: View {
         ("iPad",        820, 1180),
         ("Laptop",     1280,  800),
         ("Desktop",    1440,  900),
-        ("Full HD",    1920, 1080),
+        ("Full HD",    1920, 1080)
     ]
 
     /// Expanded editor row shown only while the user is configuring a custom

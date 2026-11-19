@@ -292,7 +292,7 @@ final class ThinkingWireGoldenSnapshotTests: XCTestCase {
             // the same permissiveness `declaresNoEffortTiers` is careful to preserve.
             Case(label: "authoritative-no-declared-tiers",
                  model: model("relay-unknown-model", authoritative: true),
-                 isOpenRouter: false, unified: false, offEffort: "none", maxTokens: 8192),
+                 isOpenRouter: false, unified: false, offEffort: "none", maxTokens: 8192)
         ]
     }
 

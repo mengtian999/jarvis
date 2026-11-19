@@ -336,7 +336,7 @@ final class CorrectionContextBuilderTests: XCTestCase {
     func testBuilder_digestPicksRareTermsAndRespectsCap() {
         let msgs = [
             CorrectionSourceMessage(role: .user, text: "今天我们聊聊 LiveActivity 的闪退问题。"),
-            CorrectionSourceMessage(role: .assistant, text: "可以，dns-server 也有关系。"),
+            CorrectionSourceMessage(role: .assistant, text: "可以，dns-server 也有关系。")
         ]
         let ctx = CorrectionContextBuilder.build(messages: msgs, rankProvider: fakeRank)
         let digest = ctx.rareTermsDigest ?? ""
@@ -352,7 +352,7 @@ final class CorrectionContextBuilderTests: XCTestCase {
         // Old design stopped at the last user+assistant pair. An older message
         // carrying a rare term must now still contribute an excerpt.
         var msgs: [CorrectionSourceMessage] = [
-            CorrectionSourceMessage(role: .user, text: "部署 WGHome 网关的注意事项。这句是老消息。"),
+            CorrectionSourceMessage(role: .user, text: "部署 WGHome 网关的注意事项。这句是老消息。")
         ]
         msgs.append(CorrectionSourceMessage(role: .assistant, text: "好的。"))
         msgs.append(CorrectionSourceMessage(role: .user, text: "今天可以。"))
@@ -382,7 +382,7 @@ final class CorrectionContextBuilderTests: XCTestCase {
         // total exceeds the cap gets fewer sentences, not a mid-sentence slice.
         let msgs = [
             CorrectionSourceMessage(role: .user,
-                text: (0..<60).map { "第\($0)句是一整句完整的话。" }.joined()),
+                text: (0..<60).map { "第\($0)句是一整句完整的话。" }.joined())
         ]
         let ctx = CorrectionContextBuilder.build(messages: msgs, rankProvider: fakeRank)
         guard let excerpt = ctx.recentExcerpts.first else { return XCTFail("no excerpt") }

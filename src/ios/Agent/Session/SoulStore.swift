@@ -292,7 +292,7 @@ enum SoulIconSource {
         var roots: [URL] = [
             AIChatViewModel.minisSkillsPersistentDir,
             AIChatViewModel.minisMemoryPersistentDir,
-            AIChatViewModel.minisSharedPersistentDir,
+            AIChatViewModel.minisSharedPersistentDir
         ]
         if let sid = AIChatViewModel.activeSessionId {
             roots.append(AIChatViewModel.minisPersistentBase
@@ -1006,7 +1006,7 @@ enum SystemPromptBuilder {
         let patterns: [String] = [
             #"(?i)ignore.{0,30}previous.{0,30}instructions?"#,
             #"(?i)disregard.{0,30}(previous|prior).{0,30}instructions?"#,
-            #"(?i)forget.{0,30}(previous|prior).{0,30}instructions?"#,
+            #"(?i)forget.{0,30}(previous|prior).{0,30}instructions?"#
         ]
         var lines = s.components(separatedBy: "\n")
         lines = lines.filter { line in

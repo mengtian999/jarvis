@@ -1328,7 +1328,7 @@ final class BrowserUseManager: NSObject, ObservableObject {
                 .name: name,
                 .value: value,
                 .domain: domain,
-                .path: path,
+                .path: path
             ]
             if bool(["secure"]) == true {
                 properties[.secure] = "TRUE"

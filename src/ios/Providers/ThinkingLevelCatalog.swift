@@ -23,7 +23,7 @@ enum ThinkingLevelCatalog {
         // Claude Opus 4.x — model IDs use hyphens (claude-opus-4-8) in the
         // built-in catalog but third-party proxies may return dots
         // (claude-opus-4.8). Normalize to match both.
-        ({ Self.normalizedHasPrefix($0, "claude-opus-4") }, .max),
+        ({ Self.normalizedHasPrefix($0, "claude-opus-4") }, .max)
     ]
 
     static func declaredMaxLevel(for modelId: String) -> ThinkingLevel? {

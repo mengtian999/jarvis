@@ -2019,7 +2019,7 @@ extension SkillStore {
         ".tox", ".nox", "eggs",
         ".build", "build", "dist", "DerivedData",
         ".gradle", ".idea", ".vscode",
-        "vendor", "Pods", "Carthage",
+        "vendor", "Pods", "Carthage"
     ]
 
     /// Check if a directory name should be excluded (exact match or suffix pattern like .egg-info).

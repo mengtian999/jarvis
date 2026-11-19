@@ -4,7 +4,7 @@
 <dict>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
-		<string>com.openminis.app.liveactivity-refresh</string>
+		<string>com.bitjarvis.app.liveactivity-refresh</string>
 	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>

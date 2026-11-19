@@ -129,7 +129,7 @@ final class KimiOAuthTests: XCTestCase {
             "device_code": "DC", "user_code": "ABCD-1234",
             "verification_uri": "https://kimi.com/device",
             "verification_uri_complete": "https://kimi.com/device?code=ABCD-1234",
-            "interval": 5.0, "expires_in": 900.0,
+            "interval": 5.0, "expires_in": 900.0
         ])
         XCTAssertEqual(auth.userCode, "ABCD-1234")
         XCTAssertEqual(auth.openURL, "https://kimi.com/device?code=ABCD-1234")

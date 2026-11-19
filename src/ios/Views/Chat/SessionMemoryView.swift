@@ -105,7 +105,7 @@ struct SessionMemoryView: View {
         // SOUL.md. identitySection() reads the same body, so this shows the
         // exact persona the model sees. Read-only here; edit the persona via
         // Role settings (RoleStore.saveRole).
-        let soulContent = RoleStore.resolveRole(vm.sessionRole.roleId)?.body ?? ""
+        let soulContent = RoleStore.resolveRole(vm.sessionRole.roleId).body
         if !soulContent.isEmpty {
             let lineCount = soulContent.components(separatedBy: "\n").count
             items.append(AutoItem(

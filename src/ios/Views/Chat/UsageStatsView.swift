@@ -213,68 +213,86 @@ class UsageStatsViewModel: ObservableObject {
 struct UsageStatsView: View {
     @StateObject private var vm = UsageStatsViewModel()
 
+    @_optimize(none)
     var body: some View {
         List {
-            if vm.isLoaded && vm.providers.isEmpty {
-                Section {
-                    Text("No usage data yet. Start a conversation to see token statistics here.")
-                        .foregroundStyle(.secondary)
-                }
-            } else if vm.isLoaded {
-                // Grand totals
-                Section("Total Usage") {
-                    let grandTotalAllInput = vm.grandTotalInput + vm.grandTotalCacheRead + vm.grandTotalCacheCreation
-                    LabeledContent("Total Input (incl. Cache)", value: formatCount(grandTotalAllInput))
-                    LabeledContent("Output Tokens", value: formatCount(vm.grandTotalOutput))
-                    if vm.grandTotalCacheRead > 0 {
-                        LabeledContent("Cache Read", value: formatCount(vm.grandTotalCacheRead))
-                    }
-                    if vm.grandTotalCacheCreation > 0 {
-                        LabeledContent("Cache Creation", value: formatCount(vm.grandTotalCacheCreation))
-                    }
-                    if grandTotalAllInput > 0 && vm.grandTotalCacheRead > 0 {
-                        let grandHitRate = Double(vm.grandTotalCacheRead) / Double(grandTotalAllInput) * 100
-                        LabeledContent("Cache Hit Rate", value: String(format: "%.1f%%", grandHitRate))
-                    }
-                }
-
-                // Per-provider sections
-                ForEach(vm.providers) { provider in
-                    Section(provider.id) {
-                        // [T-token-attribution-snapshot] Keyed by id + state:
-                        // the same model can appear once as measured and once
-                        // as estimated, and a duplicate ForEach id would drop
-                        // one of them silently.
-                        ForEach(provider.models, id: \.rowKey) { model in
-                            DisclosureGroup {
-                                modelDetailRows(model)
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(model.localizedDisplayName)
-                                        // Say why whenever the number is not a
-                                        // straight measurement. Silence is what
-                                        // let re-attributed totals pass as fact.
-                                        if let caveat = model.attributionCaveat {
-                                            Text(caveat)
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer()
-                                    let totalInputLabel = model.inputTokens + model.cacheReadTokens + model.cacheCreationTokens
-                                    Text("\(formatCount(totalInputLabel)) / \(formatCount(model.outputTokens))")
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            listContent
         }
         .navigationTitle("Usage")
         .task {
             await vm.load()
+        }
+    }
+
+    @ViewBuilder
+    private var listContent: some View {
+        if vm.isLoaded && vm.providers.isEmpty {
+            Section {
+                Text("No usage data yet. Start a conversation to see token statistics here.")
+                    .foregroundStyle(.secondary)
+            }
+        } else if vm.isLoaded {
+            totalUsageSection
+            providerSections
+        }
+    }
+
+    @ViewBuilder
+    private var totalUsageSection: some View {
+        Section("Total Usage") {
+            let grandTotalAllInput = vm.grandTotalInput + vm.grandTotalCacheRead + vm.grandTotalCacheCreation
+            LabeledContent("Total Input (incl. Cache)", value: formatCount(grandTotalAllInput))
+            LabeledContent("Output Tokens", value: formatCount(vm.grandTotalOutput))
+            if vm.grandTotalCacheRead > 0 {
+                LabeledContent("Cache Read", value: formatCount(vm.grandTotalCacheRead))
+            }
+            if vm.grandTotalCacheCreation > 0 {
+                LabeledContent("Cache Creation", value: formatCount(vm.grandTotalCacheCreation))
+            }
+            if grandTotalAllInput > 0 && vm.grandTotalCacheRead > 0 {
+                let grandHitRate = Double(vm.grandTotalCacheRead) / Double(grandTotalAllInput) * 100
+                LabeledContent("Cache Hit Rate", value: String(format: "%.1f%%", grandHitRate))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var providerSections: some View {
+        ForEach(vm.providers) { provider in
+            Section(provider.id) {
+                // [T-token-attribution-snapshot] Keyed by id + state:
+                // the same model can appear once as measured and once
+                // as estimated, and a duplicate ForEach id would drop
+                // one of them silently.
+                ForEach(provider.models, id: \.rowKey) { model in
+                    DisclosureGroup {
+                        modelDetailRows(model)
+                    } label: {
+                        modelRowLabel(model)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func modelRowLabel(_ model: UsageStatsViewModel.ModelStats) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(model.displayName)
+                // Say why whenever the number is not a
+                // straight measurement. Silence is what
+                // let re-attributed totals pass as fact.
+                if let caveat = model.attributionCaveat {
+                    Text(caveat)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            let totalInputLabel = model.inputTokens + model.cacheReadTokens + model.cacheCreationTokens
+            Text("\(formatCount(totalInputLabel)) / \(formatCount(model.outputTokens))")
+                .foregroundStyle(.secondary)
         }
     }
 

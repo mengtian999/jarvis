@@ -660,7 +660,7 @@ struct MinisApp: App {
     // MARK: - FileProvider
 
     private static let fileProviderDomain = NSFileProviderDomain(
-        identifier: NSFileProviderDomainIdentifier("com.openminis.app.files"),
+        identifier: NSFileProviderDomainIdentifier("com.bitjarvis.app.files"),
         displayName: "Jarvis"
     )
 
@@ -701,7 +701,7 @@ struct MinisApp: App {
         guard previous != current else { return }
         UserDefaults.standard.set(current, forKey: key)
 
-        guard let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.openminis.app") else { return }
+        guard let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.bitjarvis.app") else { return }
         let dir = container.appendingPathComponent("MinisConfig", isDirectory: true)
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
         let url = dir.appendingPathComponent("fp-sync-trace.log")
@@ -1049,7 +1049,7 @@ struct MinisApp: App {
     private static func migrateSharedDirToAppGroup() {
         let fm = FileManager.default
         let library = fm.urls(for: .libraryDirectory, in: .userDomainMask).first!
-        let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.openminis.app")!
+        let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.bitjarvis.app")!
 
         let migrations: [(source: URL, dest: URL, label: String)] = [
             // Legacy Library/MinisChat/shared → new shared
@@ -1063,7 +1063,7 @@ struct MinisApp: App {
              AIChatViewModel.minisSkillsPersistentDir, "skills"),
             // Old App Group MinisShared → new shared
             (container.appendingPathComponent("MinisShared", isDirectory: true),
-             AIChatViewModel.minisSharedPersistentDir, "MinisShared→shared"),
+             AIChatViewModel.minisSharedPersistentDir, "MinisShared→shared")
         ]
 
         for migration in migrations {
@@ -1090,7 +1090,7 @@ struct MinisApp: App {
     /// targets logged during MOUNT setup.
     private static func logFPSyncTracePaths() {
         let fm = FileManager.default
-        let groupID = "group.com.openminis.app"
+        let groupID = "group.com.bitjarvis.app"
         let containerURL = fm.containerURL(forSecurityApplicationGroupIdentifier: groupID)
         let containerPath = containerURL?.path ?? "<nil>"
         let resolvedContainer = containerURL?.resolvingSymlinksInPath().path ?? "<nil>"
@@ -1102,7 +1102,7 @@ struct MinisApp: App {
         let roots: [(name: String, url: URL)] = [
             ("shared", AIChatViewModel.minisSharedPersistentDir),
             ("skills", AIChatViewModel.minisSkillsPersistentDir),
-            ("memory", AIChatViewModel.minisMemoryPersistentDir),
+            ("memory", AIChatViewModel.minisMemoryPersistentDir)
         ]
         for (name, url) in roots {
             let exists = fm.fileExists(atPath: url.path)

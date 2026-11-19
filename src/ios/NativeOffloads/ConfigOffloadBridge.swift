@@ -37,7 +37,7 @@ private let logger = AppLogger(category: "ConfigOffload")
             "ok": false,
             "error": "permission_denied",
             "reason": "minis-config is disabled in Settings → Permissions.",
-            "user_message": "I tried to change a setting but minis-config is currently disabled. You can enable it at [Settings → Permissions](jarvis://settings/permissions), then ask me again. Or change the setting yourself directly through the relevant Settings screen.",
+            "user_message": "I tried to change a setting but minis-config is currently disabled. You can enable it at [Settings → Permissions](jarvis://settings/permissions), then ask me again. Or change the setting yourself directly through the relevant Settings screen."
         ]
     }
 
@@ -49,7 +49,7 @@ private let logger = AppLogger(category: "ConfigOffload")
             "ok": false,
             "error": "feature_unavailable",
             "reason": reason,
-            "user_message": "The setting '\(path)' isn't available on this device: \(reason)",
+            "user_message": "The setting '\(path)' isn't available on this device: \(reason)"
         ]
     }
 
@@ -85,7 +85,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                     "schema": f.valueSchema.helpDescription,
                     "access": String(describing: f.access),
                     "risk": String(describing: f.risk),
-                    "revertable": f.revertable,
+                    "revertable": f.revertable
                 ] as NSDictionary
             }
             sem.signal()
@@ -194,7 +194,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                     "total": postFilterCount,
                     "total_pages": totalPages,
                     "has_next": hasNext,
-                    "has_prev": hasPrev,
+                    "has_prev": hasPrev
                 ] as [String: Any]
                 out["agent_hint"] = Self.paginationHint(
                     path: path, filter: filterText,
@@ -269,14 +269,14 @@ private let logger = AppLogger(category: "ConfigOffload")
             return [
                 "ok": false,
                 "error": "unknown_path",
-                "reason": "No registered field at '\(path)'.",
+                "reason": "No registered field at '\(path)'."
             ]
         }
         if field.access == .hidden {
             return [
                 "ok": false,
                 "error": "permission_denied",
-                "reason": "'\(path)' is intentionally not exposed to minis-config.",
+                "reason": "'\(path)' is intentionally not exposed to minis-config."
             ]
         }
         if let reason = field.unavailableReason {
@@ -288,13 +288,13 @@ private let logger = AppLogger(category: "ConfigOffload")
                 "ok": true,
                 "value": v.jsonString(),
                 "schema": field.valueSchema.helpDescription,
-                "display_name": field.displayName,
+                "display_name": field.displayName
             ]
         } catch {
             return [
                 "ok": false,
                 "error": "read_failed",
-                "reason": String(describing: error),
+                "reason": String(describing: error)
             ]
         }
     }
@@ -429,27 +429,27 @@ private let logger = AppLogger(category: "ConfigOffload")
                 guard let parsedValue = ConfigValue.decode(json: valueJSON) else {
                     return [
                         "ok": false, "error": "invalid_value",
-                        "reason": "Value JSON is not parseable for '\(rawPath)'.",
+                        "reason": "Value JSON is not parseable for '\(rawPath)'."
                     ]
                 }
                 if isRemove {
                     guard collection.removable else {
                         return [
                             "ok": false, "error": "permission_denied",
-                            "reason": "Collection '\(resolvePath)' does not support remove.",
+                            "reason": "Collection '\(resolvePath)' does not support remove."
                         ]
                     }
                     // For removes the payload is the child id (string).
                     guard case .string(let childId) = parsedValue, !childId.isEmpty else {
                         return [
                             "ok": false, "error": "invalid_value",
-                            "reason": "'\(rawPath)' expects a JSON string child id (e.g. \"<uuid>\").",
+                            "reason": "'\(rawPath)' expects a JSON string child id (e.g. \"<uuid>\")."
                         ]
                     }
                     guard collection.childIds().contains(childId) else {
                         return [
                             "ok": false, "error": "not_found",
-                            "reason": "No '\(resolvePath)' child with id '\(childId)'.",
+                            "reason": "No '\(resolvePath)' child with id '\(childId)'."
                         ]
                     }
                     // Snapshot of the entry for audit (best-effort —
@@ -472,14 +472,14 @@ private let logger = AppLogger(category: "ConfigOffload")
                     guard collection.addable else {
                         return [
                             "ok": false, "error": "permission_denied",
-                            "reason": "Collection '\(resolvePath)' does not support add.",
+                            "reason": "Collection '\(resolvePath)' does not support add."
                         ]
                     }
                     // Validate payload shape against collection's schema.
                     do { try collection.addPayloadSchema.validate(parsedValue) } catch {
                         return [
                             "ok": false, "error": "validation_failed",
-                            "reason": String(describing: error),
+                            "reason": String(describing: error)
                         ]
                     }
                     // [T-minis-config-provider-add] Redact credential values
@@ -506,7 +506,7 @@ private let logger = AppLogger(category: "ConfigOffload")
             guard let field = ConfigRegistry.shared.resolveField(path: resolvePath) else {
                 return [
                     "ok": false, "error": "unknown_path",
-                    "reason": "No registered field at '\(rawPath)'.",
+                    "reason": "No registered field at '\(rawPath)'."
                 ]
             }
             // Feature-unavailable gate BEFORE access/validation and before the
@@ -521,13 +521,13 @@ private let logger = AppLogger(category: "ConfigOffload")
                     ? "'\(rawPath)' is intentionally not exposed to minis-config."
                     : "'\(rawPath)' is read-only."
                 return [
-                    "ok": false, "error": "permission_denied", "reason": reason,
+                    "ok": false, "error": "permission_denied", "reason": reason
                 ]
             }
             guard let parsedValue = ConfigValue.decode(json: valueJSON) else {
                 return [
                     "ok": false, "error": "invalid_value",
-                    "reason": "Value JSON is not parseable for '\(rawPath)'.",
+                    "reason": "Value JSON is not parseable for '\(rawPath)'."
                 ]
             }
 
@@ -553,13 +553,13 @@ private let logger = AppLogger(category: "ConfigOffload")
                 guard case .array(let elemSchema) = field.valueSchema else {
                     return [
                         "ok": false, "error": "invalid_value",
-                        "reason": "'.append' is only valid on array-typed fields; '\(field.path)' is not an array.",
+                        "reason": "'.append' is only valid on array-typed fields; '\(field.path)' is not an array."
                     ]
                 }
                 do { try elemSchema.validate(parsedValue) } catch {
                     return [
                         "ok": false, "error": "validation_failed",
-                        "reason": String(describing: error),
+                        "reason": String(describing: error)
                     ]
                 }
                 let existing: [ConfigValue]
@@ -573,7 +573,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                 guard case .array = field.valueSchema else {
                     return [
                         "ok": false, "error": "invalid_value",
-                        "reason": "'.remove' is only valid on array-typed fields; '\(field.path)' is not an array.",
+                        "reason": "'.remove' is only valid on array-typed fields; '\(field.path)' is not an array."
                     ]
                 }
                 let existing: [ConfigValue]
@@ -582,7 +582,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                 if filtered.count == existing.count {
                     return [
                         "ok": false, "error": "not_found",
-                        "reason": "No occurrence of value \(parsedValue.displayString) in '\(field.path)'.",
+                        "reason": "No occurrence of value \(parsedValue.displayString) in '\(field.path)'."
                     ]
                 }
                 newValue = .array(filtered)
@@ -596,7 +596,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                 } catch {
                     return [
                         "ok": false, "error": "validation_failed",
-                        "reason": String(describing: error),
+                        "reason": String(describing: error)
                     ]
                 }
                 newValue = parsedValue
@@ -632,7 +632,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                         ?? error.localizedDescription
                     return [
                         "ok": false, "error": "validation_failed",
-                        "reason": "Can't use that image: \(reason)",
+                        "reason": "Can't use that image: \(reason)"
                     ]
                 }
             }
@@ -719,7 +719,7 @@ private let logger = AppLogger(category: "ConfigOffload")
             return [
                 "ok": false, "error": "timeout",
                 "reason": "Confirmation timed out after \(Int(ConfigConfirmationGate.timeoutSeconds))s.",
-                "user_message": "I waited but you didn't confirm the change. Tap me again if you want me to retry.",
+                "user_message": "I waited but you didn't confirm the change. Tap me again if you want me to retry."
             ]
 
         case .rejected:
@@ -737,7 +737,7 @@ private let logger = AppLogger(category: "ConfigOffload")
             return [
                 "ok": false, "error": "user_rejected",
                 "reason": "User cancelled the change.",
-                "user_message": "Change cancelled.",
+                "user_message": "Change cancelled."
             ]
 
         case .approved(let approvedRows):
@@ -780,7 +780,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                             "path": field.path,
                             "display_name": field.displayName,
                             "old": oldValue.displayString,
-                            "new": auditNewValue.displayString,
+                            "new": auditNewValue.displayString
                         ]
                     case .collectionAdd(let collection, let payload, _):
                         let newId = try collection.add(payload)
@@ -789,7 +789,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                             "path": finalKey,
                             "display_name": collection.displayName,
                             "old": "",
-                            "new": newId,
+                            "new": newId
                         ]
                     case .collectionRemove(let collection, let childId, _):
                         try collection.remove(id: childId)
@@ -798,7 +798,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                             "path": finalKey,
                             "display_name": collection.displayName,
                             "old": childId,
-                            "new": "",
+                            "new": ""
                         ]
                     }
                     let auditId = UUID().uuidString
@@ -823,7 +823,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                     var entry: [String: String] = [
                         "path": a.key,
                         "display_name": a.displayName,
-                        "reason": message,
+                        "reason": message
                     ]
                     if let code = errorCode { entry["error"] = code }
                     writeErrors.append(entry)
@@ -837,7 +837,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                         "error": "write_failed",
                         "reason": writeErrors.map { "\($0["path"] ?? "?"): \($0["reason"] ?? "unknown error")" }.joined(separator: "; "),
                         "write_errors": writeErrors,
-                        "user_message": "I confirmed the change, but applying it failed. No settings were updated.",
+                        "user_message": "I confirmed the change, but applying it failed. No settings were updated."
                     ]
                 }
                 if approvedRows.count != resolved.count {
@@ -845,14 +845,14 @@ private let logger = AppLogger(category: "ConfigOffload")
                         "ok": false,
                         "error": "internal_error",
                         "reason": "Confirmation row count mismatch: expected \(resolved.count), got \(approvedRows.count).",
-                        "user_message": "I couldn't verify the confirmation result. No changes were applied. Please try again.",
+                        "user_message": "I couldn't verify the confirmation result. No changes were applied. Please try again."
                     ]
                 }
                 logger.warning("all_rejected resolved=\(resolved.count) approvedRows=\(approvedRows.count) approvedRowsOn=\(approvedRows.filter { $0.isApproved }.count) caption=\(caption ?? "")")
                 return [
                     "ok": false, "error": "all_rejected",
                     "reason": "User rejected every row.",
-                    "user_message": "No changes applied.",
+                    "user_message": "No changes applied."
                 ]
             }
             if !writeErrors.isEmpty {
@@ -863,7 +863,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                     "audit_ids": auditIds,
                     "write_errors": writeErrors,
                     "reason": writeErrors.map { "\($0["path"] ?? "?"): \($0["reason"] ?? "unknown error")" }.joined(separator: "; "),
-                    "user_message": "Some settings were updated, but at least one confirmed change failed to apply.",
+                    "user_message": "Some settings were updated, but at least one confirmed change failed to apply."
                 ]
             }
             return [
@@ -871,7 +871,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                 "applied": applied,
                 "audit_ids": auditIds,
                 "audit_url": "jarvis://settings/logs?tab=config-audit",
-                "user_message": "Settings updated. Review or revert at [Logs → Config Changes](jarvis://settings/logs?tab=config-audit).",
+                "user_message": "Settings updated. Review or revert at [Logs → Config Changes](jarvis://settings/logs?tab=config-audit)."
             ]
         }
     }
@@ -981,7 +981,7 @@ private let logger = AppLogger(category: "ConfigOffload")
                 "count": entries.count,
                 "capacity": usage.capacity,
                 "total_used": usage.count,
-                "entries": entries.map(Self.auditEntryDict),
+                "entries": entries.map(Self.auditEntryDict)
             ]
             sem.signal()
         }
@@ -1022,7 +1022,7 @@ private let logger = AppLogger(category: "ConfigOffload")
             "key": e.key,
             "old": e.oldValueJSON,
             "new": e.newValueJSON,
-            "status": e.status.rawValue,
+            "status": e.status.rawValue
         ]
         if let s = e.sessionId { d["session_id"] = s }
         if let c = e.confirmedAt { d["confirmed_at"] = iso.string(from: c) }
@@ -1078,7 +1078,7 @@ private let logger = AppLogger(category: "ConfigOffload")
             // Build a single-item batch flipping back to oldValue.
             let revertItem: NSDictionary = [
                 "path": entry.key,
-                "value_json": entry.oldValueJSON,
+                "value_json": entry.oldValueJSON
             ]
             let res = await Self.performWriteBatch(
                 items: [revertItem],

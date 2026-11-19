@@ -57,7 +57,7 @@ struct SessionLockIdleOption: Identifiable, Equatable {
         .init(seconds: 600,  labelKey: "10 minutes"),
         .init(seconds: 900,  labelKey: "15 minutes"),
         .init(seconds: 3600, labelKey: "1 hour"),
-        .init(seconds: 0,    labelKey: "Never auto-lock"),
+        .init(seconds: 0,    labelKey: "Never auto-lock")
     ]
 }
 

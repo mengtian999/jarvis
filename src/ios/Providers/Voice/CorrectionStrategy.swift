@@ -248,7 +248,7 @@ struct LLMCorrectionStrategy: CorrectionStrategy {
         logger.info("[CorrectionPrompt] blocks vocab=\(vocabChars)/\(CorrectionContextBudget.vocabBlock) confusion=\(confusionChars)/\(CorrectionContextBudget.confusionBlock) digest=\(digestChars)/\(CorrectionContextBudget.rareDigest) context=\(contextChars) msg_ctx=\(digestChars + contextChars)/\(CorrectionContextBudget.messageContextTotal) transcript=\(transcript.count) prompt_total=\(prompt.count)")
         diagnostics?.blockChars = [
             "vocab": vocabChars, "confusion": confusionChars, "digest": digestChars,
-            "context": contextChars, "transcript": transcript.count, "total": prompt.count,
+            "context": contextChars, "transcript": transcript.count, "total": prompt.count
         ]
         return prompt
     }

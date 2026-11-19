@@ -395,7 +395,7 @@ final class ProviderConfigStore: ObservableObject {
     private func registerDegradedRecovery() {
         let names: [Notification.Name] = [
             UIApplication.protectedDataDidBecomeAvailableNotification,
-            UIApplication.didBecomeActiveNotification,
+            UIApplication.didBecomeActiveNotification
         ]
         for name in names {
             degradedRecoveryObservers.append(NotificationCenter.default.addObserver(
@@ -1067,7 +1067,7 @@ final class ProviderConfigStore: ObservableObject {
                 var m: [String: Any] = [
                     "modelId": base.id,
                     "displayName": base.displayName,
-                    "isHidden": entry.isHidden,
+                    "isHidden": entry.isHidden
                 ]
                 if entry.isCustom { m["isCustom"] = true }
                 if let modality = base.modalityOverride {
@@ -1103,7 +1103,7 @@ final class ProviderConfigStore: ObservableObject {
                     m["overrides"] = o
                 }
                 return m
-            },
+            }
         ]
         if let key = ProviderKeychainHelper.loadAPIKey(instanceId: instanceId) {
             dict["apiKey"] = Data(key.utf8).base64EncodedString()
@@ -3046,7 +3046,7 @@ enum ProviderKeychainHelper {
         let deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         SecItemDelete(deleteQuery as CFDictionary)
         var syncDelete = deleteQuery
@@ -3074,7 +3074,7 @@ enum ProviderKeychainHelper {
             kSecAttrAccount as String: account,
             kSecAttrSynchronizable as String: true,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         let syncStatus = SecItemCopyMatching(syncQuery as CFDictionary, &result)
@@ -3089,7 +3089,7 @@ enum ProviderKeychainHelper {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         result = nil
         let legacyStatus = SecItemCopyMatching(legacyQuery as CFDictionary, &result)
@@ -3107,7 +3107,7 @@ enum ProviderKeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         let s1 = SecItemDelete(query as CFDictionary)
         var syncQuery = query
@@ -3145,7 +3145,7 @@ enum ProviderKeychainHelper {
         let deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: acct,
+            kSecAttrAccount as String: acct
         ]
         SecItemDelete(deleteQuery as CFDictionary)
         var syncDelete = deleteQuery
@@ -3168,7 +3168,7 @@ enum ProviderKeychainHelper {
             kSecAttrService as String: service,
             kSecAttrAccount as String: "oauth-token",
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         query[kSecAttrSynchronizable as String] = kSecAttrSynchronizableAny
         var result: AnyObject?
@@ -3186,7 +3186,7 @@ enum ProviderKeychainHelper {
         let deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: acct,
+            kSecAttrAccount as String: acct
         ]
         SecItemDelete(deleteQuery as CFDictionary)
         var syncDelete = deleteQuery
@@ -3211,7 +3211,7 @@ enum ProviderKeychainHelper {
             kSecAttrAccount as String: acct,
             kSecAttrSynchronizable as String: true,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         let syncStatus = SecItemCopyMatching(syncQuery as CFDictionary, &result)
@@ -3226,7 +3226,7 @@ enum ProviderKeychainHelper {
             kSecAttrService as String: service,
             kSecAttrAccount as String: acct,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         let legacyStatus = SecItemCopyMatching(query as CFDictionary, &result)
         guard legacyStatus == errSecSuccess, let data = result as? Data else {
@@ -3244,7 +3244,7 @@ enum ProviderKeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: acct,
+            kSecAttrAccount as String: acct
         ]
         let s1 = SecItemDelete(query as CFDictionary)
         var syncQuery = query
@@ -3261,7 +3261,7 @@ enum ProviderKeychainHelper {
         let deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         SecItemDelete(deleteQuery as CFDictionary)
         var syncDelete = deleteQuery
@@ -3285,7 +3285,7 @@ enum ProviderKeychainHelper {
             kSecAttrAccount as String: account,
             kSecAttrSynchronizable as String: true,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         let syncStatus = SecItemCopyMatching(syncQuery as CFDictionary, &result)
@@ -3300,7 +3300,7 @@ enum ProviderKeychainHelper {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         let legacyStatus = SecItemCopyMatching(query as CFDictionary, &result)
         guard legacyStatus == errSecSuccess, let data = result as? Data else {
@@ -3317,7 +3317,7 @@ enum ProviderKeychainHelper {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         let s1 = SecItemDelete(query as CFDictionary)
         var syncQuery = query

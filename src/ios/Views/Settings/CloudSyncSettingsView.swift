@@ -359,7 +359,7 @@ private struct DeviceSyncSection: View {
         ContentTypeInfo(type: "Sessions", label: "Sessions & Files", icon: "bubble.left.and.bubble.right", color: .blue),
         ContentTypeInfo(type: "Skills", label: "Skills", icon: "puzzlepiece.extension", color: .orange),
         ContentTypeInfo(type: "Providers", label: "Providers", icon: "server.rack", color: .teal),
-        ContentTypeInfo(type: "Environments", label: "Environments", icon: "terminal", color: .mint),
+        ContentTypeInfo(type: "Environments", label: "Environments", icon: "terminal", color: .mint)
     ]
 
     private var availableTypes: [ContentTypeInfo] {

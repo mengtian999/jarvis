@@ -44,7 +44,7 @@ struct AssistantMenuKey: Equatable {
     let isActive: Bool
     /// [T-role-forward] "Forward to Role" availability — kept in the key so
     /// the gated menu rebuilds when the bridge wires/unwires the action.
-    let hasForward: Bool = false
+    let hasForward: Bool
 }
 
 /// Value key for the tool-capsule long-press menu. `blockId` identifies the

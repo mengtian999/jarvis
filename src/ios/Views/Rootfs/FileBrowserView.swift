@@ -1087,7 +1087,7 @@ class FileBrowserViewModel: ObservableObject {
     private static let fileProviderExposedRoots: [String: NSFileProviderItemIdentifier] = [
         "/var/jarvis/shared":  NSFileProviderItemIdentifier("shared"),
         "/var/jarvis/skills":  NSFileProviderItemIdentifier("skills"),
-        "/var/jarvis/memory":  NSFileProviderItemIdentifier("memory"),
+        "/var/jarvis/memory":  NSFileProviderItemIdentifier("memory")
     ]
 
     private static func signalFileProviderParent(forLinuxPath linux: String) {
@@ -1114,7 +1114,7 @@ class FileBrowserViewModel: ObservableObject {
         }
         guard let targetID = parentID else { return }
 
-        let domainIdentifier = NSFileProviderDomainIdentifier("com.openminis.app.files")
+        let domainIdentifier = NSFileProviderDomainIdentifier("com.bitjarvis.app.files")
         NSFileProviderManager.getDomainsWithCompletionHandler { domains, _ in
             guard let domain = domains.first(where: { $0.identifier == domainIdentifier }) else {
                 return
@@ -1180,7 +1180,7 @@ class FileBrowserViewModel: ObservableObject {
         let roots: [(String, URL)] = [
             ("shared", AIChatViewModel.minisSharedPersistentDir),
             ("skills", AIChatViewModel.minisSkillsPersistentDir),
-            ("memory", AIChatViewModel.minisMemoryPersistentDir),
+            ("memory", AIChatViewModel.minisMemoryPersistentDir)
         ]
         for (key, rootURL) in roots {
             let rootPath = rootURL.resolvingSymlinksInPath().standardized.path
@@ -1435,7 +1435,7 @@ struct FileItem: Identifiable {
             .isSymbolicLinkKey,
             .isDirectoryKey,
             .fileSizeKey,
-            .contentModificationDateKey,
+            .contentModificationDateKey
         ]
         let values = try? url.resourceValues(forKeys: allKeys)
         let isLink = values?.isSymbolicLink ?? false
@@ -1446,7 +1446,7 @@ struct FileItem: Identifiable {
             // refer to the link itself. Follow the link to get real target info.
             let resolved = url.resolvingSymlinksInPath()
             let targetValues = try? resolved.resourceValues(forKeys: [
-                .isDirectoryKey, .fileSizeKey, .contentModificationDateKey,
+                .isDirectoryKey, .fileSizeKey, .contentModificationDateKey
             ])
             self.isDirectory = targetValues?.isDirectory ?? false
             self.size = Int64(targetValues?.fileSize ?? 0)

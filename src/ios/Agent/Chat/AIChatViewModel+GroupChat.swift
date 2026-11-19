@@ -33,7 +33,7 @@ extension AIChatViewModel {
     func selectGroupSpeakers(
         _ userText: String,
         group: AgentGroupRecord,
-        resolved: [ResolvedGroupMember],
+        resolved: [ResolvedGroupMember]
     ) -> [ResolvedGroupMember] {
         let roundEligible = resolved.filter { $0.participatesInRound }
         // Longest-name-first scan: at each '@', the longest member name
@@ -57,7 +57,7 @@ extension AIChatViewModel {
         // markers, so a plain "hi" selected NOBODY and the round silently
         // produced zero replies. Only an explicit @mention narrows it.
         let mentioned: [ResolvedGroupMember]
-        if Self.groupAllMarkers.contains({ userText.range(of: $0, options: .caseInsensitive) != nil }) ||
+        if Self.groupAllMarkers.contains(where: { userText.range(of: $0, options: .caseInsensitive) != nil }) ||
             mentionedIds.isEmpty {
             mentioned = roundEligible
         } else {
@@ -81,7 +81,7 @@ extension AIChatViewModel {
     /// the whole round; the caller surfaces a notice.
     private func resolveSpeakerModelEntry(
         group: AgentGroupRecord,
-        role: RoleFile,
+        role: RoleFile
     ) -> ModelEntry? {
         func find(_ ref: AgentGroupModelRef?) -> ModelEntry? {
             guard let ref else { return nil }
@@ -101,7 +101,7 @@ extension AIChatViewModel {
     /// Loop-internal user rows (tool results) are skipped.
     func rebuildAgentHistoryForSpeaker(
         selfRoleId: String?,
-        members: [ResolvedGroupMember],
+        members: [ResolvedGroupMember]
     ) async {
         agentHistory.removeAll()
         guard let sessionId else { return }
@@ -127,13 +127,17 @@ extension AIChatViewModel {
                 }
                 if isInternal { continue }
                 flushPending()
-                agentHistory.append(AgentMessage(role: .user, parts: row.parts))
+                let userText = Self.forwardExtractText(row.parts)
+                if !userText.isEmpty {
+                    agentHistory.append(AgentMessage(role: .user, parts: [.text(userText)]))
+                }
             case .assistant:
                 if row.roleId == selfRoleId {
                     flushPending()
-                    agentHistory.append(AgentMessage(role: .assistant, parts: row.parts))
+                    let asstText = Self.forwardExtractText(row.parts)
+                    agentHistory.append(AgentMessage(role: .assistant, parts: [.text(asstText)]))
                 } else {
-                    let author = nameByRoleId[row.roleId] ?? "Assistant"
+                    let author = nameByRoleId[row.roleId ?? ""] ?? "Assistant"
                     let text = Self.forwardExtractText(row.parts)
                         .replacingOccurrences(of: "[图片未转发]", with: "[图片]")
                     if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -177,7 +181,7 @@ extension AIChatViewModel {
     func buildGroupSection(
         group: AgentGroupRecord,
         selfRole: RoleFile,
-        resolved: [ResolvedGroupMember],
+        resolved: [ResolvedGroupMember]
     ) -> String {
         var lines = "\n\n## Group chat context\n"
         lines += "You are speaking in a group chat \"\(group.name)\". Members (round-robin order):\n"
@@ -272,7 +276,7 @@ extension AIChatViewModel {
             } catch {
                 baseSystemPromptOverride = nil
                 groupEntryOverride = nil
-                logger.error("group round: member \(name) failed: \(error)")
+                AppLogger(category: "AIChatVM").error("group round: member \(name) failed: \(error)")
                 groupNotice("“\(name)” failed to reply: \(error.localizedDescription)")
             }
         }

@@ -991,7 +991,7 @@ final class ScrollMetricsRecorder {
                 "a": (e.a * 10).rounded() / 10, "b": (e.b * 10).rounded() / 10,
                 "key": e.key, "src": e.src, "pos": e.pos,
                 "offset": (e.offset * 10).rounded() / 10, "note": e.note,
-                "tag": e.tag,
+                "tag": e.tag
             ]
         }
     }

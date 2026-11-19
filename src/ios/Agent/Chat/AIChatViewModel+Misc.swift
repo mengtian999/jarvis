@@ -217,7 +217,7 @@ extension AIChatViewModel {
             (1280, 0.70),
             (1024, 0.65),
             (800,  0.55),
-            (640,  0.45),
+            (640,  0.45)
         ]
         var best: Data = data
         for (edge, q) in passes {

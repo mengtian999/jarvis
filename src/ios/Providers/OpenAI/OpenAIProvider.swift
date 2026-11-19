@@ -1021,7 +1021,7 @@ final class OpenAIProvider: LLMProvider {
         var body: [String: Any] = [
             "model": model.id,
             "messages": allMessages,
-            "stream": stream,
+            "stream": stream
         ]
         if useOpenRouterCompat {
             body["max_tokens"] = maxTokens
@@ -1125,7 +1125,7 @@ final class OpenAIProvider: LLMProvider {
             "stream": stream,
             "store": false,
             "parallel_tool_calls": true,
-            "input": messages,
+            "input": messages
         ]
         // [T-responses-max-output-tokens] Same injection (and same Codex
         // exclusion) as the agent path in OpenAIAgentProvider: without the
@@ -1287,7 +1287,7 @@ final class OpenAIProvider: LLMProvider {
             let dataURL = "data:\(img.mimeType);base64,\(img.data.base64EncodedString())"
             parts.append([
                 "type": "input_image",
-                "image_url": dataURL,
+                "image_url": dataURL
             ])
         }
         for audio in msg.audios {
@@ -1592,7 +1592,7 @@ final class OpenAIProvider: LLMProvider {
         var body: [String: Any] = [
             "model": model.id,
             "prompt": prompt,
-            "n": n,
+            "n": n
         ]
         if let size { body["size"] = size }
         if let quality { body["quality"] = quality }
@@ -1823,7 +1823,7 @@ final class OpenAIProvider: LLMProvider {
             "quality": quality as Any,
             "images": images.enumerated().map { idx, img in
                 ["index": idx, "mime_type": img.mimeType, "bytes": img.data.count]
-            },
+            }
         ]
         if let summary = try? JSONSerialization.data(withJSONObject: editSummary, options: [.prettyPrinted, .sortedKeys]),
            let summaryStr = String(data: summary, encoding: .utf8) {
@@ -1925,7 +1925,7 @@ final class OpenAIProvider: LLMProvider {
                 parts.append([
                     "type": "input_image",
                     "image_url": "data:\(img.mimeType);base64,\(img.data.base64EncodedString())",
-                    "detail": "auto",
+                    "detail": "auto"
                 ])
             }
             input = [["role": "user", "content": parts]]
@@ -1941,7 +1941,7 @@ final class OpenAIProvider: LLMProvider {
             "include": [],
             "tool_choice": "auto",
             "parallel_tool_calls": true,
-            "stream": true,
+            "stream": true
         ]
 
         let (lineStream, _) = try await streamRaw(body: body, isResponsesAPI: true)

@@ -118,7 +118,7 @@ import Foundation
         guard let input = BrowserActionInput.parse(from: json) else {
             completion([
                 "text": "Error: Invalid browser_use input. Required: 'action' parameter.",
-                "success": false,
+                "success": false
             ] as NSDictionary)
             return
         }
@@ -142,7 +142,7 @@ import Foundation
                 logger.info("[BridgeTiming] pool_not_found elapsed=\(elapsedMs)ms sid=\(sid.prefix(8))")
                 completion([
                     "text": "Error: session \(sid) no longer exists — cannot run browser_use.",
-                    "success": false,
+                    "success": false
                 ] as NSDictionary)
                 return
             }
@@ -170,7 +170,7 @@ import Foundation
                 logger.info("[BridgeTiming] error elapsed=\(totalMs)ms action=\(input.action.rawValue) error=\(error.localizedDescription.prefix(120))")
                 completion([
                     "text": "Error: \(error.localizedDescription)",
-                    "success": false,
+                    "success": false
                 ] as NSDictionary)
             }
         }

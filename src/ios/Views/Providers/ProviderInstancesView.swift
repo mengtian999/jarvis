@@ -249,7 +249,7 @@ struct ProviderInstancesView: View {
         await ForceSyncHelper.bidirectionalSync(recordTypes: [
             "ProviderConfig", "ProviderConfigV2",
             "ProviderInstanceV3", "ProviderModelEntryV3",
-            "ProviderModelGroupV3", "ProviderThinkingRuleV3",
+            "ProviderModelGroupV3", "ProviderThinkingRuleV3"
         ])
         forceSyncToast = AppLocalized("Syncing providers via iCloud")
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {

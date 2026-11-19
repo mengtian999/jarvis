@@ -140,7 +140,7 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
             "exists": FileManager.default.fileExists(atPath: path),
             "size": size,
             "maxBytes": Int(toolBreadcrumbMaxBytes),
-            "modified": modified ?? NSNull(),
+            "modified": modified ?? NSNull()
         ]
     }
 #endif
@@ -328,7 +328,7 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
         let markers = [
             "cydiasubstrate", "mobilesubstrate", "substrate.dylib",
             "substitute", "ellekit", "libhooker", "tweakinject",
-            "librocketbootstrap", "libblackjack", "choicy",
+            "librocketbootstrap", "libblackjack", "choicy"
         ]
         var found: [String] = []
         for i in 0..<_dyld_image_count() {
@@ -517,7 +517,7 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
             // installs → four UUIDs, contents migrated). A stale marker whose
             // UUID differs from the current run's therefore means "the process
             // was replaced by an install", never "the app crashed".
-            "containerId": Self.currentContainerId(),
+            "containerId": Self.currentContainerId()
         ]
 
         let url = launchMarkerURL
@@ -663,12 +663,12 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
                 // liveStarts fix.
                 let legs = [
                     bgSilentAudioLeg == true ? "audio" : nil,
-                    (bgTaskGrants ?? 0) > 0 ? "bgTask×\(bgTaskGrants ?? 0)" : nil,
+                    (bgTaskGrants ?? 0) > 0 ? "bgTask×\(bgTaskGrants ?? 0)" : nil
                 ].compactMap { $0 }
                 let legStr = legs.isEmpty ? "none recorded" : legs.joined(separator: "+")
                 let workBits = [
                     runningShell ? "shell=running" : nil,
-                    (activeSessionCount ?? 0) > 0 ? "sessions=\(activeSessionCount ?? 0)" : nil,
+                    (activeSessionCount ?? 0) > 0 ? "sessions=\(activeSessionCount ?? 0)" : nil
                 ].compactMap { $0 }.joined(separator: ",")
                 crashType = "Background Termination (memory not tight; \(workBits); keep-alive legs: \(legStr)) — cause undetermined"
             } else {

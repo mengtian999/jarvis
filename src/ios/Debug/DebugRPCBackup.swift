@@ -88,7 +88,7 @@ enum DebugRPCBackup {
             "skippedBytes": summary.skippedBytes,
             "skippedPaths": summary.skippedPaths.prefix(20).map {
                 ["path": $0.path, "size": $0.size]
-            },
+            }
         ]
     }
 
@@ -136,7 +136,7 @@ enum DebugRPCBackup {
                 "imported": report.totalImported,
                 "updated": report.totalUpdated,
                 "skipped": report.totalSkipped,
-                "unreadable": report.totalUnreadable,
+                "unreadable": report.totalUnreadable
             ],
             "categories": report.categories.map { c -> [String: Any] in
                 var d: [String: Any] = [
@@ -147,12 +147,12 @@ enum DebugRPCBackup {
                     // [review S9/S7] Surfaced so a device test can assert on an
                     // incomplete package instead of only seeing "success".
                     "notDownloadedInPackage": c.notDownloadedInPackage,
-                    "missingBlobs": c.missingBlobs,
+                    "missingBlobs": c.missingBlobs
                 ]
                 if let f = c.failed { d["failed"] = f }
                 return d
             },
-            "warnings": report.warnings,
+            "warnings": report.warnings
         ]
     }
 
@@ -195,7 +195,7 @@ enum DebugRPCBackup {
             "hasPendingPackage": pending != nil,
             "appIsLocked": locked,
             // What the root sheet will actually do with the above.
-            "sheetWouldPresent": pending != nil && !locked,
+            "sheetWouldPresent": pending != nil && !locked
         ]
     }
 
@@ -227,7 +227,7 @@ enum DebugRPCBackup {
                 "effectiveWritable": e.effectiveWritable,
                 "available": resolved != nil,
                 "path": resolved?.path ?? "",
-                "selected": BackupDestinations.isSelected(e.id),
+                "selected": BackupDestinations.isSelected(e.id)
             ]
         }
 
@@ -237,7 +237,7 @@ enum DebugRPCBackup {
             "eligibleCount": BackupDestinations.eligibleFolders.count,
             "packagesInDestinations": BackupDestinations.listPackages().map {
                 ["name": $0.url.lastPathComponent, "folder": $0.folderName, "size": $0.size]
-            },
+            }
         ]
 
         if let path = params["deliver"] as? String {
@@ -393,7 +393,7 @@ enum DebugRPCBackup {
             "smokeTest": smoke,
             "ok": !smoke.hasPrefix("FAILED"),
             "backendCount": backends.count,
-            "backends": backends,
+            "backends": backends
         ]
     }
 
@@ -450,7 +450,7 @@ enum DebugRPCBackup {
                 "ConnectTimeout": main["ConnectTimeout"] ?? "?",
                 "LowLevelRetries": main["LowLevelRetries"] ?? "?",
                 "Retries": main["Retries"] ?? "?",
-                "InsecureSkipVerify": main["InsecureSkipVerify"] ?? "?",
+                "InsecureSkipVerify": main["InsecureSkipVerify"] ?? "?"
             ]]
 
         case "update":
@@ -485,7 +485,7 @@ enum DebugRPCBackup {
             }
             let dir = (params["dir"] as? String) ?? r.path
             let out = try RcloneBridge.rpc("operations/list", [
-                "fs": RcloneRemoteStore.fsSpec(for: r), "remote": dir,
+                "fs": RcloneRemoteStore.fsSpec(for: r), "remote": dir
             ])
             return ["ok": true, "list": out["list"] ?? []]
 
@@ -551,7 +551,7 @@ enum DebugRPCBackup {
             return [
                 "remotes": RcloneRemoteStore.remotes.map { r -> [String: Any] in
                     ["name": r.name, "backend": r.backend, "path": r.path]
-                },
+                }
             ]
         }
     }
@@ -627,7 +627,7 @@ enum DebugRPCBackup {
             // and JSONSerialization rejects the whole response if one is left in.
             "entries": Array(entries.prefix(200)),
             "manifest": manifest,
-            "lineCounts": lineCounts,
+            "lineCounts": lineCounts
         ]
     }
 }

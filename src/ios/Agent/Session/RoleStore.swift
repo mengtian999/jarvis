@@ -59,9 +59,8 @@ enum RoleStore {
         // 导致默认角色和所有早期创建的角色都遍历不到（角色切换弹窗最多只能
         // 看到 custom/ 下建过壳目录的那几个角色）。
         let subdirs = ((try? fm.contentsOfDirectory(at: rolesDir,
-                                                     includingPropertiesForKeys: nil,
-                                                     skipHiddenFiles: true))
-            ?? []).filter { $0.hasDirectoryPath }
+                                                     includingPropertiesForKeys: nil))
+            ?? []).filter { $0.hasDirectoryPath && !$0.lastPathComponent.hasPrefix(".") }
         for roleDir in subdirs {
             if let roleFile = load(roleId: roleDir.lastPathComponent) {
                 roles.append(roleFile)
@@ -344,7 +343,7 @@ enum RoleStore {
             // 绘制渐变
             let gradient = CGGradient(
                 colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                colors: [UIColor.systemBlue.cgColor, UIColor.darkBlue.cgColor] as CFArray,
+                colors: [UIColor.systemBlue.cgColor, UIColor.systemIndigo.cgColor] as CFArray,
                 locations: [0, 1]
             )!
             context.cgContext.drawRadialGradient(
@@ -394,7 +393,8 @@ struct RoleMetadata: Equatable, Hashable {
 }
 
 /// 角色文件
-struct RoleFile: Equatable, Hashable {
+struct RoleFile: Equatable, Hashable, Identifiable {
+    var id: String { roleId }
     var metadata: RoleMetadata
     var body: String
     var avatarData: Data?
@@ -414,9 +414,9 @@ struct RoleFile: Equatable, Hashable {
     }
 }
 
-// MARK: - Legacy SOUL.md 解析器
+// MARK: - Legacy SOUL.md 解析器（角色侧；勿与 SoulStore.SoulMDParser 同名）
 
-enum SoulMDParser {
+enum RoleMDParser {
     
     /// 解析 SOUL.md 文件内容（向后兼容）
     static func parse(_ source: String) -> (metadata: RoleMetadata, body: String) {

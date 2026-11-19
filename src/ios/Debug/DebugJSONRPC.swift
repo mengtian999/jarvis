@@ -106,7 +106,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "app": "MinisApp",
             "version": info["CFBundleShortVersionString"] as? String ?? "?",
             "build": info["CFBundleVersion"] as? String ?? "?",
-            "device": DeviceIdentity.deviceName,
+            "device": DeviceIdentity.deviceName
         ]
     }()
 
@@ -732,7 +732,7 @@ final class DebugJSONRPC: @unchecked Sendable {
         let freedTraces = AgentRequestTrace.shared.clear()
         var result: [String: Any] = [
             "clearedTraces": freedTraces,
-            "clearedLLMRequests": false,
+            "clearedLLMRequests": false
         ]
         if alsoLLM {
             let before = LastAPIRequestBody.shared.getAll().count
@@ -757,7 +757,7 @@ final class DebugJSONRPC: @unchecked Sendable {
         }
         return [
             "paused": AgentRequestTrace.shared.isPaused,
-            "llmRequestsPaused": LastAPIRequestBody.shared.isPaused,
+            "llmRequestsPaused": LastAPIRequestBody.shared.isPaused
         ]
     }
 
@@ -786,7 +786,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             var dict: [String: Any] = [
                 "provider": req.provider,
                 "timestamp": tf.string(from: req.timestamp),
-                "requestBody": req.requestBody,
+                "requestBody": req.requestBody
             ]
             if let url = req.requestURL { dict["requestURL"] = url }
             if let method = req.requestMethod { dict["requestMethod"] = method }
@@ -797,7 +797,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                     "inputTokens": u.inputTokens,
                     "outputTokens": u.outputTokens,
                     "cacheCreationTokens": u.cacheCreationTokens,
-                    "cacheReadTokens": u.cacheReadTokens,
+                    "cacheReadTokens": u.cacheReadTokens
                 ] as [String: Any]
             }
             if let sc = req.responseStatusCode { dict["responseStatusCode"] = sc }
@@ -866,7 +866,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "keepUserData": keepUserData,
                 "backupPath": backup?.path as Any,
                 "relaunchRequired": true,
-                "note": "Rootfs deleted. Kill + cold-launch the app; installIfNeeded() will reinstall a clean rootfs.",
+                "note": "Rootfs deleted. Kill + cold-launch the app; installIfNeeded() will reinstall a clean rootfs."
             ]
         } catch {
             throw RPCError(code: -32000, message: "rootfs reset failed: \(error.localizedDescription)")
@@ -883,14 +883,14 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "name": file.name,
                 "size": file.size,
                 "modified": iso.string(from: file.date),
-                "type": file.type,
+                "type": file.type
             ]
         }
         return [
             "enabled": mgr.isEnabled,
             "logDirectory": mgr.logDirectory.path,
             "totalSize": mgr.totalLogSize(),
-            "files": files,
+            "files": files
         ] as [String: Any]
     }
 
@@ -910,7 +910,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "enabled": mgr.isEnabled,
             "name": newest?.name as Any,
             "size": newest?.size as Any,
-            "modified": newest.map { iso.string(from: $0.date) } as Any,
+            "modified": newest.map { iso.string(from: $0.date) } as Any
         ] as [String: Any]
     }
 
@@ -955,7 +955,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "size": fileSize,
             "offset": startOffset,
             "bytesRead": data.count,
-            "content": content,
+            "content": content
         ]
         let endOffset = startOffset + data.count
         if endOffset < fileSize {
@@ -1029,7 +1029,7 @@ final class DebugJSONRPC: @unchecked Sendable {
         return [
             "base64": pngData.base64EncodedString(),
             "size": pngData.count,
-            "encoding": "png",
+            "encoding": "png"
         ] as [String: Any]
     }
 
@@ -1045,7 +1045,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "id": entry.id,
             "label": entry.label,
             "timestamp": entry.iso,
-            "size": entry.pngData.count,
+            "size": entry.pngData.count
         ] as [String: Any]
     }
 
@@ -1057,8 +1057,8 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "id": $0.id,
                 "label": $0.label,
                 "timestamp": $0.iso,
-                "size": $0.pngData.count,
-            ] as [String: Any] },
+                "size": $0.pngData.count
+            ] as [String: Any] }
         ] as [String: Any]
     }
 
@@ -1073,7 +1073,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "timestamp": entry.iso,
                 "base64": entry.pngData.base64EncodedString(),
                 "size": entry.pngData.count,
-                "encoding": "png",
+                "encoding": "png"
             ] as [String: Any]
         }
         // Return the latest
@@ -1086,7 +1086,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "timestamp": entry.iso,
             "base64": entry.pngData.base64EncodedString(),
             "size": entry.pngData.count,
-            "encoding": "png",
+            "encoding": "png"
         ] as [String: Any]
     }
 
@@ -1106,7 +1106,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                     [
                         "name": t.name,
                         "capabilities": t.capabilities.rawValue,
-                        "isLan": t is LANTransport,
+                        "isLan": t is LANTransport
                     ] as [String: Any]
                 }
             }
@@ -1114,7 +1114,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "isRunning": await MainActor.run { core.isRunning },
                 "transports": entries,
                 "lanImplemented": LANTransport.isImplemented,
-                "registeredRecordTypes": SyncableTypeRegistry.shared.allRecordTypes,
+                "registeredRecordTypes": SyncableTypeRegistry.shared.allRecordTypes
             ] as [String: Any]
         }
         return ["status": "unavailable"] as [String: Any]
@@ -1153,8 +1153,8 @@ final class DebugJSONRPC: @unchecked Sendable {
             "counts": [
                 "instances": counts.instances,
                 "entries": counts.entries,
-                "groups": counts.groups,
-            ],
+                "groups": counts.groups
+            ]
         ] as [String: Any]
     }
 
@@ -1176,7 +1176,7 @@ final class DebugJSONRPC: @unchecked Sendable {
         let summary = await ChatStore.shared.countDirtyRecords()
         return [
             "total": summary.total,
-            "byType": summary.byType,
+            "byType": summary.byType
         ] as [String: Any]
     }
 
@@ -1234,7 +1234,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             query.sortDescriptors = [NSSortDescriptor(key: key, ascending: sortAscending)]
         }
         let zoneID = CKRecordZone.ID(zoneName: zoneName)
-        let container = CKContainer(identifier: "iCloud.com.openminis.app")
+        let container = CKContainer(identifier: "iCloud.com.bitjarvis.app")
         do {
             let result = try await container.privateCloudDatabase.records(
                 matching: query,
@@ -1247,7 +1247,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 if case .success(let rec) = recResult {
                     var entry: [String: Any] = [
                         "name": rec.recordID.recordName,
-                        "type": rec.recordType,
+                        "type": rec.recordType
                     ]
                     if let mod = rec.modificationDate {
                         entry["modificationDate"] = ISO8601DateFormatter().string(from: mod)
@@ -1269,7 +1269,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             return [
                 "ok": true,
                 "count": out.count,
-                "records": out,
+                "records": out
             ] as [String: Any]
         } catch {
             let nse = error as NSError
@@ -1278,7 +1278,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "ok": false,
                 "errorCode": nse.code,
                 "ckCode": ck?.code.rawValue ?? -1,
-                "description": error.localizedDescription,
+                "description": error.localizedDescription
             ] as [String: Any]
         }
     }
@@ -1288,13 +1288,13 @@ final class DebugJSONRPC: @unchecked Sendable {
     /// (minis-shared / minis-devices / minis-secrets) when migration
     /// counters look suspect.
     private func handleSyncAllZones() async -> Any {
-        let container = CKContainer(identifier: "iCloud.com.openminis.app")
+        let container = CKContainer(identifier: "iCloud.com.bitjarvis.app")
         do {
             let zones = try await container.privateCloudDatabase.allRecordZones()
             return [
                 "ok": true,
                 "count": zones.count,
-                "zones": zones.map { ["zoneName": $0.zoneID.zoneName, "ownerName": $0.zoneID.ownerName] },
+                "zones": zones.map { ["zoneName": $0.zoneID.zoneName, "ownerName": $0.zoneID.ownerName] }
             ] as [String: Any]
         } catch {
             let nse = error as NSError
@@ -1303,7 +1303,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "ok": false,
                 "errorCode": nse.code,
                 "ckCode": ck?.code.rawValue ?? -1,
-                "description": error.localizedDescription,
+                "description": error.localizedDescription
             ] as [String: Any]
         }
     }
@@ -1314,7 +1314,7 @@ final class DebugJSONRPC: @unchecked Sendable {
     private func handleSyncDeviceId() async -> Any {
         return [
             "ok": true,
-            "deviceId": DeviceIdentity.deviceId,
+            "deviceId": DeviceIdentity.deviceId
         ] as [String: Any]
     }
 
@@ -1336,7 +1336,7 @@ final class DebugJSONRPC: @unchecked Sendable {
     ///   recordTypes (optional): override the default per-zone type
     ///     list. Useful for ad-hoc probes.
     private func handleSyncZoneStats(params: [String: Any]) async -> Any {
-        let containerId = "iCloud.com.openminis.app"
+        let containerId = "iCloud.com.bitjarvis.app"
         let container = CKContainer(identifier: containerId)
         let db = container.privateCloudDatabase
 
@@ -1355,7 +1355,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 ("minis-shared", ["SessionV2", "MessageV2", "CompactMarkerV2", "SessionFileV2", "SkillV2"]),
                 ("minis-devices", ["SyncDeviceV2"]),
                 ("minis-secrets", ["ProviderConfigV2", "EnvVarV2", "EnvVarItem"]),
-                ("device-\(myDeviceId)", ["Session", "Message", "CompactMarker", "SessionFile"]),
+                ("device-\(myDeviceId)", ["Session", "Message", "CompactMarker", "SessionFile"])
             ]
         }
 
@@ -1399,14 +1399,14 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "recordCount": zoneCount,
                 "assetBytes": zoneBytes,
                 "assetSizeFormatted": ByteCountFormatter.string(
-                    fromByteCount: zoneBytes, countStyle: .file),
+                    fromByteCount: zoneBytes, countStyle: .file)
             ]
             entry["byType"] = perType.mapValues { stat -> [String: Any] in
                 [
                     "count": stat.count,
                     "assetBytes": stat.assetBytes,
                     "assetSizeFormatted": ByteCountFormatter.string(
-                        fromByteCount: stat.assetBytes, countStyle: .file),
+                        fromByteCount: stat.assetBytes, countStyle: .file)
                 ]
             }
             zoneResults.append(entry)
@@ -1417,7 +1417,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "totalRecords": totalRecords,
             "totalAssetBytes": totalAssetBytes,
             "totalAssetSizeFormatted": ByteCountFormatter.string(
-                fromByteCount: totalAssetBytes, countStyle: .file),
+                fromByteCount: totalAssetBytes, countStyle: .file)
         ] as [String: Any]
     }
 
@@ -1540,7 +1540,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                     "url": tab.manager.currentURL,
                     "title": tab.manager.pageTitle,
                     "selected": tab.id == pool.selectedTabId,
-                    "inUse": tab.inUse,
+                    "inUse": tab.inUse
                 ])
             }
             return ["tabs": tabs] as [String: Any]
@@ -1558,7 +1558,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "title": wv.title ?? tab.manager.pageTitle,
                 "isLoading": tab.manager.isLoading,
                 "canGoBack": wv.canGoBack,
-                "canGoForward": wv.canGoForward,
+                "canGoForward": wv.canGoForward
             ]
             return (wv, dict)
         }
@@ -1689,7 +1689,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "afterCancel": ["responsive": after.ok, "ms": after.ms, "value": after.value, "identity": identityNote],
             "verdict": before.ok
                 ? "page did NOT pin (test invalid — before eval succeeded)"
-                : (after.ok ? "RECOVERED: \(methodNote) unblocked the WebView" : "STILL STUCK: \(methodNote) did NOT recover the WebView"),
+                : (after.ok ? "RECOVERED: \(methodNote) unblocked the WebView" : "STILL STUCK: \(methodNote) did NOT recover the WebView")
         ]
     }
 
@@ -1737,7 +1737,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "distinctTabs": distinct,
             "verdict": distinct == count
                 ? "OK: all \(count) actions got distinct tabs (fan-out worked)"
-                : "RACE: \(count) concurrent navigates collapsed onto \(distinct) tab(s) — they serialized instead of running in parallel",
+                : "RACE: \(count) concurrent navigates collapsed onto \(distinct) tab(s) — they serialized instead of running in parallel"
         ]
     }
 
@@ -1807,7 +1807,7 @@ final class DebugJSONRPC: @unchecked Sendable {
         return [
             "base64": pngData.base64EncodedString(),
             "size": pngData.count,
-            "encoding": "png",
+            "encoding": "png"
         ] as [String: Any]
     }
 
@@ -1836,7 +1836,7 @@ final class DebugJSONRPC: @unchecked Sendable {
         // where the FileProvider extension writes its diagnostic log.
         if stripped.hasPrefix("AppGroup/") {
             let fm = FileManager.default
-            if let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.openminis.app") {
+            if let container = fm.containerURL(forSecurityApplicationGroupIdentifier: "group.com.bitjarvis.app") {
                 let relative = String(stripped.dropFirst("AppGroup/".count))
                 return relative.isEmpty ? container : container.appendingPathComponent(relative)
             }
@@ -1904,7 +1904,7 @@ final class DebugJSONRPC: @unchecked Sendable {
         let type: String = isSymlink ? "symlink" : (isDirectory ? "directory" : "file")
         var dict: [String: Any] = [
             "name": url.lastPathComponent,
-            "type": type,
+            "type": type
         ]
         if let size = values?.fileSize {
             dict["size"] = size
@@ -2057,7 +2057,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "hostPath": url.path,
             "linuxPath": linuxPath ?? NSNull(),
             "size": data.count,
-            "registeredInGuest": registered,
+            "registeredInGuest": registered
         ] as [String: Any]
     }
 
@@ -2149,7 +2149,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "stdout": "",
                 "stderr": "",
                 "duration": 0,
-                "timedOut": false,
+                "timedOut": false
             ] as [String: Any]
         }
 
@@ -2182,7 +2182,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "stdout": stdoutCapped.text,
             "stderr": stderrCapped.text,
             "duration": result.duration,
-            "timedOut": didTimeout || result.error == .timeout,
+            "timedOut": didTimeout || result.error == .timeout
         ]
         if stdoutCapped.truncated { resp["stdoutTruncatedFrom"] = stdoutCapped.originalCount }
         if stderrCapped.truncated { resp["stderrTruncatedFrom"] = stderrCapped.originalCount }
@@ -2237,7 +2237,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             // shell timeout leak recurring, and it ends with the app unable to
             // run any command until the device restarts.
             "shellLeakGuard": ISHShellExecutor.leakGuardStatus(),
-            "buildDate": buildDate,
+            "buildDate": buildDate
         ]
 
         // Disk usage requires recursive directory walks that can be very slow
@@ -2257,7 +2257,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             result["diskUsage"] = [
                 "documents": dirSize(docs),
                 "rootfsData": dirSize(dataPath),
-                "bundle": dirSize(URL(fileURLWithPath: bundlePath)),
+                "bundle": dirSize(URL(fileURLWithPath: bundlePath))
             ]
         }
         return result
@@ -2404,13 +2404,13 @@ final class DebugJSONRPC: @unchecked Sendable {
         let rpcParams: [String: Any] = [
             "element_id": elementId,
             "match": matchMode,
-            "bundle_id": bundleId,
+            "bundle_id": bundleId
         ]
         let payload: [String: Any] = [
             "jsonrpc": "2.0",
             "id": 1,
             "method": "find_and_tap",
-            "params": rpcParams,
+            "params": rpcParams
         ]
         guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return nil }
 
@@ -2454,7 +2454,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 return [
                     "ok": false, "via": "ictrl", "strategy": strategy,
                     "error": "ictrl: \(msg)",
-                    "ictrl_status": http.statusCode,
+                    "ictrl_status": http.statusCode
                 ]
             }
             return nil
@@ -2488,7 +2488,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                     "ok": false,
                     "strategy": strategy,
                     "error": "main thread busy — request timed out after \(seconds)s; try 'identifier' if you know one, or fall back to x/y",
-                    "timedOutAfter": seconds,
+                    "timedOutAfter": seconds
                 ] as [String: Any])
             }
             defer { group.cancelAll() }
@@ -2656,7 +2656,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "ok": true,
             "strategy": strategy,
             "via": via,
-            "point": ["x": point.x, "y": point.y],
+            "point": ["x": point.x, "y": point.y]
         ]
     }
 
@@ -2773,7 +2773,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                 "contentHeight": Double(sv.contentSize.height),
                 "boundsHeight": Double(sv.bounds.height),
                 "insetTop": Double(sv.adjustedContentInset.top),
-                "insetBottom": Double(sv.adjustedContentInset.bottom),
+                "insetBottom": Double(sv.adjustedContentInset.bottom)
             ] as [String: Any]
         }
     }
@@ -2785,7 +2785,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "jsonrpc": "2.0",
             "id": id ?? NSNull(),
             "result": result,
-            "_meta": Self.responseMeta,
+            "_meta": Self.responseMeta
         ]
         return jsonString(response)
     }
@@ -2796,9 +2796,9 @@ final class DebugJSONRPC: @unchecked Sendable {
             "id": id ?? NSNull(),
             "error": [
                 "code": code,
-                "message": message,
+                "message": message
             ],
-            "_meta": Self.responseMeta,
+            "_meta": Self.responseMeta
         ]
         return jsonString(response)
     }
@@ -2844,7 +2844,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             // EnvVarEntry has no per-row updatedAt yet — mirror createdAt so
             // callers can rely on the field being present.
             "updatedAt": iso.string(from: entry.createdAt),
-            "hasValue": hasValue,
+            "hasValue": hasValue
         ]
         if includeValue {
             dict["value"] = stored ?? ""
@@ -3007,7 +3007,7 @@ final class DebugJSONRPC: @unchecked Sendable {
                     "kind": kind.rawValue,
                     "status": status,
                     "elapsed": String(format: "%.2fs", elapsed),
-                    "detail": detail,
+                    "detail": detail
                 ])
             }
         }
@@ -3015,7 +3015,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "model": entry.model.displayName,
             "modelId": entry.model.id,
             "entryId": entryId,
-            "results": results,
+            "results": results
         ]
     }
 
@@ -3040,7 +3040,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             ("provider-config", chatBase.appendingPathComponent("provider-config.db")),
             ("voice-correction", chatBase.appendingPathComponent("voice-correction.db")),
             ("alarm-labels", chatBase.appendingPathComponent("alarm-labels.db")),
-            ("rootfs-meta", rootfs.appendingPathComponent("meta.db")),
+            ("rootfs-meta", rootfs.appendingPathComponent("meta.db"))
         ]
     }
 
@@ -3146,7 +3146,7 @@ final class DebugJSONRPC: @unchecked Sendable {
             "columns": columns,
             "rows": rows,
             "rowCount": rows.count,
-            "truncated": truncated,
+            "truncated": truncated
         ]
     }
 

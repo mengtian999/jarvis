@@ -24,7 +24,7 @@ struct MinisShortcutsProvider: AppShortcutsProvider {
                 "Ask \(.applicationName)",
                 "Ask \(.applicationName) a question",
                 "Talk to \(.applicationName)",
-                "New \(.applicationName) chat",
+                "New \(.applicationName) chat"
             ],
             shortTitle: "Ask Jarvis",
             systemImageName: "sparkles"
@@ -33,7 +33,7 @@ struct MinisShortcutsProvider: AppShortcutsProvider {
             intent: QuickTaskIntent(),
             phrases: [
                 "Run a \(.applicationName) quick task",
-                "Use \(.applicationName) quick task",
+                "Use \(.applicationName) quick task"
             ],
             shortTitle: "Quick Task",
             systemImageName: "bolt.fill"
@@ -43,7 +43,7 @@ struct MinisShortcutsProvider: AppShortcutsProvider {
             phrases: [
                 "Send a prompt to \(.applicationName)",
                 "Ask \(.applicationName) something",
-                "Start a \(.applicationName) task",
+                "Start a \(.applicationName) task"
             ],
             shortTitle: "Send Prompt",
             systemImageName: "message.fill"
@@ -52,7 +52,7 @@ struct MinisShortcutsProvider: AppShortcutsProvider {
             intent: GetSessionStatusIntent(),
             phrases: [
                 "Get \(.applicationName) session status",
-                "Check \(.applicationName) task",
+                "Check \(.applicationName) task"
             ],
             shortTitle: "Session Status",
             systemImageName: "info.circle.fill"
@@ -61,7 +61,7 @@ struct MinisShortcutsProvider: AppShortcutsProvider {
             intent: ListSessionsIntent(),
             phrases: [
                 "List \(.applicationName) sessions",
-                "Show \(.applicationName) chats",
+                "Show \(.applicationName) chats"
             ],
             shortTitle: "List Sessions",
             systemImageName: "list.bullet"
@@ -70,7 +70,7 @@ struct MinisShortcutsProvider: AppShortcutsProvider {
             intent: FollowUpSessionIntent(),
             phrases: [
                 "Follow up a \(.applicationName) session",
-                "Continue a \(.applicationName) session",
+                "Continue a \(.applicationName) session"
             ],
             shortTitle: "Follow Up",
             systemImageName: "arrowshape.turn.up.left.fill"
@@ -82,7 +82,7 @@ struct MinisShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: OpenSessionIntent(),
             phrases: [
-                "Open a \(.applicationName) session",
+                "Open a \(.applicationName) session"
             ],
             shortTitle: "Open Session",
             systemImageName: "arrow.up.right.square"

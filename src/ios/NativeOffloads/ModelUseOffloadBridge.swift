@@ -126,7 +126,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
             "instance_label": instance?.label ?? "unknown",
             "provider_type": instance?.providerType.displayName ?? "unknown",
             "modalities": supported,
-            "context_window": entry.model.contextWindowTokens,
+            "context_window": entry.model.contextWindowTokens
         ]
         // Surface the configured + resolved image endpoint for image-output models
         // so the agent can see which path will be used (and which one already worked).
@@ -769,7 +769,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
                 "model_name": entry.model.displayName,
                 "output_text": fullText,
                 "streamed": true,
-                "output_file": outputHostPath.map { Self.toLinuxPath($0) } ?? NSNull(),
+                "output_file": outputHostPath.map { Self.toLinuxPath($0) } ?? NSNull()
             ], warnings: callWarnings, extras: appliedExtras)
         } else {
             // [T-modeluse-transient-retry] Non-streaming: nothing has been
@@ -854,7 +854,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
                     "type": attachment.type.rawValue,
                     "mime_type": Self.mimeType(for: targetExt) ?? attachment.mimeType,
                     "path": linuxPath,
-                    "size": outputData.count,
+                    "size": outputData.count
                 ])
                 logger.info("Saved \(attachment.type.rawValue) attachment (\(outputData.count) bytes) → \(filePath)")
             }
@@ -883,7 +883,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
                 "output_text": response.text,
                 "stop_reason": response.stopReason ?? "end_turn",
                 "streamed": false,
-                "output_file": outputHostPath.map { Self.toLinuxPath($0) } ?? NSNull(),
+                "output_file": outputHostPath.map { Self.toLinuxPath($0) } ?? NSNull()
             ]
             if !mediaFiles.isEmpty {
                 result["media_files"] = mediaFiles
@@ -891,7 +891,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
             if let usage = response.usage {
                 result["usage"] = [
                     "input_tokens": usage.inputTokens,
-                    "output_tokens": usage.outputTokens,
+                    "output_tokens": usage.outputTokens
                 ]
             }
             if let imageEndpointForResult {
@@ -1112,7 +1112,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
             "aspect_ratio", "aspectRatio",
             "image_size", "imageSize",
             "number_of_images", "numberOfImages",
-            "person_generation", "personGeneration",
+            "person_generation", "personGeneration"
         ]
 
         var imageConfig: [String: Any] = [:]
@@ -1215,7 +1215,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
         "messages", "model", "chat_model", "prompt", "n", "number_of_images",
         "size", "image_size", "quality", "generation_config", "endpoint",
         "image_endpoint", "endpoint_path", "extra_body", "extra_headers",
-        "stream", "temperature", "max_tokens",
+        "stream", "temperature", "max_tokens"
     ]
 
     /// Parse passthrough extras from the input JSON. Two complementary modes,
@@ -1481,7 +1481,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
             "bytes": result.data.count,
             "endpoint_url": result.url,
             "body_mode": spec.bodyMode,
-            "model_id": entry.model.id,
+            "model_id": entry.model.id
         ]
         if let outputHostPath {
             let dir = (outputHostPath as NSString).deletingLastPathComponent
@@ -1659,7 +1659,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
                 "type": attachment.type.rawValue,
                 "mime_type": Self.mimeType(for: targetExt) ?? attachment.mimeType,
                 "path": linuxPath2,
-                "size": outputData.count,
+                "size": outputData.count
             ])
             logger.info("🖼️ Saved \(attachment.type.rawValue) (\(outputData.count) bytes) → \(filePath)")
         }
@@ -1681,7 +1681,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
             "output_text": response.text,
             "stop_reason": response.stopReason ?? "end_turn",
             "streamed": false,
-            "output_file": outputHostPath.map { Self.toLinuxPath($0) } ?? NSNull(),
+            "output_file": outputHostPath.map { Self.toLinuxPath($0) } ?? NSNull()
         ]
         if !mediaFiles.isEmpty {
             result["media_files"] = mediaFiles
@@ -1689,7 +1689,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
         if let usage = response.usage {
             result["usage"] = [
                 "input_tokens": usage.inputTokens,
-                "output_tokens": usage.outputTokens,
+                "output_tokens": usage.outputTokens
             ]
         }
         if let imageEndpointUsed {
@@ -1902,7 +1902,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
                 (AIChatViewModel.minisWorkspacePersistentDir(for: callerSid).path,
                  AIChatViewModel.minisWorkspaceLinuxDir),
                 (AIChatViewModel.minisOffloadsPersistentDir(for: callerSid).path,
-                 AIChatViewModel.minisOffloadsLinuxDir),
+                 AIChatViewModel.minisOffloadsLinuxDir)
             ]
             for (persistDir, linuxDir) in mappings {
                 for prefix in [persistDir, "/private" + persistDir] {
@@ -2084,14 +2084,14 @@ private let logger = AppLogger(category: "ModelUseOffload")
 
         var output: [String: Any] = [
             "model_id": model.id,
-            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "timestamp": ISO8601DateFormatter().string(from: Date())
         ]
         if !text.isEmpty { output["content"] = text }
         if !mediaFiles.isEmpty { output["media_files"] = mediaFiles }
         if let usage {
             output["usage"] = [
                 "input_tokens": usage.inputTokens,
-                "output_tokens": usage.outputTokens,
+                "output_tokens": usage.outputTokens
             ]
         }
 
@@ -2142,7 +2142,7 @@ private let logger = AppLogger(category: "ModelUseOffload")
             let output: [String: Any] = [
                 "content": text,
                 "type": "text",
-                "timestamp": ISO8601DateFormatter().string(from: Date()),
+                "timestamp": ISO8601DateFormatter().string(from: Date())
             ]
             let data = try JSONSerialization.data(withJSONObject: output, options: [.prettyPrinted, .sortedKeys])
             try data.write(to: URL(fileURLWithPath: path))

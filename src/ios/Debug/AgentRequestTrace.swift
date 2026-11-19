@@ -38,13 +38,13 @@ final class AgentRequestTraceEntry {
                     "t": tf.string(from: step.timestamp),
                     "ms": Int(step.timestamp.timeIntervalSince(startedAt) * 1000),
                     "label": step.label,
-                    "detail": String(step.detail.prefix(4000)),
+                    "detail": String(step.detail.prefix(4000))
                 ] as [String: Any]
             },
             "httpRequestBody": httpRequestBody.map { String($0.prefix(8000)) } as Any,
             "httpResponseStatus": httpResponseStatus as Any,
             "httpResponseBody": httpResponseBody.map { String($0.prefix(2000)) } as Any,
-            "error": error as Any,
+            "error": error as Any
         ]
     }
 }

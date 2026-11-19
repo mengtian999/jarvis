@@ -125,7 +125,7 @@ private class PlayerSession {
             "codec": "unknown",
             "width": 0,
             "height": 0,
-            "status": "playing",
+            "status": "playing"
         ]
 
         // Present MinisAudioPreviewView
@@ -188,7 +188,7 @@ private class PlayerSession {
                 "codec": codec,
                 "width": width,
                 "height": height,
-                "status": "playing",
+                "status": "playing"
             ]
 
             await MainActor.run {
@@ -211,14 +211,14 @@ private class PlayerSession {
             return [
                 "session_id": sessionId,
                 "status": "paused",
-                "current_time": player.currentTime,
+                "current_time": player.currentTime
             ]
         } else {
             session.videoPlayer?.pause()
             return [
                 "session_id": sessionId,
                 "status": "paused",
-                "current_time": CMTimeGetSeconds(session.videoPlayer?.currentTime() ?? .zero),
+                "current_time": CMTimeGetSeconds(session.videoPlayer?.currentTime() ?? .zero)
             ]
         }
     }
@@ -234,14 +234,14 @@ private class PlayerSession {
             return [
                 "session_id": sessionId,
                 "status": "playing",
-                "current_time": player.currentTime,
+                "current_time": player.currentTime
             ]
         } else {
             session.videoPlayer?.play()
             return [
                 "session_id": sessionId,
                 "status": "playing",
-                "current_time": CMTimeGetSeconds(session.videoPlayer?.currentTime() ?? .zero),
+                "current_time": CMTimeGetSeconds(session.videoPlayer?.currentTime() ?? .zero)
             ]
         }
     }
@@ -256,7 +256,7 @@ private class PlayerSession {
             return [
                 "session_id": sessionId,
                 "status": GlobalAudioPlayer.shared.isPlaying ? "playing" : "paused",
-                "current_time": seconds,
+                "current_time": seconds
             ]
         } else {
             let time = CMTime(seconds: seconds, preferredTimescale: 600)
@@ -264,7 +264,7 @@ private class PlayerSession {
             return [
                 "session_id": sessionId,
                 "status": (session.videoPlayer?.rate ?? 0) > 0 ? "playing" : "paused",
-                "current_time": seconds,
+                "current_time": seconds
             ]
         }
     }
@@ -283,7 +283,7 @@ private class PlayerSession {
                 "status": player.isPlaying ? "playing" : "paused",
                 "current_time": player.currentTime,
                 "duration": player.duration,
-                "rate": player.rate,
+                "rate": player.rate
             ]
         } else {
             guard let vp = session.videoPlayer else {
@@ -305,7 +305,7 @@ private class PlayerSession {
                 "status": status,
                 "current_time": currentTime.isNaN ? 0 : currentTime,
                 "duration": duration.isNaN ? 0 : duration,
-                "rate": rate,
+                "rate": rate
             ]
         }
     }
@@ -332,7 +332,7 @@ private class PlayerSession {
         }
         return [
             "session_id": sessionId,
-            "status": "stopped",
+            "status": "stopped"
         ]
     }
 
@@ -347,7 +347,7 @@ private class PlayerSession {
                     "media_type": "audio",
                     "status": player.isPlaying ? "playing" : "paused",
                     "current_time": player.currentTime,
-                    "duration": player.duration,
+                    "duration": player.duration
                 ])
             } else if let vp = session.videoPlayer {
                 let currentTime = CMTimeGetSeconds(vp.currentTime())
@@ -358,13 +358,13 @@ private class PlayerSession {
                     "media_type": "video",
                     "status": vp.rate > 0 ? "playing" : "paused",
                     "current_time": currentTime.isNaN ? 0 : currentTime,
-                    "duration": duration.isNaN ? 0 : duration,
+                    "duration": duration.isNaN ? 0 : duration
                 ])
             }
         }
         return [
             "sessions": items,
-            "count": items.count,
+            "count": items.count
         ]
     }
 
@@ -437,7 +437,7 @@ private class PlayerSession {
             Character(UnicodeScalar((code >> 24) & 0xFF)!),
             Character(UnicodeScalar((code >> 16) & 0xFF)!),
             Character(UnicodeScalar((code >> 8)  & 0xFF)!),
-            Character(UnicodeScalar( code        & 0xFF)!),
+            Character(UnicodeScalar( code        & 0xFF)!)
         ]
         return String(chars).trimmingCharacters(in: .whitespaces)
     }

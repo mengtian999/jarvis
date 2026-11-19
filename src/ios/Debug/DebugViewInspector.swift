@@ -84,7 +84,7 @@ final class DebugViewInspector {
         var dict: [String: Any] = [
             "type": String(describing: type(of: view)),
             "address": addressString(for: view),
-            "frame": frameDict(view.frame),
+            "frame": frameDict(view.frame)
         ]
 
         if let identifier = view.accessibilityIdentifier, !identifier.isEmpty {
@@ -176,7 +176,7 @@ final class DebugViewInspector {
         }
         var dict: [String: Any] = [
             "type": "AX." + String(describing: type(of: element)),
-            "address": addressString(for: element),
+            "address": addressString(for: element)
         ]
         if let label = element.accessibilityLabel, !label.isEmpty { dict["label"] = label }
         if let value = element.accessibilityValue, !value.isEmpty { dict["value"] = value }
@@ -269,7 +269,7 @@ final class DebugViewInspector {
 
         var dict: [String: Any] = [
             "type": typeName,
-            "address": addressString(for: node),
+            "address": addressString(for: node)
         ]
         if let view = node as? UIView {
             dict["frame"] = frameDict(view.frame)
@@ -455,7 +455,7 @@ final class DebugViewInspector {
             (node as? UILabel)?.text ?? "",
             (node as? UIButton)?.currentTitle ?? "",
             (node as? UITextField)?.text ?? "",
-            (node as? UITextField)?.placeholder ?? "",
+            (node as? UITextField)?.placeholder ?? ""
         ]
         let matched = candidates.contains { candidate in
             if candidate.isEmpty { return false }
@@ -674,7 +674,7 @@ final class DebugViewInspector {
             "alpha": view.alpha,
             "clipsToBounds": view.clipsToBounds,
             "isUserInteractionEnabled": view.isUserInteractionEnabled,
-            "childCount": view.subviews.count,
+            "childCount": view.subviews.count
         ]
 
         if let bg = view.backgroundColor {
@@ -715,7 +715,7 @@ final class DebugViewInspector {
         let t = view.transform
         if t != .identity {
             dict["transform"] = [
-                "a": t.a, "b": t.b, "c": t.c, "d": t.d, "tx": t.tx, "ty": t.ty,
+                "a": t.a, "b": t.b, "c": t.c, "d": t.d, "tx": t.tx, "ty": t.ty
             ]
         }
 
@@ -732,7 +732,7 @@ final class DebugViewInspector {
             dict["shadow"] = [
                 "opacity": layer.shadowOpacity,
                 "radius": layer.shadowRadius,
-                "offset": ["w": layer.shadowOffset.width, "h": layer.shadowOffset.height],
+                "offset": ["w": layer.shadowOffset.width, "h": layer.shadowOffset.height]
             ] as [String: Any]
         }
         if layer.mask != nil {
@@ -798,7 +798,7 @@ final class DebugViewInspector {
                     "itemSize": sizeDict(layout.itemSize),
                     "minimumLineSpacing": layout.minimumLineSpacing,
                     "minimumInteritemSpacing": layout.minimumInteritemSpacing,
-                    "sectionInset": insetsDict(layout.sectionInset),
+                    "sectionInset": insetsDict(layout.sectionInset)
                 ]
             }
             dict["layoutType"] = String(describing: type(of: cv.collectionViewLayout))
@@ -887,7 +887,7 @@ final class DebugViewInspector {
                 "constant": c.constant,
                 "priority": c.priority.rawValue,
                 "isActive": c.isActive,
-                "description": c.description,
+                "description": c.description
             ]
         }
         if !constraintsList.isEmpty {
@@ -905,7 +905,7 @@ final class DebugViewInspector {
                 [
                     "type": String(describing: type(of: gr)),
                     "isEnabled": gr.isEnabled,
-                    "state": gestureStateString(gr.state),
+                    "state": gestureStateString(gr.state)
                 ]
             }
         }

@@ -143,7 +143,8 @@ enum GatewaySync {
             imageModels: imageEntries.map { $0.id },
             videoModels: videoEntries.map { $0.id },
             defaultModelId: defaultModelId,
-            deviceId: identity.deviceId
+            deviceId: identity.deviceId,
+            error: nil
         )
     }
 
@@ -351,8 +352,6 @@ enum GatewaySync {
     }
 
     // MARK: - Agent Loop Media Models
-
-    private static let keyAgentLoopMediaSeeded = "gateway_agent_loop_media_models_seeded"
 
     /// Seeds gateway image and video models into the Agent Loop usable models list
     /// (Settings > Model Groups > Usable Models in Agent Loop) on initial setup.

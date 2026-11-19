@@ -95,11 +95,11 @@ final class MCPOAuthController: NSObject, ObservableObject {
         let match: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         let attrs: [String: Any] = [
             kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
         var status = SecItemUpdate(match as CFDictionary, attrs as CFDictionary)
         if status == errSecItemNotFound {
@@ -118,7 +118,7 @@ final class MCPOAuthController: NSObject, ObservableObject {
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: account,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess else { return nil }
@@ -129,7 +129,7 @@ final class MCPOAuthController: NSObject, ObservableObject {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         SecItemDelete(query as CFDictionary)
     }
@@ -251,7 +251,7 @@ final class MCPOAuthController: NSObject, ObservableObject {
             "access_token": tokens.accessToken,
             "expires_at": Int(tokens.expiresAt),
             "token_endpoint": oauth.tokenEndpoint,
-            "client_id": oauth.clientId,
+            "client_id": oauth.clientId
         ]
         if let rt = tokens.refreshToken { obj["refresh_token"] = rt }
         if let secret = clientSecret(server: server), !secret.isEmpty {
@@ -323,7 +323,7 @@ final class MCPOAuthController: NSObject, ObservableObject {
             // Ask for a refresh token where the provider supports these hints
             // (Google requires both; other providers ignore unknown params).
             URLQueryItem(name: "access_type", value: "offline"),
-            URLQueryItem(name: "prompt", value: "consent"),
+            URLQueryItem(name: "prompt", value: "consent")
         ])
         // [T-mcp-oauth-resource] RFC 8707 Resource Indicator — the MCP auth
         // spec REQUIRES it on both the authorization and token requests,
@@ -360,7 +360,7 @@ final class MCPOAuthController: NSObject, ObservableObject {
             "code": code,
             "redirect_uri": redirect,
             "client_id": oauth.clientId,
-            "code_verifier": verifier,
+            "code_verifier": verifier
         ]
         if let secret = Self.clientSecret(server: server), !secret.isEmpty {
             form["client_secret"] = secret

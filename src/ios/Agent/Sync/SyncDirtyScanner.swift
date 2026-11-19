@@ -194,7 +194,7 @@ final class SyncDirtyScanner {
         let library = fm.urls(for: .libraryDirectory, in: .userDomainMask).first!
         let files: [(path: String, recordType: String, recordId: String)] = [
             ("MinisChat/provider-config.json", "ProviderConfig", "provider-config"),
-            ("MinisChat/env-vars.json", "EnvVar", "env-vars"),
+            ("MinisChat/env-vars.json", "EnvVar", "env-vars")
         ]
         for file in files {
             let url = library.appendingPathComponent(file.path)

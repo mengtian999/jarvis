@@ -103,7 +103,7 @@ struct RoleSettingsView: View {
             Spacer()
             
             // 切换按钮
-            Button(action: showRoleList) {
+            Button(action: { showRoleList = true }) {
                 Image(systemName: "chevron.down")
             }
             .buttonStyle(.plain)
@@ -193,7 +193,7 @@ struct RoleSettingsView: View {
         return renderer.image { context in
             let gradient = CGGradient(
                 colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                colors: [UIColor.systemBlue.cgColor, UIColor.darkBlue.cgColor] as CFArray,
+                colors: [UIColor.systemBlue.cgColor, UIColor.systemIndigo.cgColor] as CFArray,
                 locations: [0, 1]
             )!
             context.cgContext.drawRadialGradient(
@@ -237,9 +237,6 @@ struct RoleSettingsView: View {
         RoleStore.resetToDefault()
     }
     
-    private func showRoleList() {
-        // 可以弹出角色选择列表
-    }
 }
 
 // MARK: - 角色编辑器
@@ -251,7 +248,7 @@ struct RoleEditorView: View {
     @State private var name: String = ""
     @State private var style: String = ""
     @State private var lang: String = "auto"
-    @State private var body: String = ""
+    @State private var bodyText: String = ""
     @State private var avatarImage: UIImage? = nil
     /// [T-group-chat] §5 默认模型选择器状态。"" = 跟随默认（model 为 nil）；
     /// 否则为 ModelEntry 的 compositeKey（"{providerInstanceId}/{baseModel.id}"）。
@@ -285,7 +282,7 @@ struct RoleEditorView: View {
                                 Circle()
                                     .stroke(Color.gray.opacity(0.5), lineWidth: 2)
                             }
-                            .onTapGesture(showImagePicker)
+                            .onTapGesture { showImagePicker() }
                         
                         Button(action: deleteAvatar) {
                             Text(avatarImage != nil ? "更换头像" : "添加头像")
@@ -317,7 +314,7 @@ struct RoleEditorView: View {
                 
                 // 人格
                 Section(header: Text("人格/性格")) {
-                    TextEditor(text: $body)
+                    TextEditor(text: $bodyText)
                         .frame(minHeight: 200)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
@@ -325,7 +322,7 @@ struct RoleEditorView: View {
                         )
                     
                     HStack {
-                        Text("\(body.count) / 2000 字符")
+                        Text("\(bodyText.count) / 2000 字符")
                         Spacer()
                         if bodyCount > 1600 {
                             Text("⚠️ 超限")
@@ -361,7 +358,7 @@ struct RoleEditorView: View {
         return renderer.image { context in
             let gradient = CGGradient(
                 colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                colors: [UIColor.systemBlue.cgColor, UIColor.darkBlue.cgColor] as CFArray,
+                colors: [UIColor.systemBlue.cgColor, UIColor.systemIndigo.cgColor] as CFArray,
                 locations: [0, 1]
             )!
             context.cgContext.drawRadialGradient(
@@ -377,7 +374,7 @@ struct RoleEditorView: View {
     }
     
     private var bodyCount: Int {
-        body.count
+        bodyText.count
     }
     
     // MARK: - 加载/保存
@@ -387,7 +384,7 @@ struct RoleEditorView: View {
             name = role.metadata.name
             style = role.metadata.style
             lang = role.metadata.lang
-            body = role.body
+            bodyText = role.body
             avatarImage = role.avatarData.flatMap { UIImage(data: $0) }
             modelSelection = Self.selectionId(for: role.metadata.model)
         }
@@ -397,14 +394,13 @@ struct RoleEditorView: View {
         let metadata = RoleMetadata(
             name: name, style: style, lang: lang,
             isDefault: role?.metadata.isDefault ?? false,
-            model: Self.modelRef(for: modelSelection),
+            model: Self.modelRef(for: modelSelection)
         )
         let newRole = RoleFile(
             metadata: metadata,
-            body: body,
+            body: bodyText,
             avatarData: avatarImage?.pngData(),
-            roleId: role?.roleId ?? UUID().uuidString,
-            isDefault: role?.metadata.isDefault ?? false
+            roleId: role?.roleId ?? UUID().uuidString
         )
         
         if let existingRole = role {
@@ -412,7 +408,7 @@ struct RoleEditorView: View {
             try? RoleStore.save(newRole)
         } else {
             // 创建新角色
-            RoleStore.createRole(name: name, style: style, lang: lang, body: body, avatarData: avatarImage?.pngData())
+            RoleStore.createRole(name: name, style: style, lang: lang, body: bodyText, avatarData: avatarImage?.pngData())
         }
         
         NotificationCenter.default.post(name: .rolesChanged, object: nil)

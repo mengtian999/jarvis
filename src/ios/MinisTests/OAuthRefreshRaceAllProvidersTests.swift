@@ -67,7 +67,7 @@ final class OAuthRefreshRaceAllProvidersTests: XCTestCase {
             Provider(name: "Codex", isFatal: fatal(rotatingFatal),
                      rotationError: rotationError(status: 400, body: "{\"error\":\"refresh_token_reused\"}")),
             Provider(name: "Antigravity", isFatal: fatal(googleFatal),
-                     rotationError: rotationError(status: 400, body: "{\"error\":\"invalid_grant\"}")),
+                     rotationError: rotationError(status: 400, body: "{\"error\":\"invalid_grant\"}"))
         ]
     }
 

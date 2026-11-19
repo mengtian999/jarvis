@@ -182,7 +182,7 @@ fileprivate func attributedShellLine(_ text: String) -> AttributedString {
         mutable.addAttributes([
             .link: url,
             .underlineStyle: NSUnderlineStyle.single.rawValue,
-            .foregroundColor: UIColor.cyan,
+            .foregroundColor: UIColor.cyan
         ], range: m.range)
     }
     return AttributedString(mutable)

@@ -335,7 +335,7 @@ extension AIChatViewModel {
         let globalDirs: [(String, URL)] = [
             ("skills", minisSkillsPersistentDir),
             ("memory", minisMemoryPersistentDir),
-            ("shared", minisSharedPersistentDir),
+            ("shared", minisSharedPersistentDir)
         ]
         for (subdir, dir) in globalDirs where host == subdir {
             for subPath in subPaths {

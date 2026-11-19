@@ -20,7 +20,7 @@ enum KimiModelsAPI {
 
     static let allModels: [LLMModel] = [
         LLMModel(id: defaultModelId, displayName: "Kimi K3", provider: "Kimi"),
-        LLMModel(id: "kimi-k2", displayName: "Kimi K2", provider: "Kimi"),
+        LLMModel(id: "kimi-k2", displayName: "Kimi K2", provider: "Kimi")
     ]
 
     /// The real catalog comes from the OAuth model-fetch path

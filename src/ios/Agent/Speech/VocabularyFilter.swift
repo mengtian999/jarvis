@@ -122,7 +122,7 @@ enum StopWords {
         "what", "which", "who", "when", "where", "why", "how",
         "there", "here", "some", "any", "all", "more", "most", "one", "two",
         "get", "got", "let", "make", "made", "use", "used", "like", "want", "need",
-        "please", "thanks", "thank", "hi", "hello", "now", "still", "even", "up", "out", "over",
+        "please", "thanks", "thank", "hi", "hello", "now", "still", "even", "up", "out", "over"
     ]
 
     static let set: Set<String> = [
@@ -132,7 +132,7 @@ enum StopWords {
         "可以", "能", "会", "要", "想", "需要", "应该", "可能", "或者", "但是", "因为", "所以",
         "然后", "而且", "不过", "虽然", "如果", "继续", "好的", "嗯", "就是", "其实", "反正",
         "一下", "一点", "一样", "一起", "现在", "今天", "明天", "昨天",
-        "说", "讲", "看", "听", "做", "用", "给", "让", "把", "被", "在", "和", "与", "对",
+        "说", "讲", "看", "听", "做", "用", "给", "让", "把", "被", "在", "和", "与", "对"
     ]
     static func contains(_ term: String) -> Bool {
         if set.contains(term) { return true }

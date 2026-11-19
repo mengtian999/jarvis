@@ -10,7 +10,8 @@ extension ChatStoreSyncHydrators {
     
     /// 构建角色记录
     private static func buildRole(id: String) async -> PortableRecord? {
-        guard let role = await MainActor.run { RoleStore.load(roleId: id) } else {
+        let role = await MainActor.run { RoleStore.load(roleId: id) }
+        guard let role else {
             return nil
         }
         
@@ -88,7 +89,7 @@ extension ChatStoreSyncHydrators {
             modelOverrideJson: group.modelOverrideJson,
             maxRounds: group.maxRounds,
             createdAt: group.createdAt,
-            updatedAt: group.updatedAt,
+            updatedAt: group.updatedAt
         )
         return SyncableTypeRegistry.shared.metadata(for: "AgentGroupV2")?.buildPortable(synced)
     }
@@ -116,7 +117,7 @@ extension ChatStoreSyncHydrators {
             modelOverrideJson: optionalStringField(record, "modelOverrideJson"),
             maxRounds: intField(record, "maxRounds") ?? existing?.maxRounds ?? 1,
             createdAt: dateField(record, "createdAt") ?? existing?.createdAt ?? Date(),
-            updatedAt: remoteUpdatedAt,
+            updatedAt: remoteUpdatedAt
         )
         await ChatStore.shared.upsertAgentGroup(group)
         await MainActor.run { GroupStore.refreshSnapshotAsync() }

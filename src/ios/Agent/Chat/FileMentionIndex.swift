@@ -446,7 +446,7 @@ final class FileMentionIndex: ObservableObject {
                 hostURL: AIChatViewModel.minisAttachmentsPersistentDir(for: sid),
                 linuxPrefix: AIChatViewModel.minisAttachmentsLinuxDir,
                 mountName: nil
-            ),
+            )
         ]
     }
 
@@ -469,7 +469,7 @@ final class FileMentionIndex: ObservableObject {
                 hostURL: AIChatViewModel.minisMemoryPersistentDir,
                 linuxPrefix: AIChatViewModel.minisMemoryLinuxDir,
                 mountName: nil
-            ),
+            )
         ]
     }
 
@@ -553,7 +553,7 @@ final class FileMentionIndex: ObservableObject {
         ".git", ".svn", ".hg",
         "node_modules", ".venv", "venv", "__pycache__",
         ".build", ".gradle", ".idea", ".tox",
-        ".mypy_cache", ".pytest_cache", ".ruff_cache",
+        ".mypy_cache", ".pytest_cache", ".ruff_cache"
     ]
 
     /// True if any `/`-delimited component of `path` contains `query` as a
@@ -575,7 +575,7 @@ final class FileMentionIndex: ObservableObject {
         let tops = [
             "/var/jarvis/skills/",
             "/var/jarvis/mounts/",
-            "/var/jarvis/shared/",
+            "/var/jarvis/shared/"
         ]
         for top in tops where path.hasPrefix(top) {
             let rest = path.dropFirst(top.count)

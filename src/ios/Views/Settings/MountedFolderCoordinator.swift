@@ -195,7 +195,7 @@ enum MountedFolderCoordinator {
     static func ensureDownloaded(_ url: URL) throws {
         let keys: Set<URLResourceKey> = [
             .isUbiquitousItemKey,
-            .ubiquitousItemDownloadingStatusKey,
+            .ubiquitousItemDownloadingStatusKey
         ]
         guard let values = try? url.resourceValues(forKeys: keys),
               values.isUbiquitousItem == true else { return }

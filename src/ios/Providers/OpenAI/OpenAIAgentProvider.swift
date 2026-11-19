@@ -81,8 +81,8 @@ final class OpenAIAgentProvider: AgentProvider {
                 allMessages.insert([
                     "role": "system",
                     "content": [
-                        ["type": "text", "text": sys, "cache_control": ["type": "ephemeral"]],
-                    ],
+                        ["type": "text", "text": sys, "cache_control": ["type": "ephemeral"]]
+                    ]
                 ], at: 0)
             } else {
                 allMessages.insert(["role": "system", "content": sys], at: 0)
@@ -92,7 +92,7 @@ final class OpenAIAgentProvider: AgentProvider {
         var body: [String: Any] = [
             "model": model.id,
             "messages": allMessages,
-            "stream": true,
+            "stream": true
         ]
         // [T-codex-prompt-cache-headers] Same stable per-conversation key the
         // Responses path sends. OpenAI's prompt-caching guide states that on
@@ -435,7 +435,7 @@ final class OpenAIAgentProvider: AgentProvider {
             "stream": true,
             "store": false,
             "parallel_tool_calls": true,
-            "input": inputMessages,
+            "input": inputMessages
         ]
         // Stable per-conversation key so the Responses API can hit prompt cache
         // across turns. Codex CLI sets this to its conversation_id; we don't have
@@ -1148,7 +1148,7 @@ final class OpenAIAgentProvider: AgentProvider {
             // Convert content to array format if it's a plain string
             if let text = messages[i]["content"] as? String {
                 messages[i]["content"] = [
-                    ["type": "text", "text": text, "cache_control": cacheControl],
+                    ["type": "text", "text": text, "cache_control": cacheControl]
                 ] as [[String: Any]]
             } else if var parts = messages[i]["content"] as? [[String: Any]], !parts.isEmpty {
                 // Attach cache_control to the last content block
@@ -1181,7 +1181,7 @@ final class OpenAIAgentProvider: AgentProvider {
                     toolMessages.append([
                         "role": "tool",
                         "tool_call_id": Self.capChatId(id),
-                        "content": content,
+                        "content": content
                     ])
                 }
                 // Return first tool message; remaining will need separate entries
@@ -1204,7 +1204,7 @@ final class OpenAIAgentProvider: AgentProvider {
                     toolCalls.append([
                         "id": Self.capChatId(id),
                         "type": "function",
-                        "function": ["name": name, "arguments": argsJSON],
+                        "function": ["name": name, "arguments": argsJSON]
                     ])
                 }
                 result["tool_calls"] = toolCalls
@@ -1230,7 +1230,7 @@ final class OpenAIAgentProvider: AgentProvider {
                             let base64 = data.base64EncodedString()
                             contentParts.append([
                                 "type": "image_url",
-                                "image_url": ["url": "data:\(mimeType);base64,\(base64)"],
+                                "image_url": ["url": "data:\(mimeType);base64,\(base64)"]
                             ])
                         } else {
                             // [T-ios-vision-group-t264 #182] Points the model at
@@ -1320,7 +1320,7 @@ final class OpenAIAgentProvider: AgentProvider {
                     result.append([
                         "role": "tool",
                         "tool_call_id": Self.capChatId(tr.id),
-                        "content": tr.content,
+                        "content": tr.content
                     ])
                     // Attach the image (if any) as a synthetic user message
                     // right after the tool reply. Skipped for non-vision
@@ -1332,8 +1332,8 @@ final class OpenAIAgentProvider: AgentProvider {
                             "role": "user",
                             "content": [[
                                 "type": "image_url",
-                                "image_url": ["url": "data:\(mime);base64,\(base64)"],
-                            ]] as [[String: Any]],
+                                "image_url": ["url": "data:\(mime);base64,\(base64)"]
+                            ]] as [[String: Any]]
                         ])
                     }
                 }
@@ -1516,7 +1516,7 @@ final class OpenAIAgentProvider: AgentProvider {
                     out.append([
                         "role": "tool",
                         "tool_call_id": id,
-                        "content": "Tool execution result is unavailable (history was truncated or interrupted).",
+                        "content": "Tool execution result is unavailable (history was truncated or interrupted)."
                     ])
                 }
             }
@@ -1607,7 +1607,7 @@ final class OpenAIAgentProvider: AgentProvider {
                 toolCalls.append([
                     "id": Self.capChatId(id),
                     "type": "function",
-                    "function": ["name": name, "arguments": argsJSON],
+                    "function": ["name": name, "arguments": argsJSON]
                 ])
             }
             result["tool_calls"] = toolCalls
@@ -1630,7 +1630,7 @@ final class OpenAIAgentProvider: AgentProvider {
                         let base64 = data.base64EncodedString()
                         contentParts.append([
                             "type": "image_url",
-                            "image_url": ["url": "data:\(mimeType);base64,\(base64)"],
+                            "image_url": ["url": "data:\(mimeType);base64,\(base64)"]
                         ])
                     } else {
                         // [T-ios-vision-group-t264 #182] See the sibling site in
@@ -1675,7 +1675,7 @@ final class OpenAIAgentProvider: AgentProvider {
                         var entry: [String: Any] = [
                             "type": "reasoning",
                             "id": id,
-                            "summary": summary.map { ["type": "summary_text", "text": $0] },
+                            "summary": summary.map { ["type": "summary_text", "text": $0] }
                         ]
                         if let encrypted, !encrypted.isEmpty {
                             entry["encrypted_content"] = encrypted
@@ -1698,7 +1698,7 @@ final class OpenAIAgentProvider: AgentProvider {
                         "type": "function_call",
                         "call_id": safeCallId,
                         "name": name,
-                        "arguments": argsStr,
+                        "arguments": argsStr
                     ]
                     // Responses API requires `function_call.id` to begin with
                     // `fc_`. gpt-5.5 enforces the prefix strictly and returns
@@ -1727,7 +1727,7 @@ final class OpenAIAgentProvider: AgentProvider {
                     result.append([
                         "type": "function_call_output",
                         "call_id": Self.capResponsesId(callId),
-                        "output": content,
+                        "output": content
                     ])
                     // Same trick as Chat Completions: Responses API's
                     // function_call_output items don't carry images either,
@@ -1742,8 +1742,8 @@ final class OpenAIAgentProvider: AgentProvider {
                         result.append([
                             "role": "user",
                             "content": [
-                                ["type": "input_image", "image_url": "data:\(mime);base64,\(base64)"],
-                            ],
+                                ["type": "input_image", "image_url": "data:\(mime);base64,\(base64)"]
+                            ]
                         ])
                     }
 
@@ -1753,8 +1753,8 @@ final class OpenAIAgentProvider: AgentProvider {
                         result.append([
                             "role": msg.role == .user ? "user" : "assistant",
                             "content": [
-                                ["type": "input_image", "image_url": "data:\(mimeType);base64,\(base64)"],
-                            ],
+                                ["type": "input_image", "image_url": "data:\(mimeType);base64,\(base64)"]
+                            ]
                         ])
                     }
                 }
@@ -1771,7 +1771,7 @@ final class OpenAIAgentProvider: AgentProvider {
             for (name, param) in tool.parameters {
                 var prop: [String: Any] = [
                     "type": param.type.rawValue,
-                    "description": param.description,
+                    "description": param.description
                 ]
                 if let enumValues = param.enumValues {
                     prop["enum"] = enumValues
@@ -1787,9 +1787,9 @@ final class OpenAIAgentProvider: AgentProvider {
                     "parameters": [
                         "type": "object",
                         "properties": properties,
-                        "required": tool.required,
-                    ] as [String: Any],
-                ] as [String: Any],
+                        "required": tool.required
+                    ] as [String: Any]
+                ] as [String: Any]
             ]
         }
     }
@@ -1800,7 +1800,7 @@ final class OpenAIAgentProvider: AgentProvider {
             for (name, param) in tool.parameters {
                 var prop: [String: Any] = [
                     "type": param.type.rawValue,
-                    "description": param.description,
+                    "description": param.description
                 ]
                 if let enumValues = param.enumValues {
                     prop["enum"] = enumValues
@@ -1815,8 +1815,8 @@ final class OpenAIAgentProvider: AgentProvider {
                 "parameters": [
                     "type": "object",
                     "properties": properties,
-                    "required": tool.required,
-                ] as [String: Any],
+                    "required": tool.required
+                ] as [String: Any]
             ]
         }
     }

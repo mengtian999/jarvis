@@ -17,7 +17,7 @@ struct AgentGroupMember: Equatable {
 /// as the per-message attribution snapshot columns (`model_id` +
 /// `provider_instance_id`), because users have several provider instances that
 /// can carry the same model id. A bare modelId is ambiguous across instances.
-struct AgentGroupModelRef: Equatable {
+struct AgentGroupModelRef: Equatable, Hashable {
     var modelId: String
     var providerInstanceId: String
 }
@@ -44,8 +44,8 @@ struct AgentGroupRecord: Identifiable, Equatable {
     var createdAt: Date
     var updatedAt: Date
 
-    var members: [AgentGroupMember] { AgentGroupStore.members(from: membersJson) }
-    var modelOverride: AgentGroupModelRef? { AgentGroupStore.modelOverride(from: modelOverrideJson) }
+    var members: [AgentGroupMember] { GroupStore.members(from: membersJson) }
+    var modelOverride: AgentGroupModelRef? { GroupStore.modelOverride(from: modelOverrideJson) }
 }
 
 /// [T-group-chat] A roster entry resolved against the live RoleStore.
@@ -113,7 +113,7 @@ enum GroupStore {
         members: [AgentGroupMember],
         hostRoleId: String? = nil,
         instruction: String? = nil,
-        modelOverride: AgentGroupModelRef? = nil,
+        modelOverride: AgentGroupModelRef? = nil
     ) async -> AgentGroupRecord {
         let now = Date()
         let group = AgentGroupRecord(
@@ -125,7 +125,7 @@ enum GroupStore {
             hostRoleId: hostRoleId,
             modelOverrideJson: modelOverride.map { modelOverrideJson(from: $0) },
             createdAt: now,
-            updatedAt: now,
+            updatedAt: now
         )
         await ChatStore.shared.upsertAgentGroup(group)
         await ChatStore.shared.markDirty(recordType: "AgentGroupV2", recordId: group.id)

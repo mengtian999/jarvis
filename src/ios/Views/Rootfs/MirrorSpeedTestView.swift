@@ -91,7 +91,7 @@ extension MirrorEntry {
             m("leaseweb", "LEASEWEB UK", "https://mirror.leaseweb.com/alpine/", "Europe"),
             m("rwth", "RWTH Germany", "https://ftp.halifax.rwth-aachen.de/alpine/", "Europe"),
             m("jaist", "JAIST Japan", "https://ftp.jaist.ac.jp/pub/Linux/alpine/", "Asia"),
-            m("kakao", "Kakao Korea", "https://mirror.kakao.com/alpine/", "Asia"),
+            m("kakao", "Kakao Korea", "https://mirror.kakao.com/alpine/", "Asia")
         ]
     }()
 
@@ -106,7 +106,7 @@ extension MirrorEntry {
             m("aliyun", "Alibaba", "https://mirrors.aliyun.com/pypi/simple/", "China"),
             m("ustc", "USTC", "https://mirrors.ustc.edu.cn/pypi/web/simple/", "China"),
             m("huawei", "Huawei", "https://repo.huaweicloud.com/repository/pypi/simple/", "China"),
-            m("tencent", "Tencent", "https://mirrors.cloud.tencent.com/pypi/simple/", "China"),
+            m("tencent", "Tencent", "https://mirrors.cloud.tencent.com/pypi/simple/", "China")
         ]
     }()
 
@@ -119,7 +119,7 @@ extension MirrorEntry {
             m("official", "Official npm", "https://registry.npmjs.org/", "Global", official: true),
             m("npmmirror", "npmmirror", "https://registry.npmmirror.com/", "China"),
             m("huawei", "Huawei", "https://repo.huaweicloud.com/repository/npm/", "China"),
-            m("tencent", "Tencent", "https://mirrors.cloud.tencent.com/npm/", "China"),
+            m("tencent", "Tencent", "https://mirrors.cloud.tencent.com/npm/", "China")
         ]
     }()
 

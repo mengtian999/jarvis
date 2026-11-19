@@ -19,6 +19,6 @@ enum XAIModelsAPI {
         // High-frequency fast / code variants surfaced by OpenClaw's catalog.
         LLMModel(id: "grok-4-fast", displayName: "Grok 4 Fast", provider: "xAI"),
         LLMModel(id: "grok-4-fast-non-reasoning", displayName: "Grok 4 Fast (Non-Reasoning)", provider: "xAI"),
-        LLMModel(id: "grok-code-fast-1", displayName: "Grok Code Fast 1", provider: "xAI"),
+        LLMModel(id: "grok-code-fast-1", displayName: "Grok Code Fast 1", provider: "xAI")
     ]
 }

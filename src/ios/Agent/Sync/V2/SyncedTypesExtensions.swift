@@ -30,7 +30,7 @@ struct SyncedRole: Syncable {
                 F.string("lang",          \SyncedRole.lang),
                 F.string("bodyJson",      \SyncedRole.bodyJson),
                 F.optionalString("avatarBase64", \SyncedRole.avatarBase64),
-                F.date("updatedAt",       \SyncedRole.updatedAt),
+                F.date("updatedAt",       \SyncedRole.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedRole.updatedAt),
             version: 1
@@ -56,7 +56,7 @@ struct SyncedRolesCollection: Syncable {
             fields: [
                 F.string("roleIds",         \SyncedRolesCollection.roleIds),
                 F.string("currentRoleId",   \SyncedRolesCollection.currentRoleId),
-                F.date("updatedAt",         \SyncedRolesCollection.updatedAt),
+                F.date("updatedAt",         \SyncedRolesCollection.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedRolesCollection.updatedAt),
             version: 1
@@ -96,7 +96,7 @@ struct SyncedAgentGroup: Syncable {
                 F.optionalString("modelOverrideJson", \SyncedAgentGroup.modelOverrideJson),
                 F.int("maxRounds",            \SyncedAgentGroup.maxRounds),
                 F.date("createdAt",           \SyncedAgentGroup.createdAt),
-                F.date("updatedAt",           \SyncedAgentGroup.updatedAt),
+                F.date("updatedAt",           \SyncedAgentGroup.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedAgentGroup.updatedAt),
             version: 1

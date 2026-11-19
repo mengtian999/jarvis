@@ -5,9 +5,10 @@
 #   cd src/ios && pod install
 # 之后请通过 Minis.xcworkspace（而非 Minis.xcodeproj）打开工程。
 #
-# 平台版本与主工程 IPHONEOS_DEPLOYMENT_TARGET(26.2) 保持一致；
+# 平台版本与主工程 IPHONEOS_DEPLOYMENT_TARGET(16.0) 保持一致；
+# 本机 Xcode 16.2 / iOS 18.2 SDK 无法使用 26.2。
 # Flutter module 仅要求 >= 13，不会抬高此值。
-platform :ios, '26.2'
+platform :ios, '16.0'
 
 flutter_application_path = '../../im'
 load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')

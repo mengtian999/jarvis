@@ -134,7 +134,7 @@ final class ThinkingRulePersistenceTests: XCTestCase {
             .geminiThinkingLevel,
             .booleanToggle(path: "thinking"),
             .extraBodyToggle(path: "extra_body.thinking.enabled"),
-            .customPath(path: "a.b.c", values: [.high: "hi", .low: "lo"], offValue: "off"),
+            .customPath(path: "a.b.c", values: [.high: "hi", .low: "lo"], offValue: "off")
         ]
         for fmt in cases {
             let json = fmt.persistedJSON

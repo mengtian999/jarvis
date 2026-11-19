@@ -4155,7 +4155,7 @@ struct AIChatView: View {
             LinearGradient(
                 stops: [
                     .init(color: ChatColors.background.opacity(0), location: 0),
-                    .init(color: ChatColors.background, location: 0.8),
+                    .init(color: ChatColors.background, location: 0.8)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -4387,10 +4387,18 @@ struct AIChatView: View {
             }
         }
     }
+    @ViewBuilder
     private var mentionMenu: some View {
         // [T-group-chat] In group chats the popup lists MEMBERS
         // (avatar + name) instead of files — same popup chrome.
-        if vm.isGroupChat { return AnyView(groupMentionMenu) }
+        if vm.isGroupChat {
+            groupMentionMenu
+        } else {
+            mentionFileMenu
+        }
+    }
+
+    private var mentionFileMenu: some View {
         let rows = vm.filteredMentionEntries
         #if DEBUG
         let preview = rows.prefix(6).map { $0.basename }.joined(separator: ",")
@@ -5554,7 +5562,7 @@ private struct ChatTrailingMenuButton: UIViewRepresentable {
 
         groups.append(UIMenu(options: .displayInline, children: [
             UIAction(title: AppLocalized("New Chat"),
-                     image: UIImage(systemName: "square.and.pencil")) { _ in coordinator.parent.onNewChat() },
+                     image: UIImage(systemName: "square.and.pencil")) { _ in coordinator.parent.onNewChat() }
         ]))
 
         // [T-chat-menu-compact-entry] Compact sits ABOVE Clear Chat in its own
@@ -5567,7 +5575,7 @@ private struct ChatTrailingMenuButton: UIViewRepresentable {
                      attributes: key.messagesEmpty ? [.disabled] : []) { _ in coordinator.parent.onCompact() },
             UIAction(title: AppLocalized("Clear Chat"),
                      image: UIImage(systemName: "trash"),
-                     attributes: key.messagesEmpty ? [.destructive, .disabled] : [.destructive]) { _ in coordinator.parent.onClearChat() },
+                     attributes: key.messagesEmpty ? [.destructive, .disabled] : [.destructive]) { _ in coordinator.parent.onClearChat() }
         ]))
 
         // Same gate as before: iOS 17+ (v2 sync engine) AND the user's
@@ -5580,7 +5588,7 @@ private struct ChatTrailingMenuButton: UIViewRepresentable {
                          attributes: disabled) { _ in coordinator.parent.onForceSync() },
                 UIAction(title: AppLocalized("Force Pull Messages"),
                          image: UIImage(systemName: "icloud.and.arrow.down"),
-                         attributes: disabled) { _ in coordinator.parent.onForcePull() },
+                         attributes: disabled) { _ in coordinator.parent.onForcePull() }
             ]))
         }
 
@@ -5590,14 +5598,14 @@ private struct ChatTrailingMenuButton: UIViewRepresentable {
             UIAction(title: AppLocalized("Open Browser"),
                      image: UIImage(systemName: "globe")) { _ in coordinator.parent.onOpenBrowser() },
             UIAction(title: AppLocalized("Browse Chat Files"),
-                     image: UIImage(systemName: "folder")) { _ in coordinator.parent.onBrowseFiles() },
+                     image: UIImage(systemName: "folder")) { _ in coordinator.parent.onBrowseFiles() }
         ]))
 
         var sessionGroup: [UIMenuElement] = [
             UIAction(title: AppLocalized("Skills in Session"),
                      image: UIImage(systemName: "puzzlepiece.extension")) { _ in coordinator.parent.onSkills() },
             UIAction(title: AppLocalized("MCPs in Session"),
-                     image: UIImage(systemName: "wrench.and.screwdriver")) { _ in coordinator.parent.onMCPs() },
+                     image: UIImage(systemName: "wrench.and.screwdriver")) { _ in coordinator.parent.onMCPs() }
         ]
         if key.memoryEnabled {
             sessionGroup.append(UIAction(title: AppLocalized("Memories in Session"),
@@ -5637,7 +5645,7 @@ private struct ChatTrailingMenuButton: UIViewRepresentable {
 
         var tailGroup: [UIMenuElement] = [
             UIAction(title: AppLocalized("Token Usage"),
-                     image: UIImage(systemName: "number")) { _ in coordinator.parent.onTokenUsage() },
+                     image: UIImage(systemName: "number")) { _ in coordinator.parent.onTokenUsage() }
         ]
         #if DEBUG
         tailGroup.append(UIDeferredMenuElement.uncached { completion in
@@ -5646,7 +5654,7 @@ private struct ChatTrailingMenuButton: UIViewRepresentable {
                 UIAction(title: "Copy Requests (\(n))",
                          image: UIImage(systemName: "arrow.up.doc")) { _ in coordinator.parent.onCopyRequests() },
                 UIAction(title: "Copy Session Data",
-                         image: UIImage(systemName: "tray.and.arrow.up")) { _ in coordinator.parent.onCopySessionData() },
+                         image: UIImage(systemName: "tray.and.arrow.up")) { _ in coordinator.parent.onCopySessionData() }
             ])
         })
         #endif

@@ -37,7 +37,7 @@ enum ShareFeedbackToast {
             label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
             container.centerXAnchor.constraint(equalTo: window.centerXAnchor),
             container.bottomAnchor.constraint(equalTo: window.safeAreaLayoutGuide.bottomAnchor, constant: -80),
-            container.widthAnchor.constraint(lessThanOrEqualTo: window.widthAnchor, constant: -48),
+            container.widthAnchor.constraint(lessThanOrEqualTo: window.widthAnchor, constant: -48)
         ])
 
         UIView.animate(withDuration: 0.25) { container.alpha = 1 }

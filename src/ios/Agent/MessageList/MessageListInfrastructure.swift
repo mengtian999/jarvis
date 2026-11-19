@@ -1159,7 +1159,7 @@ final class CellStateBridgeV2: ObservableObject {
     /// [T-role-forward] "转发到角色会话" from the message context menu. Carries
     /// the UI message id; AIChatView maps it to DB row ids and presents the
     /// role/target picker sheet.
-    @Published var onForward: ((UUID) -> Void)?
+    @Published var onForward: (() -> Void)?
     /// Read this whole reply aloud from the start (clears in-progress TTS).
     @Published var onReadAloud: (() -> Void)?
     /// [T-selection-menu-minis-tts] Speak an arbitrary text snippet (the

@@ -176,7 +176,7 @@ struct BackupDestinationDetailView: View {
     private func loadFolderPackages(_ f: MountedFolderEntry) async {
         let id = f.id
         folderPackages = await Task.detached(priority: .userInitiated) {
-            BackupDestinations.listPackages(folderId: id)
+            await BackupDestinations.listPackages(folderId: id)
         }.value
     }
 
@@ -722,7 +722,7 @@ struct RcloneFolderBrowser: View {
         do {
             _ = try await Task.detached(priority: .userInitiated) {
                 try RcloneBridge.rpc("operations/mkdir", [
-                    "fs": RcloneRemoteStore.fsSpec(for: r), "remote": path,
+                    "fs": RcloneRemoteStore.fsSpec(for: r), "remote": path
                 ])
             }.value
             await list(path)
@@ -858,7 +858,7 @@ struct RcloneConnectionEditor: View {
             _ = try await Task.detached(priority: .userInitiated) {
                 try RcloneBridge.rpc("operations/list", [
                     "fs": RcloneRemoteStore.fsSpec(for: updated),
-                    "remote": updated.path,
+                    "remote": updated.path
                 ])
             }.value
             onSaved(updated)

@@ -470,7 +470,7 @@ extension ConfigRegistry {
                 case .modelPattern(let p): return p
                 }
             }()),
-            "editable": .bool(rule.kind == .custom),
+            "editable": .bool(rule.kind == .custom)
         ]
         if let wf = rule.wireFormat {
             obj["wire_format"] = ThinkingRulesCollection.encodeWireFormat(wf)
@@ -527,7 +527,7 @@ extension ConfigRegistry {
                         "provider": .string(inst.label),
                         "provider_id": .string(inst.id),
                         "custom": .array(custom.map { describe($0, instanceId: inst.id) }),
-                        "builtin": .array(builtIn.map { describe($0, instanceId: inst.id) }),
+                        "builtin": .array(builtIn.map { describe($0, instanceId: inst.id) })
                     ]))
                 }
                 return .array(out)
@@ -554,7 +554,7 @@ extension ConfigRegistry {
                         "customBaseURL": inst.customBaseURL.map(ConfigValue.string) ?? .null,
                         "appendV1Suffix": .bool(inst.appendV1Suffix),
                         "hasVoiceModels": .bool(ProviderConfigStore.shared.hasVoiceModels(for: inst.id)),
-                        "imageEndpointMode": .string(inst.imageEndpointMode.rawValue),
+                        "imageEndpointMode": .string(inst.imageEndpointMode.rawValue)
                     ])
                 }
                 return .array(summaries)
@@ -589,7 +589,7 @@ extension ConfigRegistry {
                         "provider_label": inst.map { .string($0.label) } ?? .null,
                         "provider_type": inst.map { .string($0.providerType.rawValue) } ?? .null,
                         "is_custom": .bool(entry.isCustom),
-                        "is_hidden": .bool(entry.isHidden),
+                        "is_hidden": .bool(entry.isHidden)
                     ])
                 }
                 return .array(summaries)
@@ -611,7 +611,7 @@ extension ConfigRegistry {
                     .object([
                         "key": .string(e.key),
                         "note": .string(e.note),
-                        "created_at": .string(iso.string(from: e.createdAt)),
+                        "created_at": .string(iso.string(from: e.createdAt))
                     ])
                 }
                 return .array(summaries)
@@ -667,7 +667,7 @@ extension ConfigRegistry {
                         guard let entry = entriesById[entryId] else {
                             return .object([
                                 "entry_id": .string(entryId),
-                                "missing": .bool(true),
+                                "missing": .bool(true)
                             ])
                         }
                         let inst = providersById[entry.providerInstanceId]
@@ -676,7 +676,7 @@ extension ConfigRegistry {
                             "display_name": .string(entry.model.displayName),
                             "model_id": .string(entry.baseModel.id),
                             "provider_id": .string(entry.providerInstanceId),
-                            "provider_label": inst.map { .string($0.label) } ?? .null,
+                            "provider_label": inst.map { .string($0.label) } ?? .null
                         ])
                     }
                     return .object([
@@ -688,7 +688,7 @@ extension ConfigRegistry {
                             .map { .string($0.rawValue) } ?? .null,
                         "context_limit_tokens": g.contextLimitTokens
                             .map { .int($0) } ?? .null,
-                        "entries": .array(entries),
+                        "entries": .array(entries)
                     ])
                 }
                 return .array(summaries)

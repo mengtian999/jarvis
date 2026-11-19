@@ -1079,7 +1079,7 @@ extension AIChatViewModel {
             title: group?.name,
             source: sessionSource,
             roleId: sessionRole.roleId,
-            groupId: group == nil ? nil : gid,
+            groupId: group == nil ? nil : gid
         )
         sessionId = session.id
         Self.activeSessionId = session.id
@@ -1172,7 +1172,12 @@ extension AIChatViewModel {
         // still satisfies "new sessions always seed a role".
         let effectiveRoleId = RoleStore.roleById(targetRoleId)?.roleId ?? RoleStore.loadDefault().roleId
 
-        let existing = targetSessionId.flatMap { await store.getSession($0) }
+        let existing: ChatSession?
+        if let targetSessionId {
+            existing = await store.getSession(targetSessionId)
+        } else {
+            existing = nil
+        }
         let targetId: String
         if let existing {
             targetId = existing.id
@@ -1234,7 +1239,12 @@ extension AIChatViewModel {
 
         let store = ChatStore.shared
         let effectiveRoleId = RoleStore.roleById(targetRoleId)?.roleId ?? RoleStore.loadDefault().roleId
-        let existing = targetSessionId.flatMap { await store.getSession($0) }
+        let existing: ChatSession?
+        if let targetSessionId {
+            existing = await store.getSession(targetSessionId)
+        } else {
+            existing = nil
+        }
         let targetId: String
         if let existing {
             targetId = existing.id

@@ -46,7 +46,9 @@ struct ForwardToRoleSheet: View {
                 }
                 if chosenRole != nil {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "Forward")) { await forward() }
+                        Button(String(localized: "Forward")) {
+                            Task { await forward() }
+                        }
                             .disabled(forwarding)
                     }
                 }

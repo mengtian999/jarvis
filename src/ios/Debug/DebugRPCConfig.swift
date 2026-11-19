@@ -105,7 +105,7 @@ enum DebugRPCConfig {
                 let fields = ConfigOffloadBridge.fieldsForTopic(topic)
                 cont.resume(returning: [
                     "topic": topic,
-                    "fields": fields.compactMap { $0 as? [String: Any] },
+                    "fields": fields.compactMap { $0 as? [String: Any] }
                 ])
             }
         }

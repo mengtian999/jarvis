@@ -95,7 +95,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     //   - existing session: the persisted session.roleId (orphan → default)
     // baseSystemPrompt reads it (RoleSystemPromptBuilder), and persisted
     // assistant rows carry sessionRole.roleId (message-level rendering).
-    @Published private(set) var sessionRole: RoleFile = RoleStore.loadDefault()
+    @Published var sessionRole: RoleFile = RoleStore.loadDefault()
 
     // ─── [T-group-chat] §4.1 Current speaker ────────────────────────────────
     /// The persona whose identity drives the in-flight agent loop: system
@@ -103,12 +103,12 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     /// memory attribution read THIS, not sessionRole. Ordinary chats: always
     /// equal to sessionRole. Group chats: the round scheduler retargets it per
     /// member; it resets when the round ends. Mirrors Android _speakerRole.
-    @Published private(set) var speakerRole: RoleFile = RoleStore.loadDefault()
+    @Published var speakerRole: RoleFile = RoleStore.loadDefault()
 
     /// [T-group-chat] The agent group this chat belongs to (hydrated at load).
     /// Non-nil marks a GROUP session (multi-role round-robin chat). Nil =
     /// ordinary session.
-    @Published private(set) var agentGroupId: String? = nil
+    @Published var agentGroupId: String? = nil
 
     /// True when this chat is an agent-group session (multi-role round-robin).
     var isGroupChat: Bool { agentGroupId != nil }
@@ -122,7 +122,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     /// by ensureSessionReturningId at first send; nil = plain draft.
     var initialAgentGroupId: String? = nil
     /// Guards the one-time draft role seed (initialRoleId ?? global current).
-    private var draftRoleSeeded = false
+    var draftRoleSeeded = false
 
     /// Short unique ID for this ViewModel instance (for debugging lifecycle).
     let vmInstanceId = UUID().uuidString.prefix(6)
@@ -2373,8 +2373,6 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
                     logger.info("[Context] Exhausted — shortcut session cannot continue")
                     let errMsg = makeAssistantPlaceholder()
                     errMsg.error = String(localized: "Context full. Start a new session to continue.")
-                    let errMsg = ChatMessage(role: .assistant, content: "", blocks: [])
-                    errMsg.error = AppLocalized("Context full. Start a new session to continue.")
                     messages.append(errMsg)
                     return
                 }
@@ -4539,7 +4537,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
         }
     }
 
-    private func playCompletionHaptic() {
+    func playCompletionHaptic() {
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
     }
 
@@ -4572,7 +4570,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
         Task { await self.persistErrorInfo(displayDesc) }
     }
 
-    private func handleUserCancelledCleanup() {
+    func handleUserCancelledCleanup() {
         let blockCount = (messages.last?.role == .assistant) ? messages.last!.blocks.count : -1
         let hasContent = (messages.last?.role == .assistant) ? messages.last!.blocks.contains(where: { !$0.content.isEmpty }) : false
         let lastRole = messages.last.map { $0.role == .assistant ? "assistant" : "user" } ?? "nil"
@@ -4832,7 +4830,7 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
         message.blocks = kept
     }
 
-    private func runAgentLoop(resumingAt existingMsgIdx: Int? = nil, committedBlocks: Int? = nil) async throws {
+    func runAgentLoop(resumingAt existingMsgIdx: Int? = nil, committedBlocks: Int? = nil) async throws {
         // REPRO-DIAG(2026-05-16): bump global round counter and emit a clear
         // BEGIN/END marker so the user can grep `ROUND \d+` to slice the log
         // by attempt. A "round" = one runAgentLoop invocation, which is
@@ -4854,8 +4852,6 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
         guard let entry = groupEntryOverride ?? resolveCurrentEntry() else {
             let errMsg = makeAssistantPlaceholder()
             errMsg.error = String(localized: "No model configured. Add a provider in Settings.")
-            let errMsg = ChatMessage(role: .assistant, content: "", blocks: [])
-            errMsg.error = AppLocalized("No model configured. Add a provider in Settings.")
             messages.append(errMsg)
             return
         }

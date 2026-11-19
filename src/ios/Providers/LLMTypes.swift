@@ -192,7 +192,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
     )
 
     static let allAnthropic: [LLMModel] = [
-        .claudeFable5, .claudeOpus5, .claudeOpus48, .claudeOpus46, .claudeSonnet5, .claudeSonnet46, .claudeHaiku45,
+        .claudeFable5, .claudeOpus5, .claudeOpus48, .claudeOpus46, .claudeSonnet5, .claudeSonnet46, .claudeHaiku45
     ]
 
     // MARK: - Gemini Models
@@ -235,7 +235,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
 
     static let allGemini: [LLMModel] = [
         .gemini31ProPreview, .gemini3ProPreview, .gemini3FlashPreview,
-        .gemini25Pro, .gemini25Flash, .gemini25FlashLite,
+        .gemini25Pro, .gemini25Flash, .gemini25FlashLite
     ]
 
     // MARK: - Antigravity Models (via Cloud Code — Gemini, Claude, GPT)
@@ -255,7 +255,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         .agGemini31ProHigh, .agGemini31ProLow,
         .agGemini3ProHigh, .agGemini3ProLow, .agGemini3ProImage, .agGemini3Flash,
         .agClaudeOpus46Thinking, .agClaudeSonnet46,
-        .agClaudeSonnet45Thinking, .agClaudeSonnet45,
+        .agClaudeSonnet45Thinking, .agClaudeSonnet45
     ]
 
     // MARK: - OpenAI Models
@@ -419,7 +419,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         .gpt54, .gpt52, .gpt5, .gpt41,
         .gpt4o, .gpt4oMini,
         .o3, .o4Mini,
-        .codexMini,
+        .codexMini
     ]
 
     /// Models available via Codex OAuth (ChatGPT subscription).
@@ -444,7 +444,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         .gpt55, .gpt54, .gpt54Mini,
         // gptImage2 is kept: it is an image endpoint, not a Codex chat model,
         // so the text-model probe above does not apply to it.
-        .gptImage2,
+        .gptImage2
     ]
 
     // MARK: - OpenRouter Models
@@ -474,7 +474,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
     )
 
     static let allOpenRouter: [LLMModel] = [
-        .orClaudeSonnet4, .orGemini25Flash, .orGPT4o, .orLlama4Maverick,
+        .orClaudeSonnet4, .orGemini25Flash, .orGPT4o, .orLlama4Maverick
     ]
 
     static let allModels: [LLMModel] = allAnthropic + allGemini + allOpenAI + allAntigravity + allOpenRouter
@@ -493,7 +493,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         // Video generation models
         (["video-gen", "video-generation", "veo", "sora"], .videoOutput),
         // Broad image/audio/video output markers
-        (["image-output", "img-gen", "img-output"], .imageOutput),
+        (["image-output", "img-gen", "img-output"], .imageOutput)
     ]
 
     /// [T-mimo-shadow-voice] Substrings that mark a DEDICATED speech-to-text
@@ -505,7 +505,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
     /// ASR voice model.
     private static let asrInferencePatterns: [String] = [
         "-asr", "asr-", "_asr", "asr_", "whisper", "transcrib", "speech-to-text",
-        "speech2text", "stt-", "-stt", "_stt", "stt_", "voice-input", "voice_input",
+        "speech2text", "stt-", "-stt", "_stt", "stt_", "voice-input", "voice_input"
     ]
 
     /// [T-mimo-shadow-voice] Substrings that mark a DEDICATED text-to-speech
@@ -515,7 +515,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
     /// here with an exact shape rather than the broad output-union path.
     private static let ttsInferencePatterns: [String] = [
         "tts", "-tts", "_tts", "text-to-speech", "text2speech", "audio-gen",
-        "audio-generation", "seed-tts", "voice-output", "voice_output",
+        "audio-generation", "seed-tts", "voice-output", "voice_output"
     ]
 
     /// Infer a DEDICATED voice model's EXACT modality from its id/name, or nil if
@@ -605,7 +605,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
         "OpenRouter": ModelCapabilities(
             supportedModalities: .vision,
             supportedAuth: [.apiKey, .oauth]
-        ),
+        )
     ]
 
     /// Default capabilities when the provider is unknown.
@@ -730,7 +730,7 @@ struct LLMModel: Equatable, Hashable, Identifiable, Sendable, Codable {
             "gpt-5.3-codex",
             "gpt-5.2-codex",
             "gpt-5.1-codex",
-            "gpt-5-codex",
+            "gpt-5-codex"
         ]
         guard codexIds.contains(where: { id.hasPrefix($0) }) else { return nil }
 
@@ -913,7 +913,7 @@ extension LLMModel {
         // "minimal" are OFF-ish tiers handled by the toggle, not the ladder.
         let mapping: [(wire: String, level: ThinkingLevel)] = [
             ("low", .low), ("medium", .medium), ("high", .high),
-            ("xhigh", .xhigh), ("max", .max),
+            ("xhigh", .xhigh), ("max", .max)
         ]
         let set = Set(declared.map { $0.lowercased() })
         return mapping.filter { set.contains($0.wire) }.map(\.level)
@@ -1038,7 +1038,7 @@ func modelDisplayName(from id: String) -> String {
     let uppercaseAbbreviations: Set<String> = [
         "gpt", "glm", "oss", "ai", "xl", "xxl",
         "vl", "llm", "moe", "api", "hd", "sd",
-        "rp", "sft", "rl", "dpo", "gguf", "fp16", "bf16", "int4", "int8",
+        "rp", "sft", "rl", "dpo", "gguf", "fp16", "bf16", "int4", "int8"
     ]
     // Brand names with specific casing
     let brandCasing: [String: String] = [
@@ -1051,7 +1051,7 @@ func modelDisplayName(from id: String) -> String {
         "mistral": "Mistral",
         "mixtral": "Mixtral",
         "qwen": "Qwen",
-        "yi": "Yi",
+        "yi": "Yi"
     ]
 
     return id

@@ -219,7 +219,7 @@ extension AIChatViewModel {
     /// broke a promised deletion workflow and pushed the model into
     /// shell_execute workarounds. [T-preflight-empty-string-allowed]
     static let preflightEmptyStringAllowedFields: [String: Set<String>] = [
-        "file_edit": ["new_string"],
+        "file_edit": ["new_string"]
     ]
 
     nonisolated static func preflightEmptyStringAllowed(tool: String, field: String) -> Bool {

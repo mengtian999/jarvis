@@ -84,7 +84,7 @@ final class WebAppWebViewController: UIViewController, WKNavigationDelegate, WKU
             wv.topAnchor.constraint(equalTo: view.topAnchor),
             wv.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             wv.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            wv.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            wv.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
         webView = wv
 
@@ -168,7 +168,7 @@ final class WebAppWebViewController: UIViewController, WKNavigationDelegate, WKU
             button.topAnchor.constraint(equalTo: container.topAnchor),
             button.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             button.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            button.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            button.trailingAnchor.constraint(equalTo: container.trailingAnchor)
         ])
     }
 

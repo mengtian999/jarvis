@@ -54,7 +54,7 @@ struct ProvidersCollection: ConfigCollection {
                 displayName: "OAuth Token",
                 description: "Hidden — managed by the in-app OAuth login flow.",
                 reason: "OAuth tokens are never exposed to minis-config"
-            ),
+            )
         ]
     }
 

@@ -79,7 +79,7 @@ final class QuickActionRouter: ObservableObject {
                 localizedSubtitle: nil,
                 icon: UIApplicationShortcutIcon(systemImageName: "camera.fill"),
                 userInfo: nil
-            ),
+            )
         ]
         UIApplication.shared.shortcutItems = items
         logger.info("registerShortcutItems installed=\(items.count)")

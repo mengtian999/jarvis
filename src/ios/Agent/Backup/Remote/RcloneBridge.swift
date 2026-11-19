@@ -70,7 +70,7 @@ enum RcloneBridge {
             // failed destination and keeps the other ones, and the user can
             // re-run — both better outcomes than a long silence.
             "LowLevelRetries": 1,
-            "Retries": 1,
+            "Retries": 1
         ]
         do {
             _ = try rpcUnchecked("options/set", ["main": opts])

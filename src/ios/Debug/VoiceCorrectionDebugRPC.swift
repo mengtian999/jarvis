@@ -34,7 +34,7 @@ enum VoiceCorrectionDebugRPC {
         let rows = await db.allConfusion(orderBy: orderBy, locale: locale, limit: limit)
         return [
             "count": rows.count,
-            "rows": rows.map(confusionDict),
+            "rows": rows.map(confusionDict)
         ]
     }
 
@@ -45,7 +45,7 @@ enum VoiceCorrectionDebugRPC {
         let rows = await db.allVocabulary(orderBy: orderBy, limit: limit)
         return [
             "count": rows.count,
-            "rows": rows.map(vocabDict),
+            "rows": rows.map(vocabDict)
         ]
     }
 
@@ -62,7 +62,7 @@ enum VoiceCorrectionDebugRPC {
             "term": term,
             "phoneticKey": key,
             "confusionMatches": confusion.map(confusionDict),
-            "vocabularyMatches": vocab.map(vocabDict),
+            "vocabularyMatches": vocab.map(vocabDict)
         ]
     }
 
@@ -79,7 +79,7 @@ enum VoiceCorrectionDebugRPC {
             "schemaVersion": VoiceCorrectionDB.schemaVersion,
             "confusionRows": await db.rowCount(table: "confusion_dictionary"),
             "vocabularyRows": await db.rowCount(table: "typed_vocabulary"),
-            "correctionEvents": await db.rowCount(table: "correction_events"),
+            "correctionEvents": await db.rowCount(table: "correction_events")
         ]
     }
 
@@ -112,7 +112,7 @@ enum VoiceCorrectionDebugRPC {
                 "matches": matches.map {
                     ["term": $0.term, "source": $0.sourceIdentifier,
                      "confidence": $0.confidence, "evidence": $0.evidence]
-                },
+                }
             ])
         }
 
@@ -122,7 +122,7 @@ enum VoiceCorrectionDebugRPC {
             "candidates": byToken,
             "assembledPrompt": result.prompt,
             "retrievalMs": ms,
-            "retrievalBudgetMs": VoiceCorrectionConfig.retrievalBudgetMs,
+            "retrievalBudgetMs": VoiceCorrectionConfig.retrievalBudgetMs
         ]
     }
 
@@ -146,7 +146,7 @@ enum VoiceCorrectionDebugRPC {
             "diffSummary": s.diffSummary,
             "modelGroupUsed": s.modelGroupUsed,
             "durationMs": s.durationMs,
-            "rejectedReason": s.rejectedReason ?? NSNull(),
+            "rejectedReason": s.rejectedReason ?? NSNull()
         ]
     }
 
@@ -199,7 +199,7 @@ enum VoiceCorrectionDebugRPC {
                     "backgroundRank": rank ?? NSNull(),
                     // Straight from evaluate() — never recomputed here, or the two copies drift.
                     "breakdown": ["backgroundRank": b.backgroundRank, "posTag": b.posTag,
-                                  "hasLatinOrDigit": b.hasLatinOrDigit, "lengthOk": b.lengthOk],
+                                  "hasLatinOrDigit": b.hasLatinOrDigit, "lengthOk": b.lengthOk]
                 ])
             }
         }
@@ -216,7 +216,7 @@ enum VoiceCorrectionDebugRPC {
         return [
             "ok": true,
             "durationMs": Int(Date().timeIntervalSince(started) * 1000),
-            "vocabularyRows": await db.rowCount(table: "typed_vocabulary"),
+            "vocabularyRows": await db.rowCount(table: "typed_vocabulary")
         ]
     }
 
@@ -242,7 +242,7 @@ enum VoiceCorrectionDebugRPC {
             "acceptanceRate": decided > 0 ? Double(accepted) / Double(decided) : 0,
             "topConfusionPairs": (await db.allConfusion(orderBy: "confidence", locale: nil, limit: 10))
                 .map { ["original": $0.variants.first ?? $0.phoneticKey, "corrected": $0.correctedTerm,
-                        "frequency": $0.frequency, "confidence": $0.confidence] },
+                        "frequency": $0.frequency, "confidence": $0.confidence] }
         ]
     }
 
@@ -316,7 +316,7 @@ enum VoiceCorrectionDebugRPC {
             "outOfBackgroundVocabulary": oov,
             "noiseClasses": classCounts,
             "noiseExamples": examples,
-            "backgroundListVersion": BackgroundWordFrequency.shared.version,
+            "backgroundListVersion": BackgroundWordFrequency.shared.version
         ]
     }
 
@@ -336,7 +336,7 @@ enum VoiceCorrectionDebugRPC {
         return [
             "count": entries.count,
             "totalRetained": await VoiceCorrectionTrace.shared.count(),
-            "runs": entries.map { traceDict($0, includePrompt: includePrompt) },
+            "runs": entries.map { traceDict($0, includePrompt: includePrompt) }
         ]
     }
 
@@ -362,9 +362,9 @@ enum VoiceCorrectionDebugRPC {
                     "admitted": e.admitted, "reason": e.reason,
                     "sentenceLen": e.sentenceLen,
                     "before": e.before, "after": e.after,
-                    "precedingRunID": e.precedingRunID ?? NSNull(),
+                    "precedingRunID": e.precedingRunID ?? NSNull()
                 ] as [String: Any]
-            },
+            }
         ]
     }
 
@@ -390,7 +390,7 @@ enum VoiceCorrectionDebugRPC {
                     ["token": $0.token, "phoneticKey": $0.phoneticKey, "term": $0.term,
                      "source": $0.source, "confidence": $0.confidence,
                      "fusedScore": $0.fusedScore, "evidence": $0.evidence] as [String: Any]
-                },
+                }
             ] as [String: Any],
             // The conversation-mining half: what got pulled out of the user's messages
             // and the AI's replies, with the rarity score that earned each term its slot.
@@ -407,14 +407,14 @@ enum VoiceCorrectionDebugRPC {
                 "excerpts": e.excerpts.map {
                     ["role": $0.role, "newestIndex": $0.newestIndex, "kind": $0.kind,
                      "chars": $0.chars, "text": $0.text] as [String: Any]
-                },
+                }
             ] as [String: Any],
             // What survived budget clamping into the prompt. Comparing `promptVocabTerms`
             // against `retrieval.candidates` shows exactly which evidence got squeezed out.
             "promptEvidence": [
                 "vocabTerms": e.promptVocabTerms,
                 "confusionLines": e.promptConfusionLines,
-                "blockChars": e.blockChars,
+                "blockChars": e.blockChars
             ] as [String: Any],
             "verdict": [
                 "corrected": e.corrected ?? NSNull(),
@@ -422,8 +422,8 @@ enum VoiceCorrectionDebugRPC {
                 "appliedPairs": e.appliedPairs ?? [],
                 "rejectedReason": e.rejectedReason ?? NSNull(),
                 "modelGroup": e.modelGroup ?? NSNull(),
-                "totalMs": e.totalMs ?? NSNull(),
-            ] as [String: Any],
+                "totalMs": e.totalMs ?? NSNull()
+            ] as [String: Any]
         ]
         // Off by default: a full prompt is ~2.5k chars and swamps a multi-run listing.
         if includePrompt { out["prompt"] = e.prompt }
@@ -490,7 +490,7 @@ enum VoiceCorrectionDebugRPC {
             "negativeFeedbackCount": r.negativeFeedbackCount,
             "confidence": r.confidence,
             "lastSeen": r.lastSeen,
-            "source": r.source,
+            "source": r.source
         ]
     }
 
@@ -505,7 +505,7 @@ enum VoiceCorrectionDebugRPC {
             "distinctDays": r.distinctDays,
             "backgroundRank": r.backgroundRank ?? NSNull(),
             "lastSeen": r.lastSeen,
-            "source": r.source,
+            "source": r.source
         ]
     }
 }

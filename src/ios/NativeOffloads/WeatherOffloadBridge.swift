@@ -46,7 +46,7 @@ import CoreLocation
                     "dew_point_c": current.dewPoint.converted(to: .celsius).value,
                     "cloud_cover": current.cloudCover,
                     "is_daylight": current.isDaylight,
-                    "location": ["latitude": lat, "longitude": lng],
+                    "location": ["latitude": lat, "longitude": lng]
                 ]
                 if let gust = current.wind.gust {
                     currentDict["wind_gust_kmh"] = gust.converted(to: .kilometersPerHour).value
@@ -86,7 +86,7 @@ import CoreLocation
                         "wind_direction": forecast.wind.compassDirection.description,
                         "uv_index": forecast.uvIndex.value,
                         "cloud_cover": forecast.cloudCover,
-                        "is_daylight": forecast.isDaylight,
+                        "is_daylight": forecast.isDaylight
                     ]
                     // `gust` is optional in WeatherKit — omit the key rather
                     // than emitting a fake 0, which would read as "no gust".
@@ -125,7 +125,7 @@ import CoreLocation
                         "precip_amount_mm": forecast.precipitationAmount.converted(to: .millimeters).value,
                         "wind_speed_kmh": forecast.wind.speed.converted(to: .kilometersPerHour).value,
                         "wind_direction": forecast.wind.compassDirection.description,
-                        "uv_index": forecast.uvIndex.value,
+                        "uv_index": forecast.uvIndex.value
                     ]
                     if let gust = forecast.wind.gust {
                         entry["wind_gust_kmh"] = gust.converted(to: .kilometersPerHour).value
@@ -164,13 +164,13 @@ import CoreLocation
                             // length over time), so convert to m/s and scale to
                             // millimetres per hour: m/s × 1000 mm/m × 3600 s/h.
                             "precip_intensity_mmh": entry.precipitationIntensity
-                                .converted(to: .metersPerSecond).value * 3_600_000,
+                                .converted(to: .metersPerSecond).value * 3_600_000
                         ])
                     }
                     result["minute"] = [
                         "available": true,
                         "summary": minute.summary.description,
-                        "minutes": minutes,
+                        "minutes": minutes
                     ] as [String: Any]
                 } else {
                     result["minute"] = [
@@ -180,7 +180,7 @@ import CoreLocation
                                 + "(not mainland China), and is also omitted when no "
                                 + "precipitation is expected. Use `hourly` for precipitation "
                                 + "chance by hour.",
-                        "minutes": [] as [[String: Any]],
+                        "minutes": [] as [[String: Any]]
                     ] as [String: Any]
                 }
 
@@ -192,7 +192,7 @@ import CoreLocation
                             "summary": alert.summary,
                             "severity": alert.severity.description,
                             "source": alert.source,
-                            "region": alert.region ?? "",
+                            "region": alert.region ?? ""
                         ])
                     }
                     result["alerts"] = alertList

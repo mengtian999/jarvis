@@ -69,7 +69,7 @@ struct ThinkingRulesCollection: ConfigCollection {
             scopeField(id, instanceId, ruleId),
             wireFormatField(id, instanceId, ruleId),
             reasoningEchoField(id, instanceId, ruleId),
-            providerField(id, instanceId),
+            providerField(id, instanceId)
         ]
     }
 
@@ -243,7 +243,7 @@ struct ThinkingRulesCollection: ConfigCollection {
     static let wireFormatKinds = [
         "anthropicThinking", "booleanToggle", "customPath", "deepSeekSibling",
         "extraBodyToggle", "geminiBudget", "geminiThinkingLevel", "omitEverything",
-        "qwenDual", "qwenRootOnly", "reasoningEffort", "reasoningEffortNested",
+        "qwenDual", "qwenRootOnly", "reasoningEffort", "reasoningEffortNested"
     ]
 
     /// Shared by `add` and the `wireFormat` field writer so the CLI accepts exactly one

@@ -156,7 +156,7 @@ enum RcloneTransfer {
                     "srcFs": packageURL.deletingLastPathComponent().path,
                     "srcRemote": name,
                     "dstFs": fs,
-                    "dstRemote": partial,
+                    "dstRemote": partial
                 ])
                 // The size check IS the success condition, not decoration.
                 let uploaded = try remoteSize(fs: fs, remote: partial)
@@ -165,7 +165,7 @@ enum RcloneTransfer {
                 }
                 _ = try RcloneBridge.rpc("operations/movefile", [
                     "srcFs": fs, "srcRemote": partial,
-                    "dstFs": fs, "dstRemote": final,
+                    "dstFs": fs, "dstRemote": final
                 ])
                 progress?(Progress(bytesSent: size, totalBytes: size))
                 logger.info("[Rclone] uploaded \(name) (\(size) bytes, verified) -> \(remote.name), attempt \(attempt)")
@@ -400,7 +400,7 @@ enum RcloneTransfer {
             "dstFs": destination.deletingLastPathComponent().path,
             "dstRemote": destination.lastPathComponent,
             "_async": true,
-            "_group": group,
+            "_group": group
         ])
         guard let jobid = (started["jobid"] as? NSNumber)?.intValue else {
             // No jobid means the async request itself was rejected. Fall back
@@ -410,7 +410,7 @@ enum RcloneTransfer {
             _ = try RcloneBridge.rpc("operations/copyfile", [
                 "srcFs": fs, "srcRemote": pkg.key,
                 "dstFs": destination.deletingLastPathComponent().path,
-                "dstRemote": destination.lastPathComponent,
+                "dstRemote": destination.lastPathComponent
             ])
             try verifyDownload(pkg, at: destination, progress: progress)
             return

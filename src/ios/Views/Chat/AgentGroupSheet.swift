@@ -36,7 +36,7 @@ struct AgentGroupSheet: View {
                                         members: members,
                                         hostRoleId: hostRoleId,
                                         instruction: instruction,
-                                        modelOverride: modelOverride,
+                                        modelOverride: modelOverride
                                     )
                                     editing = nil
                                     onDismiss()
@@ -53,7 +53,7 @@ struct AgentGroupSheet: View {
                                 }
                             }
                         },
-                        onDelete: group.id.isEmpty ? nil : { showDeleteConfirm = true },
+                        onDelete: group.id.isEmpty ? nil : { showDeleteConfirm = true }
                     )
                 } else {
                     AgentGroupListPicker(
@@ -66,9 +66,9 @@ struct AgentGroupSheet: View {
                             editing = AgentGroupRecord(
                                 id: "", name: "", instruction: nil,
                                 membersJson: "[]", hostRoleId: nil,
-                                modelOverrideJson: nil, createdAt: Date(), updatedAt: Date(),
+                                modelOverrideJson: nil, createdAt: Date(), updatedAt: Date()
                             )
-                        },
+                        }
                     )
                 }
             }
@@ -195,9 +195,9 @@ struct RoleAvatar: View {
 
 private struct AgentGroupEditForm: View {
     let group: AgentGroupRecord
-    let onCancel: () -> Unit
+    let onCancel: () -> Void
     let onSave: (String, String?, [AgentGroupMember], String?, AgentGroupModelRef?) -> Void
-    let onDelete: (() -> Unit)?
+    let onDelete: (() -> Void)?
 
     @State private var name: String
     @State private var instruction: String
@@ -208,7 +208,7 @@ private struct AgentGroupEditForm: View {
 
     private var isCreate: Bool { group.id.isEmpty }
 
-    init(group: AgentGroupRecord, onCancel: @escaping () -> Unit, onSave: @escaping (String, String?, [AgentGroupMember], String?, AgentGroupModelRef?) -> Void, onDelete: (() -> Unit)?) {
+    init(group: AgentGroupRecord, onCancel: @escaping () -> Void, onSave: @escaping (String, String?, [AgentGroupMember], String?, AgentGroupModelRef?) -> Void, onDelete: (() -> Void)?) {
         self.group = group
         self.onCancel = onCancel
         self.onSave = onSave
@@ -246,7 +246,7 @@ private struct AgentGroupEditForm: View {
                         onRemove: {
                             members.removeAll { $0.roleId == member.roleId }
                             if hostRoleId == member.roleId { hostRoleId = nil }
-                        },
+                        }
                     )
                 }
             } header: {
@@ -272,7 +272,7 @@ private struct AgentGroupEditForm: View {
                     } label: {
                         Label(
                             role.metadata.name.isEmpty ? "Jarvis" : role.metadata.name,
-                            systemImage: "plus.circle",
+                            systemImage: "plus.circle"
                         )
                     }
                 }
@@ -288,7 +288,7 @@ private struct AgentGroupEditForm: View {
                                 AgentGroupModelRef(modelId: $0.baseModel.id, providerInstanceId: $0.providerInstanceId)
                             }
                             : nil
-                    },
+                    }
                 )) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(AppLocalized("Unified Model"))
@@ -330,7 +330,7 @@ private struct AgentGroupEditForm: View {
                         instruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : instruction,
                         members,
                         hostRoleId,
-                        modelOverride,
+                        modelOverride
                     )
                 } label: {
                     Text(AppLocalized(isCreate ? "Create Group" : "Save"))
@@ -358,10 +358,10 @@ private struct AgentGroupEditForm: View {
 private struct MemberRow: View {
     let member: AgentGroupMember
     let isHost: Bool
-    let onToggleHost: () -> Unit
-    let onMoveUp: (() -> Unit)?
-    let onMoveDown: (() -> Unit)?
-    let onRemove: () -> Unit
+    let onToggleHost: () -> Void
+    let onMoveUp: (() -> Void)?
+    let onMoveDown: (() -> Void)?
+    let onRemove: () -> Void
 
     var body: some View {
         let role = RoleStore.roleById(member.roleId)

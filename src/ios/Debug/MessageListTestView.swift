@@ -674,7 +674,7 @@ struct MessageListTestView: View {
                             .longContent,
                             .toolHeavy,
                             .streaming,
-                            .travelPlanning,
+                            .travelPlanning
                         ], id: \.rawValue) { scenario in
                             Button(scenario.rawValue) {
                                 simulator.loadBuiltinSample(scenario: scenario)

@@ -20,7 +20,7 @@ final class AppGroupChangeWatcher {
 
     private let logger = AppLogger(category: "FPWatcher")
     private let queue = DispatchQueue(label: "com.openminis.app.fpwatcher", qos: .utility)
-    private let domainIdentifier = NSFileProviderDomainIdentifier("com.openminis.app.files")
+    private let domainIdentifier = NSFileProviderDomainIdentifier("com.bitjarvis.app.files")
 
     /// Hard cap on simultaneous watched directories. Each watch holds an `O_EVTONLY`
     /// fd; iOS apps typically have a per-process limit around 256. We cap well below
@@ -51,7 +51,7 @@ final class AppGroupChangeWatcher {
         let roots: [(URL, String)] = [
             (AIChatViewModel.minisSharedPersistentDir, "shared"),
             (AIChatViewModel.minisSkillsPersistentDir, "skills"),
-            (AIChatViewModel.minisMemoryPersistentDir, "memory"),
+            (AIChatViewModel.minisMemoryPersistentDir, "memory")
         ]
 
         for (rootURL, rootKey) in roots {

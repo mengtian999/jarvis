@@ -122,13 +122,13 @@ final class CapturedVoiceInput {
                 "container": sampleRate > 0 ? "wav" : "unknown",
                 "sampleRate": sampleRate,
                 "channels": channels,
-                "bitsPerSample": bitsPerSample,
+                "bitsPerSample": bitsPerSample
             ] as [String: Any],
             "vad": [
                 "segmentCount": vadSegmentCount,
                 "endReason": vadEndReason as Any,
-                "runningDurationSeconds": vadRunningDuration as Any,
-            ] as [String: Any],
+                "runningDurationSeconds": vadRunningDuration as Any
+            ] as [String: Any]
         ]
         if let model { d["model"] = model }
         if let language { d["language"] = language }
@@ -137,7 +137,7 @@ final class CapturedVoiceInput {
         if let fullSessionAudio {
             var fs: [String: Any] = [
                 "byteCount": fullSessionAudio.count,
-                "truncated": fullSessionTruncated,
+                "truncated": fullSessionTruncated
             ]
             if let fullSessionDurationSeconds { fs["durationSeconds"] = fullSessionDurationSeconds }
             if includeAudio {

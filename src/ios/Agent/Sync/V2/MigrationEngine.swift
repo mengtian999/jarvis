@@ -931,7 +931,7 @@ enum V1FetcherShim {
             ("Session",       NSPredicate(format: "createdAt > %@", epoch as NSDate)),
             ("Message",       NSPredicate(format: "createdAt > %@", epoch as NSDate)),
             ("CompactMarker", NSPredicate(format: "createdAt > %@", epoch as NSDate)),
-            ("SessionFile",   NSPredicate(format: "sessionId != %@", "__none__" as NSString)),
+            ("SessionFile",   NSPredicate(format: "sessionId != %@", "__none__" as NSString))
         ]
         var total = 0
         for (type, predicate) in queries {

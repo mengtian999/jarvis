@@ -245,7 +245,7 @@ actor SessionFileChangeTracker {
         // /private-prefixed variants (iOS resolves /var → /private/var).
         let candidates = [
             "/\(hostBase)/\(sessionId)/",
-            "/private/\(hostBase)/\(sessionId)/",
+            "/private/\(hostBase)/\(sessionId)/"
         ]
         for cand in candidates {
             if rawPath.hasPrefix(cand) {

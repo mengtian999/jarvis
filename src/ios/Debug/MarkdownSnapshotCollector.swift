@@ -155,7 +155,7 @@ final class MarkdownSnapshotCollector {
                 "textStorageLen": s.textStorageLen,
                 "attachmentCount": s.attachments.count,
                 "markdownPreview": s.markdownPreview,
-                "imagePNGBytes": s.imagePNGBytes,
+                "imagePNGBytes": s.imagePNGBytes
             ]
         }
     }
@@ -446,7 +446,7 @@ final class MessageListSnapshotCollector {
                 "triggerDetail": s.triggerDetail ?? NSNull(),
                 "cellCount": s.cells.count,
                 "imagePNGBytes": s.imagePNGBytes,
-                "collectionContentOffsetY": s.collectionViewContentOffset?.h ?? -1,
+                "collectionContentOffsetY": s.collectionViewContentOffset?.h ?? -1
             ]
         }
     }

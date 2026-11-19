@@ -35,7 +35,7 @@ struct SoulSettingsView: View {
         [
             (AppLocalized("Auto"), "auto"),
             (AppLocalized("Chinese"), "zh"),
-            (AppLocalized("English"), "en"),
+            (AppLocalized("English"), "en")
         ]
     }
 
@@ -413,7 +413,7 @@ private struct SoulEmojiPickerSheet: View {
 
     private static let suggestions: [[String]] = [
         ["✨", "🤖", "🐱", "🦊", "🐧", "🦉", "🌟", "⚡"],
-        ["🧠", "💡", "🔮", "🚀", "🌊", "🍀", "🎯", "🐳"],
+        ["🧠", "💡", "🔮", "🚀", "🌊", "🍀", "🎯", "🐳"]
     ]
 
     var body: some View {

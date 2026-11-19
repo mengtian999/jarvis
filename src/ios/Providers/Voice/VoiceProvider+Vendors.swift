@@ -969,7 +969,7 @@ final class OpenRouterVoiceProvider: VoiceProvider {
     /// valid name, never to pick one — the fallback is `defaultVoiceOutputVoice()`.
     private static let knownVoices: Set<String> = [
         "alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral",
-        "verse", "ballad", "ash", "sage", "marin", "cedar",
+        "verse", "ballad", "ash", "sage", "marin", "cedar"
     ]
 
     /// Pick the `audio.voice` value.
@@ -1021,12 +1021,12 @@ final class OpenRouterVoiceProvider: VoiceProvider {
                 "voice": resolvedVoice(request.voice, modelId: modelId),
                 // pcm16 is the ONLY value accepted while streaming, and
                 // streaming is mandatory — so this is fixed, not a preference.
-                "format": "pcm16",
+                "format": "pcm16"
             ],
             "stream": true,
             "messages": [
-                ["role": "user", "content": request.input],
-            ],
+                ["role": "user", "content": request.input]
+            ]
         ]
         urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 

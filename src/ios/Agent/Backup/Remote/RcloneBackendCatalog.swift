@@ -87,7 +87,7 @@ enum RcloneBackendCatalog {
                       isSecret: true, isOptional: true),
                 .init(key: "domain", label: "Domain", placeholder: "WORKGROUP",
                       hint: AppLocalized("Only needed on a corporate network that uses one."),
-                      isOptional: true),
+                      isOptional: true)
             ]),
         Backend(
             type: "webdav",
@@ -104,7 +104,7 @@ enum RcloneBackendCatalog {
                 // with no way to proceed and nothing explaining why.
                 .init(key: "user", label: "Username", placeholder: "", isOptional: true),
                 .init(key: "pass", label: "Password", placeholder: "",
-                      isSecret: true, isOptional: true),
+                      isSecret: true, isOptional: true)
             ]),
         Backend(
             type: "sftp",
@@ -119,7 +119,7 @@ enum RcloneBackendCatalog {
                 .init(key: "port", label: "Port", placeholder: "22",
                       hint: AppLocalized("Leave blank unless SSH runs on a non-standard port."),
                       isOptional: true,
-                      keyboard: .numeric),
+                      keyboard: .numeric)
             ]),
         Backend(
             type: "s3",
@@ -136,7 +136,7 @@ enum RcloneBackendCatalog {
                       placeholder: "", isSecret: true),
                 .init(key: "region", label: "Region", placeholder: "us-east-1",
                       hint: AppLocalized("Leave blank if your provider doesn't use regions."),
-                      isOptional: true),
+                      isOptional: true)
             ]),
         Backend(
             type: "ftp",
@@ -154,8 +154,8 @@ enum RcloneBackendCatalog {
                 .init(key: "port", label: "Port", placeholder: "21",
                       hint: AppLocalized("Leave blank for the standard port."),
                       isOptional: true,
-                      keyboard: .numeric),
-            ]),
+                      keyboard: .numeric)
+            ])
     ]
 
     static func backend(for type: String) -> Backend? {

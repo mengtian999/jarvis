@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>teamID</key>
+	<string>4VPXQ6C88H</string>
+	<key>signingStyle</key>
+	<string>manual</string>
+	<key>uploadSymbols</key>
+	<true/>
+	<key>destination</key>
+	<string>export</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.bitjarvis.app</key>
+		<string>Jarvis AppStore</string>
+		<key>com.bitjarvis.app.ShareExtension</key>
+		<string>Jarvis ShareExtension AppStore</string>
+		<key>com.bitjarvis.app.FileProvider</key>
+		<string>Jarvis FileProvider AppStore</string>
+		<key>com.bitjarvis.app.AgentWidget</key>
+		<string>Jarvis AgentWidget AppStore</string>
+	</dict>
+</dict>
+</plist>

@@ -113,7 +113,7 @@ final class NetworkMonitor {
             "HTTPSEnable", "HTTPSProxy", "HTTPSPort",
             "SOCKSEnable", "SOCKSProxy", "SOCKSPort",
             "ProxyAutoConfigEnable", "ProxyAutoConfigURLString",
-            "ExceptionsList",
+            "ExceptionsList"
         ]
         let extras = dict.filter { !knownKeys.contains($0.key) }
         if !extras.isEmpty {

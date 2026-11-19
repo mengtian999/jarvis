@@ -455,7 +455,7 @@ struct RawMessage: Identifiable, Codable, Hashable {
     static let internalBridgeTexts: [String] = [
         internalBridgeText,
         // Pre-d2e111e9 wording.
-        "(Interrupted mid-task to handle your new message. Will return to the prior task after.)",
+        "(Interrupted mid-task to handle your new message. Will return to the prior task after.)"
     ]
 
     /// True when `text` is any known internal-bridge string. Shared by
@@ -4702,7 +4702,7 @@ actor ChatStore {
         "node_modules", ".tox", ".venv", "venv",
         ".build", ".eggs",
         ".mypy_cache", ".pytest_cache", ".ruff_cache",
-        "__pypackages__", ".gradle", ".idea",
+        "__pypackages__", ".gradle", ".idea"
     ]
 
     /// Scan workspace/offloads/attachments dirs for a session and markDirty for each file.
@@ -4859,7 +4859,7 @@ extension Array where Element == ContentPart {
                     parts.append([
                         "inlineData": [
                             "mimeType": ref.mimeType,
-                            "data": base64,
+                            "data": base64
                         ]
                     ])
                 }
@@ -4873,7 +4873,7 @@ extension Array where Element == ContentPart {
             case .toolResult(let tr):
                 var response: [String: Any] = [
                     "output": tr.output,
-                    "success": tr.success,
+                    "success": tr.success
                 ]
                 if let ref = tr.mediaRef, let data = await store.loadMediaData(ref) {
                     response["image_base64"] = data.base64EncodedString()
@@ -5173,7 +5173,7 @@ extension RawMessage {
     fileprivate static func stripAttachmentMarkers(_ s: String) -> String {
         let patterns = [
             #"\[attached [A-Za-z]+:[^\]]*\]"#,
-            #"\[image omitted to save context[^\]]*\]"#,
+            #"\[image omitted to save context[^\]]*\]"#
         ]
         var out = s
         for p in patterns {
@@ -5895,7 +5895,7 @@ extension ChatStore {
         // (v2Only:true), so MCP config never uploaded at all. It's listed
         // now so (a) the one-time legacy-record op=delete can drain and
         // (b) any leftover upsert rows drain as no-ops (builder returns nil).
-        "MCPServersV2", "MCPServerItem",
+        "MCPServersV2", "MCPServerItem"
     ]
 
     /// Pre-built SQL IN-list fragment for `v2SyncRecordTypes`. Values
@@ -6642,7 +6642,7 @@ extension ChatStore {
         updatedAt: Date? = nil,
         // [T-role-message-level] generating persona (assistant rows). nil =
         // old peer record / non-assistant row.
-        roleId: String? = nil
+        roleId: String? = nil,
         // [T-token-attribution-snapshot] nil when the sending device predates
         // these fields. nil means "the remote told us nothing", NOT "the remote
         // says this is empty" — the UPDATE below preserves the local value in

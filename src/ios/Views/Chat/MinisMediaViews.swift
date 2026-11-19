@@ -212,7 +212,7 @@ let minisDocumentExtensions: Set<String> = [
     // iWork
     "pages", "numbers", "key",
     // Rich text
-    "rtf", "rtfd",
+    "rtf", "rtfd"
 ]
 
 /// Resolve a jarvis:// URL to a host filesystem URL.
@@ -247,7 +247,7 @@ func resolveMinisFileURL(url: URL) -> URL? {
     let globalDirs: [(subdir: String, url: URL)] = [
         ("skills", AIChatViewModel.minisSkillsPersistentDir),
         ("memory", AIChatViewModel.minisMemoryPersistentDir),
-        ("shared", AIChatViewModel.minisSharedPersistentDir),
+        ("shared", AIChatViewModel.minisSharedPersistentDir)
     ]
     for (subdir, globalDir) in globalDirs where host == subdir {
         for subPath in subPaths {

@@ -305,7 +305,7 @@ private struct GroupRow: View {
     private static let modalityPriority: [ModelModality] = [
         .videoOutput, .imageOutput, .audioOutput,
         .audioInput, .videoInput, .imageInput, .pdfInput,
-        .textOutput,
+        .textOutput
     ]
 
     private var topModalities: [ModelModality] {

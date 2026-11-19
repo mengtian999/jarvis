@@ -177,7 +177,7 @@ final class ToolLoopDetectorTests: XCTestCase {
         for i in 1...10 {
             let params: [String: Any] = [
                 "path": "/etc/hostname",
-                "tool_title": "Read /etc/hostname #\(i)",
+                "tool_title": "Read /etc/hostname #\(i)"
             ]
             _ = detector.record(toolName: "file_read", params: params, result: "localhost")
         }

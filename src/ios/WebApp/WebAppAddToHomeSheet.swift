@@ -259,7 +259,7 @@ struct WebAppAddToHomeSheet: View {
         components.path = "/launch.html"
 
         var items: [URLQueryItem] = [
-            URLQueryItem(name: "icon", value: category.rawValue),
+            URLQueryItem(name: "icon", value: category.rawValue)
         ]
 
         switch classification.scope {
@@ -391,7 +391,7 @@ private struct LauncherTilePreview: View {
                             colors: [
                                 Color(red: 0.78, green: 0.92, blue: 1.00),
                                 Color(red: 0.92, green: 0.85, blue: 1.00),
-                                Color(red: 1.00, green: 0.88, blue: 0.78),
+                                Color(red: 1.00, green: 0.88, blue: 0.78)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing

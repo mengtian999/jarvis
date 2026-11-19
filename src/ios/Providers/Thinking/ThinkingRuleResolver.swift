@@ -600,7 +600,7 @@ enum ThinkingRuleResolver {
             if budget > 0 { body["thinking_budget"] = budget }
             body["extra_body"] = [
                 "enable_thinking": enabled,
-                "thinking_budget": budget > 0 ? budget : NSNull(),
+                "thinking_budget": budget > 0 ? budget : NSNull()
             ] as [String: Any]
             return (nil, nil)
 

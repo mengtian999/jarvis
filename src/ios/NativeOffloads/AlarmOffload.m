@@ -133,7 +133,11 @@ static NSDate *parseAlarmTime(NSString *str) {
     return noff_parse_date(str);
 }
 
-// ── Ensure authorization ──
+// ── AlarmKit commands (iOS 26+) ──
+// Auth helpers live inside this SDK gate: AlarmOffloadBridge.requestAuthorization
+// is only emitted into Jarvis-Swift.h when AlarmKit is available.
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
 
 // Serial queue to prevent concurrent authorization dialogs
 static dispatch_queue_t authQueue(void) {
@@ -174,10 +178,6 @@ static BOOL ensureAuthorization(int stdout_fd, NSString *action, BOOL compact, B
     }
     return authorized;
 }
-
-// ── AlarmKit commands (iOS 26+) ──
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260000
 
 static int cmd_set_alarmkit(int argc, char **argv, int stdout_fd,
                             int stderr_fd, BOOL compact, BOOL quiet) {

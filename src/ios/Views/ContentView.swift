@@ -1,8 +1,10 @@
 import SwiftUI
 // [T-im-merge] IM（bitjarvis Flutter module）嵌入所需的 Flutter 引擎 API。
 // 该 import 由 src/ios/Podfile（podhelper.rb）提供 —— 需先 `pod install`
-// 并通过 Minis.xcworkspace 构建。
+// 并通过 Minis.xcworkspace 构建。无 Flutter pods 时 canImport 失败，走 stub。
+#if canImport(Flutter)
 import Flutter
+#endif
 
 private let shareLog = AppLogger(category: "Share")
 private let draftLog = AppLogger(category: "DraftSession")
@@ -131,6 +133,7 @@ private struct FolderHeaderVisibilityProbe: View {
 
     @State private var lastMaxY: CGFloat = .infinity
 
+    @_optimize(none)
     var body: some View {
         GeometryReader { geo in
             let maxY = geo.frame(in: .global).maxY
@@ -1293,7 +1296,12 @@ struct ContentView: View {
     /// override where the user just chose to be.
     private static let pendingBackgroundNavigationTTL: TimeInterval = 90
 
+    @_optimize(none)
     var body: some View {
+        contentDeepLinkAndScene
+    }
+
+    private var contentRootAndNavReceivers: some View {
         GeometryReader { geo in
             let wide = isIPad && geo.size.width >= compactThreshold
             Group {
@@ -1514,6 +1522,10 @@ struct ContentView: View {
                 switchToSession(sessionId)
             }
         }
+    }
+
+    private var contentPrimarySheets: some View {
+        contentRootAndNavReceivers
         .fullScreenCover(isPresented: $showTerminal) {
             NavigationStack {
                 ISHTerminalView(showCloseButton: true)
@@ -1675,6 +1687,10 @@ struct ContentView: View {
                 }
             }
         ))
+    }
+
+    private var contentOverlayAndLaunchTask: some View {
+        contentPrimarySheets
         .overlay {
             if isExporting {
                 ZStack {
@@ -1829,6 +1845,10 @@ struct ContentView: View {
             fetchAlarmsIfNeeded()
             await refreshRemoteDeviceSessions()
         }
+    }
+
+    private var contentSessionSyncObservers: some View {
+        contentOverlayAndLaunchTask
         .onReceive(NotificationCenter.default.publisher(for: .cloudSyncDidFetchChanges)) { _ in
             // [T-ios-state-publish-offmain-crash] cloud-sync fetch fires off-main;
             // force the @State write onto the main thread.
@@ -1921,6 +1941,10 @@ struct ContentView: View {
                 scheduleOutgoingPreviewRefresh()
             }
         }
+    }
+
+    private var contentNavAndShareObservers: some View {
+        contentSessionSyncObservers
         .onChange(of: navigationPath) { _ in
             // [T-ios-stacknav-transition-attributegraph-race] The SAME hosting-
             // view teardown race the `selectedSessionId` observer above guards
@@ -2048,6 +2072,10 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private var contentDeepLinkAndScene: some View {
+        contentNavAndShareObservers
         .onChange(of: deepLink.showEnvironmentVariables) { show in
             if show {
                 activeToolSheet = .settings
@@ -2135,6 +2163,7 @@ struct ContentView: View {
             }
         }
     }
+
 
     // MARK: - Split Layout (iPad / wide window)
 
@@ -3024,7 +3053,7 @@ struct ContentView: View {
                         currentStackSessionId = draftId
                     }
                 },
-                onDismiss: { showAgentGroupSheet = false },
+                onDismiss: { showAgentGroupSheet = false }
             )
         }
         }
@@ -3217,7 +3246,7 @@ struct ContentView: View {
                         currentStackSessionId = draftId
                     }
                 },
-                onDismiss: { showAgentGroupSheet = false },
+                onDismiss: { showAgentGroupSheet = false }
             )
         }
         }
@@ -3314,7 +3343,7 @@ struct ContentView: View {
             "ProviderConfigV2": "Prv",
             "EnvVarV2": "Env",
             "SyncDeviceV2": "Dev",
-            "SkillV2": "Skl",
+            "SkillV2": "Skl"
         ]
         return byType
             .compactMap { (k, v) -> (String, Int)? in
@@ -6874,7 +6903,7 @@ private struct LockedRowEffect: ViewModifier {
                         stops: [
                             .init(color: .black, location: 0.0),
                             .init(color: .black, location: 0.82),
-                            .init(color: .black.opacity(0.0), location: 1.0),
+                            .init(color: .black.opacity(0.0), location: 1.0)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -6988,7 +7017,7 @@ struct SessionEditSheet: View {
         ("design",       "Design",       "paintpalette.fill",           .pink),
         ("productivity", "Productivity", "calendar.badge.checkmark",    .yellow),
         ("support",      "Support",      "gearshape.fill",              .brown),
-        ("other",        "Other",        "square.grid.2x2.fill",       .gray),
+        ("other",        "Other",        "square.grid.2x2.fill",       .gray)
     ]
 
     var body: some View {
@@ -7136,7 +7165,7 @@ private let supportedLanguages: [LanguageOption] = [
     LanguageOption(id: "es",     name: "Español", flag: "🇪🇸"),
     LanguageOption(id: "fr",     name: "Français", flag: "🇫🇷"),
     LanguageOption(id: "de",     name: "Deutsch", flag: "🇩🇪"),
-    LanguageOption(id: "ru",     name: "Русский", flag: "🇷🇺"),
+    LanguageOption(id: "ru",     name: "Русский", flag: "🇷🇺")
 ]
 
 private struct FontScaleRow: View {
@@ -7300,7 +7329,7 @@ private struct AppearanceSettingsView: View {
         AppIconOption(id: 1, title: "Light", subtitle: "Always light", iconName: "AppIcon-Light", imageName: "AlternateIcons/AppIcon-Light"),
         AppIconOption(id: 2, title: "Dark", subtitle: "Always dark", iconName: "AppIcon-Dark", imageName: "AlternateIcons/AppIcon-Dark"),
         AppIconOption(id: 3, title: "Light (Legacy)", subtitle: "Classic light icon", iconName: "AppIcon-LegacyLight", imageName: "AlternateIcons/AppIcon-LegacyLight"),
-        AppIconOption(id: 4, title: "Dark (Legacy)", subtitle: "Classic dark icon", iconName: "AppIcon-LegacyDark", imageName: "AlternateIcons/AppIcon-LegacyDark"),
+        AppIconOption(id: 4, title: "Dark (Legacy)", subtitle: "Classic dark icon", iconName: "AppIcon-LegacyDark", imageName: "AlternateIcons/AppIcon-LegacyDark")
     ]
 
     var body: some View {
@@ -8088,7 +8117,7 @@ private struct SettingsSheet: View {
         components.path = "mengtiansky@gmail.com"
         components.queryItems = [
             URLQueryItem(name: "subject", value: "Jarvis Feedback"),
-            URLQueryItem(name: "body", value: body),
+            URLQueryItem(name: "body", value: body)
         ]
         return components.url
     }
@@ -8142,7 +8171,7 @@ private struct SettingsSheet: View {
         components?.queryItems = [
             URLQueryItem(name: "template", value: "bug_report.md"),
             URLQueryItem(name: "title", value: "[Bug] "),
-            URLQueryItem(name: "body", value: body),
+            URLQueryItem(name: "body", value: body)
         ]
         return components?.url
     }
@@ -8266,14 +8295,17 @@ final class IMEmbed {
     private static let channelName = "jarvis.im/agent_bridge"
     private static let logger = AppLogger(category: "IMEmbed")
 
+#if canImport(Flutter)
     private var engine: FlutterEngine?
     private weak var controller: FlutterViewController?
+#endif
 
     private init() {}
 
     /// 打开 IM（全屏 present）。引擎未热身时现场创建（首次有 1~2s Dart
     /// 启动开销；之后走缓存）。
     func open() {
+#if canImport(Flutter)
         let engine = ensureEngine()
         let vc = FlutterViewController(engine: engine, nibName: nil, bundle: nil)
         controller = vc
@@ -8291,8 +8323,12 @@ final class IMEmbed {
         }
         top.present(vc, animated: true)
         Self.logger.info("IM presented (engine warm: \(self.engine != nil))")
+#else
+        Self.logger.warning("Flutter module not linked; IM open() is a no-op")
+#endif
     }
 
+#if canImport(Flutter)
     /// IM 请求返回 Agent（通道 `exitToAgent`）。
     private func exitToAgent() {
         controller?.dismiss(animated: true)
@@ -8344,5 +8380,6 @@ final class IMEmbed {
         engine = e
         return e
     }
+#endif
 }
 

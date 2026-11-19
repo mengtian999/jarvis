@@ -72,7 +72,7 @@ enum WebAppHtmlMetadata {
             "apple-touch-icon",
             "apple-touch-icon-precomposed",
             "icon",
-            "shortcut icon",
+            "shortcut icon"
         ]
         for rel in priorities {
             if let href = findLinkHref(html, relMatching: rel) {
@@ -141,7 +141,7 @@ enum WebAppHtmlMetadata {
             ("&quot;", "\""),
             ("&#39;", "'"),
             ("&apos;", "'"),
-            ("&nbsp;", " "),
+            ("&nbsp;", " ")
         ]
         for (entity, char) in map {
             out = out.replacingOccurrences(of: entity, with: char)

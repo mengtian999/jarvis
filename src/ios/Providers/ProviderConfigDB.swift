@@ -398,7 +398,7 @@ actor ProviderConfigDB {
                 "updated_at": sqlite3_column_double(stmt, 14),
                 "extras_json": Self.optText(stmt, 15) as Any,
                 "custom_user_agent": Self.optText(stmt, 16) as Any,
-                "azure_mode": sqlite3_column_int(stmt, 17) != 0,
+                "azure_mode": sqlite3_column_int(stmt, 17) != 0
             ])
         }
         return rows
@@ -427,7 +427,7 @@ actor ProviderConfigDB {
                 "user_modified_at": Self.optDouble(stmt, 6) as Any,
                 "sort_order": Int(sqlite3_column_int(stmt, 7)),
                 "updated_at": sqlite3_column_double(stmt, 8),
-                "extras_json": Self.optText(stmt, 9) as Any,
+                "extras_json": Self.optText(stmt, 9) as Any
             ])
         }
         return rows
@@ -474,7 +474,7 @@ actor ProviderConfigDB {
                 "updated_at": sqlite3_column_double(stmt, 9),
                 "extras_json": Self.optText(stmt, 10) as Any,
                 "removed_members_json": Self.text(stmt, 11),
-                "added_members_json": Self.text(stmt, 12),
+                "added_members_json": Self.text(stmt, 12)
             ])
         }
         return rows
@@ -509,7 +509,7 @@ actor ProviderConfigDB {
                 "updated_at": sqlite3_column_double(stmt, 9),
                 "extras_json": Self.optText(stmt, 10) as Any,
                 "removed_members_json": "{}",
-                "added_members_json": "{}",
+                "added_members_json": "{}"
             ])
         }
         return rows
@@ -1777,7 +1777,7 @@ extension ProviderConfigDB {
             "wire_format_json": Self.text(stmt, 5),
             "label": Self.text(stmt, 8),
             "created_at": sqlite3_column_double(stmt, 9),
-            "updated_at": sqlite3_column_double(stmt, 10),
+            "updated_at": sqlite3_column_double(stmt, 10)
         ]
         if sqlite3_column_type(stmt, 4) != SQLITE_NULL { row["scope_pattern"] = Self.text(stmt, 4) }
         if sqlite3_column_type(stmt, 6) != SQLITE_NULL { row["echo_field"] = Self.text(stmt, 6) }

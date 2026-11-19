@@ -22,7 +22,7 @@ enum DebugRPCMCP {
         let servers = MCPStore.shared.servers.map { s -> [String: Any] in
             var d: [String: Any] = [
                 "id": s.id,
-                "enabled": s.enabled,
+                "enabled": s.enabled
             ]
             if let note = s.note { d["note"] = note }
             if let url = s.url { d["url"] = url }
@@ -50,7 +50,7 @@ enum DebugRPCMCP {
             "ok": true,
             "importedCount": imported.count,
             "importedIds": imported.map { $0.id },
-            "allServerIds": MCPStore.shared.servers.map { $0.id },
+            "allServerIds": MCPStore.shared.servers.map { $0.id }
         ]
     }
 
@@ -66,7 +66,7 @@ enum DebugRPCMCP {
             "ok": true,
             "deleted": existed,
             "id": id,
-            "allServerIds": MCPStore.shared.servers.map { $0.id },
+            "allServerIds": MCPStore.shared.servers.map { $0.id }
         ]
     }
 }

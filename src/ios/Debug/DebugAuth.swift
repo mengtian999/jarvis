@@ -203,7 +203,7 @@ final class DebugAuthenticator: @unchecked Sendable {
                 "v": 1,
                 "nonce": nonceHex,
                 "ct": respCt.base64EncodedString(),
-                "tag": respTag.hexString,
+                "tag": respTag.hexString
             ]
             let data = (try? JSONSerialization.data(withJSONObject: envelope, options: .withoutEscapingSlashes)) ?? Data("{}".utf8)
             return String(data: data, encoding: .utf8) ?? "{}"
@@ -287,7 +287,7 @@ final class DebugAuthenticator: @unchecked Sendable {
                 let resp: [String: Any] = [
                     "pub": devicePub.base64EncodedString(),
                     "token_ct": tokenCt.hexString,
-                    "expires": expires,
+                    "expires": expires
                 ]
                 return ("200 OK", Self.json(resp))
             } catch {
@@ -378,7 +378,7 @@ final class DebugAuthenticator: @unchecked Sendable {
                     "tok": $0.tokId,
                     "clientName": $0.clientName,
                     "grantedAt": fmt.string(from: $0.grantedAt),
-                    "lastUsed": fmt.string(from: $0.lastUsed),
+                    "lastUsed": fmt.string(from: $0.lastUsed)
                 ]
             }
     }

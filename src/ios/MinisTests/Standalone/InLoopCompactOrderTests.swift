@@ -84,7 +84,7 @@ func makeRunningState() -> (msgs: [Msg], runMsgId: UUID) {
         Msg(.user, content: "do a long task"),
         Msg(.assistant, blocks: ["earlier answer"]),
         Msg(.user, content: "keep going"),
-        live,
+        live
     ]
     return (msgs, live.id)
 }
@@ -155,7 +155,7 @@ print("\nEdge case: compaction fires before the run produced anything")
 do {
     var msgs = [
         Msg(.user, content: "hi"),
-        Msg(.assistant, blocks: ["prior answer"]),
+        Msg(.assistant, blocks: ["prior answer"])
     ]
     let live = Msg(.assistant)                 // no blocks, no content
     live.isAwaitingModelResponse = true

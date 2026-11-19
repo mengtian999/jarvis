@@ -592,7 +592,7 @@ private struct ContextLimitSlider: View {
         ("200K", 200_000),
         ("400K", 400_000),
         ("1M",   1_000_000),
-        (AppLocalized("Unlimited"), Int.max),
+        (AppLocalized("Unlimited"), Int.max)
     ]
 
     private var sliderIndex: Double {

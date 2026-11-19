@@ -378,7 +378,7 @@ struct BackupRestoreView: View {
         AppLocalized("Reading the package…"),
         AppLocalized("Expanding files…"),
         AppLocalized("Checking contents…"),
-        AppLocalized("Almost there…"),
+        AppLocalized("Almost there…")
     ]
 
     /// Abandon an open that is taking too long, and leave nothing behind.
@@ -901,7 +901,7 @@ struct FolderPackageListView: View {
         // the server list detaches its rclone calls.
         let id = folder.id
         let found = await Task.detached(priority: .userInitiated) {
-            BackupDestinations.listPackages(folderId: id)
+            await BackupDestinations.listPackages(folderId: id)
         }.value
         packages = found
         loading = false

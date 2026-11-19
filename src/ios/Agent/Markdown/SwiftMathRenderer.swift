@@ -336,7 +336,7 @@ enum SwiftMathRenderer {
             result.append(NSAttributedString(string: String(ch), attributes: [
                 .font: shrunk,
                 .foregroundColor: textColor,
-                .baselineOffset: shift,
+                .baselineOffset: shift
             ]))
         }
         return result
@@ -397,7 +397,7 @@ enum SwiftMathRenderer {
             ("\\quad", "  "), ("\\qquad", "    "), ("\\,", " "),
             ("\\;", " "), ("\\!", ""),
             ("\\displaystyle", ""), ("\\left", ""), ("\\right", ""),
-            ("\\big", ""), ("\\Big", ""), ("\\bigg", ""), ("\\Bigg", ""),
+            ("\\big", ""), ("\\Big", ""), ("\\bigg", ""), ("\\Bigg", "")
         ]
         for (cmd, repl) in replacements {
             s = s.replacingOccurrences(of: cmd, with: repl)
@@ -523,7 +523,7 @@ enum SwiftMathRenderer {
         "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
         "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
         "+": "⁺", "-": "⁻", "−": "⁻", "=": "⁼", "(": "⁽", ")": "⁾",
-        "n": "ⁿ", "i": "ⁱ",
+        "n": "ⁿ", "i": "ⁱ"
     ]
 
     /// Unicode subscript forms. Note the Latin coverage is much thinner than
@@ -535,7 +535,7 @@ enum SwiftMathRenderer {
         "+": "₊", "-": "₋", "−": "₋", "=": "₌", "(": "₍", ")": "₎",
         "a": "ₐ", "e": "ₑ", "h": "ₕ", "i": "ᵢ", "j": "ⱼ", "k": "ₖ",
         "l": "ₗ", "m": "ₘ", "n": "ₙ", "o": "ₒ", "p": "ₚ", "r": "ᵣ",
-        "s": "ₛ", "t": "ₜ", "u": "ᵤ", "v": "ᵥ", "x": "ₓ",
+        "s": "ₛ", "t": "ₜ", "u": "ᵤ", "v": "ᵥ", "x": "ₓ"
     ]
 }
 

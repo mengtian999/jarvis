@@ -599,7 +599,7 @@ private final class OAuthURLProtocol: URLProtocol, URLSessionDataDelegate {
             "prompt-caching-scope-2026-01-05",
             "effort-2025-11-24",
             "context-management-2025-06-27",
-            "extended-cache-ttl-2025-04-11",
+            "extended-cache-ttl-2025-04-11"
         ]
         var flags = existing.isEmpty ? [] : existing.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
         for flag in mimicryBetas where !flags.contains(flag) {
@@ -1182,7 +1182,7 @@ enum RequestBodyPatcher {
             let thinkingText = hasReal ? reasoning! : ""
             contentArray.insert([
                 "type": "thinking",
-                "thinking": thinkingText,
+                "thinking": thinkingText
             ], at: 0)
             messages[mi]["content"] = contentArray
             if hasReal { injectedReal += 1 } else { injectedPlaceholder += 1 }

@@ -90,7 +90,7 @@ final class FileProviderEnumerator: NSObject, NSFileProviderEnumerator {
     /// this list protects against that.
     private static let metadataBlacklist: Set<String> = [
         "mounted-folders.json",
-        "logs",
+        "logs"
     ]
 
     /// True if `name` is either a dotfile, reserved FP identifier, or a

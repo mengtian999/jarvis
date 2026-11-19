@@ -24,7 +24,7 @@ enum QuickTask: String, AppEnum {
         .checkCalendar:  DisplayRepresentation(title: "Check Calendar", subtitle: "查看日程"),
         .takePhoto:      DisplayRepresentation(title: "Take Photo", subtitle: "拍照"),
         .setAlarm:       DisplayRepresentation(title: "Set Alarm", subtitle: "设置闹钟"),
-        .controlHome:    DisplayRepresentation(title: "Control Home", subtitle: "智能家居"),
+        .controlHome:    DisplayRepresentation(title: "Control Home", subtitle: "智能家居")
     ]
 
     var prompt: String {
@@ -217,7 +217,7 @@ struct QuickTaskIntent: AppIntent {
                 prompt: task.prompt,
                 responseText: responseText
             )
-            return .result(value: result, dialog: "\(responseText.prefix(500))")
+            return .result(value: result, dialog: "\(String(responseText.prefix(500)))")
         }
 
         // Async mode: return immediately

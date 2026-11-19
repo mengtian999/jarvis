@@ -208,7 +208,7 @@ final class GeminiAgentProvider: AgentProvider {
             for (name, param) in tool.parameters {
                 var prop: [String: Any] = [
                     "type": param.type.geminiType,
-                    "description": param.description,
+                    "description": param.description
                 ]
                 if let enumValues = param.enumValues {
                     // Gemini doesn't support enum directly in all cases, but we can add it to description
@@ -220,7 +220,7 @@ final class GeminiAgentProvider: AgentProvider {
             var params: [String: Any] = [
                 "type": "OBJECT",
                 "properties": properties,
-                "required": tool.required,
+                "required": tool.required
             ]
             if let ordering = tool.propertyOrdering {
                 params["propertyOrdering"] = ordering

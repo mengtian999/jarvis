@@ -69,7 +69,7 @@ final class OpenRouterOAuthManager: NSObject, ObservableObject {
         components.queryItems = [
             URLQueryItem(name: "callback_url", value: callbackURL),
             URLQueryItem(name: "code_challenge", value: challenge),
-            URLQueryItem(name: "code_challenge_method", value: "S256"),
+            URLQueryItem(name: "code_challenge_method", value: "S256")
         ]
         let authorizationURL = components.url!
         logger.info("Authorization URL: \(authorizationURL.absoluteString)")
@@ -121,7 +121,7 @@ final class OpenRouterOAuthManager: NSObject, ObservableObject {
         let body: [String: String] = [
             "code": code,
             "code_verifier": verifier,
-            "code_challenge_method": "S256",
+            "code_challenge_method": "S256"
         ]
 
         var request = URLRequest(url: URL(string: keysURL)!)

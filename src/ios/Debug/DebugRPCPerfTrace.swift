@@ -21,7 +21,7 @@ enum DebugRPCPerfTrace {
             "ok": true,
             "isEnabled": PerfTrace.isEnabled,
             "thresholdMs": PerfTrace.thresholdMs,
-            "throttleWindow": PerfTrace.throttleWindow,
+            "throttleWindow": PerfTrace.throttleWindow
         ]
     }
 
@@ -31,7 +31,7 @@ enum DebugRPCPerfTrace {
         PerfTrace.stop()
         return [
             "ok": true,
-            "isEnabled": PerfTrace.isEnabled,
+            "isEnabled": PerfTrace.isEnabled
         ]
     }
 
@@ -40,7 +40,7 @@ enum DebugRPCPerfTrace {
         return [
             "isEnabled": PerfTrace.isEnabled,
             "thresholdMs": PerfTrace.thresholdMs,
-            "throttleWindow": PerfTrace.throttleWindow,
+            "throttleWindow": PerfTrace.throttleWindow
         ]
     }
 

@@ -99,7 +99,7 @@ final class ClaudeOAuthManager: NSObject, ObservableObject {
             URLQueryItem(name: "scope", value: scopes),
             URLQueryItem(name: "code_challenge", value: challenge),
             URLQueryItem(name: "code_challenge_method", value: "S256"),
-            URLQueryItem(name: "state", value: state),
+            URLQueryItem(name: "state", value: state)
         ]
         let authorizationURL = components.url!
         logger.info("Authorization URL: \(authorizationURL.absoluteString)")
@@ -271,7 +271,7 @@ final class ClaudeOAuthManager: NSObject, ObservableObject {
             kSecAttrService as String: legacyKeychainService,
             kSecAttrAccount as String: legacyKeychainAccount,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
@@ -283,7 +283,7 @@ final class ClaudeOAuthManager: NSObject, ObservableObject {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: legacyKeychainService,
-            kSecAttrAccount as String: legacyKeychainAccount,
+            kSecAttrAccount as String: legacyKeychainAccount
         ]
         SecItemDelete(query as CFDictionary)
     }
@@ -316,7 +316,7 @@ final class ClaudeOAuthManager: NSObject, ObservableObject {
             "code": code,
             "redirect_uri": redirectURI,
             "code_verifier": verifier,
-            "state": state,
+            "state": state
         ]
 
         return try await postTokenRequest(body: body, context: "Token exchange")
@@ -326,7 +326,7 @@ final class ClaudeOAuthManager: NSObject, ObservableObject {
         let body: [String: String] = [
             "grant_type": "refresh_token",
             "client_id": clientID,
-            "refresh_token": refreshToken,
+            "refresh_token": refreshToken
         ]
 
         var storage = try await postTokenRequest(body: body, context: "Token refresh")

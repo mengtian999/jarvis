@@ -168,11 +168,11 @@ final class EnvVarStore: ObservableObject {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: key,
-            kSecAttrSynchronizable as String: true,
+            kSecAttrSynchronizable as String: true
         ]
         let attrs: [String: Any] = [
             kSecValueData as String: Data(value.utf8),
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
 
         // Remove any legacy NON-synchronizable item for this key so reads
@@ -214,7 +214,7 @@ final class EnvVarStore: ObservableObject {
             kSecAttrAccount as String: key,
             kSecAttrSynchronizable as String: true,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         if SecItemCopyMatching(syncQuery as CFDictionary, &result) == errSecSuccess,
@@ -225,7 +225,7 @@ final class EnvVarStore: ObservableObject {
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: key,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
               let data = result as? Data else { return nil }
@@ -236,7 +236,7 @@ final class EnvVarStore: ObservableObject {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: key,
+            kSecAttrAccount as String: key
         ]
         SecItemDelete(query as CFDictionary)
         var syncQuery = query

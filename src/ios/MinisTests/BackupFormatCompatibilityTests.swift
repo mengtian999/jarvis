@@ -100,7 +100,7 @@ final class BackupFormatCompatibilityTests: XCTestCase {
             "categories": ["chats": ["entries": 3, "bytes": 99, "encrypted": false]],
             "limits": ["max_file_bytes": 1024, "skipped_files": 1, "skipped_bytes": 2048],
             "integrity": ["manifest.json": "deadbeef"],
-            "manifest_mac": "bWFj",
+            "manifest_mac": "bWFj"
         ]
         // `format` is the one key with real meaning when absent (it defaults to
         // current), but it must still decode — so every key is exercised.

@@ -177,7 +177,7 @@ enum DeviceIdentity {
             "iPad15,7": "iPad (11th generation)",
             "iPad15,8": "iPad (11th generation)",
             // Mac (Catalyst) — uname returns "arm64" or "x86_64"
-            "arm64": "Mac", "x86_64": "Mac",
+            "arm64": "Mac", "x86_64": "Mac"
         ]
         if let name = map[identifier] { return name }
         if identifier.hasPrefix("iPhone") { return "iPhone" }
@@ -230,7 +230,7 @@ enum DeviceIdentity {
             "Mac14,12": "Mac mini (M2)",
             "Mac14,13": "Mac mini (M2 Pro)",
             "Mac14,14": "Mac Pro (M2 Ultra)",
-            "Mac14,8": "Mac Studio (M2 Max)",
+            "Mac14,8": "Mac Studio (M2 Max)"
         ]
         return macMap[hwModel] ?? (hwModel.hasPrefix("Mac") ? "Mac" : nil)
     }

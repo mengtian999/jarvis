@@ -24,7 +24,7 @@ final class MinisFsRouter: @unchecked Sendable {
         (AIChatViewModel.minisOffloadsLinuxDir,    "offloads"),
         (AIChatViewModel.minisAttachmentsLinuxDir, "attachments"),
         (AIChatViewModel.minisWorkspaceLinuxDir,   "workspace"),
-        (AIChatViewModel.minisBrowserLinuxDir,     "browser"),
+        (AIChatViewModel.minisBrowserLinuxDir,     "browser")
     ]
 
     private let lock = NSLock()

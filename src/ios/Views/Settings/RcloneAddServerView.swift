@@ -529,7 +529,7 @@ struct RcloneAddServerView: View {
         do {
             _ = try await Task.detached(priority: .userInitiated) {
                 try RcloneBridge.rpc("operations/mkdir", [
-                    "fs": RcloneRemoteStore.fsSpec(for: r), "remote": path,
+                    "fs": RcloneRemoteStore.fsSpec(for: r), "remote": path
                 ])
             }.value
             // Land inside the new folder: creating one is nearly always the

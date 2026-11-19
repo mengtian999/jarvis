@@ -183,7 +183,7 @@ final class GeminiProvider: LLMProvider {
 
         var genConfig: [String: Any] = [
             "maxOutputTokens": maxTokens,
-            "temperature": 0.7,
+            "temperature": 0.7
         ]
         let thinkCfg = thinkingLevel.isEnabled ? elevatedThinkingConfig(level: thinkingLevel) : minimalThinkingConfig()
         if !thinkCfg.isEmpty { genConfig["thinkingConfig"] = thinkCfg }
@@ -252,7 +252,7 @@ final class GeminiProvider: LLMProvider {
 
         var genConfig: [String: Any] = [
             "maxOutputTokens": maxTokens,
-            "temperature": 0.7,
+            "temperature": 0.7
         ]
         let thinkCfg = self.minimalThinkingConfig()
         if !thinkCfg.isEmpty { genConfig["thinkingConfig"] = thinkCfg }
@@ -446,7 +446,7 @@ final class GeminiProvider: LLMProvider {
     private let cloudCodeClientMetadata: [String: String] = [
         "ideType": "GEMINI_CLI",
         "platform": "DARWIN_ARM64",
-        "pluginType": "GEMINI",
+        "pluginType": "GEMINI"
     ]
 
     /// Apply Gemini CLI-compatible headers for Cloud Code Assist requests.
@@ -474,7 +474,7 @@ final class GeminiProvider: LLMProvider {
             "model": model.id,
             "project": gcpProjectID!,
             "user_prompt_id": generatePromptId(),
-            "request": request,
+            "request": request
         ]
     }
 
@@ -885,7 +885,7 @@ enum GeminiConversation {
         [
             "name": name,
             "description": description,
-            "parameters": parameters,
+            "parameters": parameters
         ]
     }
 }

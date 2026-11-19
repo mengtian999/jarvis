@@ -55,7 +55,7 @@ enum DebugRPCProvider {
                 "customBaseURLSupported": customBaseSupported,
                 "appendV1SuffixConfigurable": customBaseSupported,
                 "defaultModality": type.defaultModality.rawValue,
-                "builtInModelIds": type.builtInModels.map(\.id),
+                "builtInModelIds": type.builtInModels.map(\.id)
             ]
         }
         return ["types": allTypes]
@@ -187,7 +187,7 @@ enum DebugRPCProvider {
         return [
             "instanceId": id,
             "deletedModelEntries": entriesBefore,
-            "affectedSessionBindings": bindingsBefore,
+            "affectedSessionBindings": bindingsBefore
         ]
     }
 
@@ -203,7 +203,7 @@ enum DebugRPCProvider {
         return [
             "instanceId": id,
             "count": entries.count,
-            "entries": entries.map(entryDict),
+            "entries": entries.map(entryDict)
         ]
     }
 
@@ -311,7 +311,7 @@ enum DebugRPCProvider {
         return [
             "entryId": entryId,
             "deleted": true,
-            "affectedSessionBindings": bindingsBefore,
+            "affectedSessionBindings": bindingsBefore
         ]
     }
 
@@ -379,7 +379,7 @@ enum DebugRPCProvider {
         }
         return [
             "entryId": entryId,
-            "inLoop": store.config.agentLoopModelEntryIds.contains(entryId),
+            "inLoop": store.config.agentLoopModelEntryIds.contains(entryId)
         ]
     }
 
@@ -392,7 +392,7 @@ enum DebugRPCProvider {
         return [
             "defaultGroupId": store.config.defaultPrimaryGroupId ?? NSNull(),
             "count": groups.count,
-            "groups": groups,
+            "groups": groups
         ]
     }
 
@@ -462,7 +462,7 @@ enum DebugRPCProvider {
             "groupId": id,
             "deleted": true,
             "wasDefault": wasDefault,
-            "affectedSessionBindings": affected,
+            "affectedSessionBindings": affected
         ]
     }
 
@@ -497,7 +497,7 @@ enum DebugRPCProvider {
         }
         return [
             "groupId": id,
-            "inLoop": store.config.agentLoopGroupIds.contains(id),
+            "inLoop": store.config.agentLoopGroupIds.contains(id)
         ]
     }
 
@@ -511,7 +511,7 @@ enum DebugRPCProvider {
             "isDefault": store.config.defaultPrimaryGroupId == group.id,
             "inAgentLoop": store.config.agentLoopGroupIds.contains(group.id),
             "defaultThinkingLevel": group.defaultThinkingLevel?.rawValue ?? NSNull(),
-            "contextLimitTokens": group.contextLimitTokens ?? NSNull(),
+            "contextLimitTokens": group.contextLimitTokens ?? NSNull()
         ]
         if includeMembers {
             let members: [[String: Any]] = group.memberEntryIds.compactMap { eid in
@@ -521,7 +521,7 @@ enum DebugRPCProvider {
                     "entryId": entry.id,
                     "modelId": entry.model.id,
                     "displayName": entry.model.displayName,
-                    "providerLabel": inst?.label ?? "",
+                    "providerLabel": inst?.label ?? ""
                 ]
             }
             dict["members"] = members
@@ -559,7 +559,7 @@ enum DebugRPCProvider {
             "updated": afterIds.intersection(beforeIds).count,
             "disappeared": beforeIds.subtracting(afterIds).count,
             "total": afterEntries.count,
-            "durationMs": Int(Date().timeIntervalSince(start) * 1000),
+            "durationMs": Int(Date().timeIntervalSince(start) * 1000)
         ]
     }
 
@@ -590,7 +590,7 @@ enum DebugRPCProvider {
             "platform": "ios",
             "instanceId": id,
             "instanceLabel": instance.label,
-            "config": payload,
+            "config": payload
         ]
     }
 
@@ -628,7 +628,7 @@ enum DebugRPCProvider {
             "instanceId": newInstance.id,
             "instanceLabel": newInstance.label,
             "modelEntryCount": store.entries(for: newInstance.id).count,
-            "success": true,
+            "success": true
         ]
     }
 
@@ -643,7 +643,7 @@ enum DebugRPCProvider {
             "isEnabled": instance.isEnabled,
             "appendV1Suffix": instance.appendV1Suffix,
             "createdAt": iso8601(instance.createdAt),
-            "modelEntryCount": store.entries(for: instance.id).count,
+            "modelEntryCount": store.entries(for: instance.id).count
         ]
         dict["customBaseURL"] = instance.customBaseURL ?? NSNull()
         let hasKey: Bool = {
@@ -677,9 +677,9 @@ enum DebugRPCProvider {
             "maxOutputTokens": model.maxOutputTokens ?? NSNull(),
             "overrides": [
                 "displayName": (entry.overrides.displayName as Any?) ?? NSNull(),
-                "maxOutputTokens": (entry.overrides.maxOutputTokens as Any?) ?? NSNull(),
+                "maxOutputTokens": (entry.overrides.maxOutputTokens as Any?) ?? NSNull()
             ] as [String: Any],
-            "userModifiedAt": entry.userModifiedAt.map(iso8601) ?? NSNull(),
+            "userModifiedAt": entry.userModifiedAt.map(iso8601) ?? NSNull()
         ]
     }
 
@@ -710,7 +710,7 @@ enum DebugRPCProvider {
         return [
             "instanceId": instanceId,
             "custom": rules.map(describeRule),
-            "builtIn": builtIns.map(describeRule),
+            "builtIn": builtIns.map(describeRule)
         ]
     }
 
@@ -808,7 +808,7 @@ enum DebugRPCProvider {
                 // means nothing overrode the matched rule.
                 "gates": trace.gateEvents.map {
                     ["id": $0.id, "evidence": $0.evidence.rawValue, "verdict": $0.verdict]
-                },
+                }
             ] as [String: Any],
             // [T-thinking-vision-diag] The inputs the decision turned on, echoed back so a
             // surprising verdict can be explained from one call instead of cross-checking
@@ -823,10 +823,10 @@ enum DebugRPCProvider {
                     "isOpenRouter": base.contains("openrouter.ai"),
                     "usesUnifiedReasoningEffort": base.contains("volces") || base.contains("ark.") || base.contains("api.venice.ai"),
                     "isMistral": base.contains("mistral.ai"),
-                    "isXAI": base.contains("api.x.ai") || base.contains("//x.ai"),
+                    "isXAI": base.contains("api.x.ai") || base.contains("//x.ai")
                 ] as [String: Any],
-                "userRuleCount": ThinkingRuleCache.shared.rules(for: instanceId).count,
-            ] as [String: Any],
+                "userRuleCount": ThinkingRuleCache.shared.rules(for: instanceId).count
+            ] as [String: Any]
         ]
     }
 
@@ -838,7 +838,7 @@ enum DebugRPCProvider {
             "scope": r.scope.persistedKind,
             "pattern": (r.scope.persistedPattern as Any?) ?? NSNull(),
             "wireFormat": r.wireFormat?.persistedJSON as Any? ?? NSNull(),
-            "editable": r.isEditable,
+            "editable": r.isEditable
         ]
     }
 }
@@ -916,7 +916,7 @@ enum DebugRPCChat {
                 "trailingHistoryRole": vm.agentHistory.last.map { "\($0.role)" } ?? "none",
                 "trailingHasToolUse": vm.agentHistory.last.map { entry in
                     entry.parts.contains { if case .toolUse = $0 { return true }; return false }
-                } ?? false,
+                } ?? false
             ]
         }
     }
@@ -944,7 +944,7 @@ enum DebugRPCChat {
                 "supportsImages": modality.contains(.imageInput),
                 "contextWindow": entry.model.contextWindow ?? NSNull(),
                 "maxOutputTokens": entry.model.maxOutputTokens ?? NSNull(),
-                "hidden": entry.isHidden,
+                "hidden": entry.isHidden
             ]
         }
         let groups = store.modelGroups.map { group -> [String: Any] in
@@ -954,7 +954,7 @@ enum DebugRPCChat {
                 "strategy": group.strategy.rawValue,
                 "isDefault": group.id == store.config.defaultPrimaryGroupId,
                 "memberEntryIds": group.memberEntryIds,
-                "defaultThinkingLevel": group.defaultThinkingLevel?.rawValue ?? NSNull(),
+                "defaultThinkingLevel": group.defaultThinkingLevel?.rawValue ?? NSNull()
             ]
         }
         return [
@@ -962,7 +962,7 @@ enum DebugRPCChat {
             "groupCount": groups.count,
             "entryCount": entryDicts.count,
             "groups": groups,
-            "entries": entryDicts,
+            "entries": entryDicts
         ]
     }
 
@@ -981,7 +981,7 @@ enum DebugRPCChat {
                 "source": session.source ?? NSNull(),
                 "lastMessagePreview": session.lastMessage ?? NSNull(),
                 "createdAt": iso8601(session.createdAt),
-                "updatedAt": iso8601(session.updatedAt),
+                "updatedAt": iso8601(session.updatedAt)
             ])
         }
         return ["count": dicts.count, "sessions": dicts]
@@ -1000,7 +1000,7 @@ enum DebugRPCChat {
             "modelName": modelDisplayName(forModelId: session.modelId),
             "source": session.source ?? NSNull(),
             "createdAt": iso8601(session.createdAt),
-            "updatedAt": iso8601(session.updatedAt),
+            "updatedAt": iso8601(session.updatedAt)
         ]
         if let cfg = ProviderConfigStore.shared.inferenceConfig(for: id) {
             dict["thinkingLevel"] = cfg.thinkingLevel.rawValue
@@ -1037,14 +1037,14 @@ enum DebugRPCChat {
                     attachments.append([
                         "name": ref.originalFileName ?? ref.relativePath,
                         "mime": ref.mimeType,
-                        "id": ref.id,
+                        "id": ref.id
                     ])
                 case .toolUse(let use):
                     if includeTools {
                         toolCalls.append([
                             "id": use.toolUseId,
                             "name": use.name,
-                            "input": use.input,
+                            "input": use.input
                         ])
                     }
                 case .toolResult(let result):
@@ -1053,7 +1053,7 @@ enum DebugRPCChat {
                             "id": result.toolUseId,
                             "result": String(result.output.prefix(2000)),
                             "success": result.success,
-                            "status": result.status ?? (result.success ? "success" : "failed"),
+                            "status": result.status ?? (result.success ? "success" : "failed")
                         ])
                     }
                 }
@@ -1062,7 +1062,7 @@ enum DebugRPCChat {
                 "id": raw.id,
                 "role": roleStr,
                 "createdAt": iso8601(raw.createdAt),
-                "content": content,
+                "content": content
             ]
             if !attachments.isEmpty {
                 dict["attachments"] = attachments
@@ -1166,7 +1166,7 @@ enum DebugRPCChat {
                 "prompt": prompt,
                 "responseText": responseText,
                 "userMessageId": userMessageId,
-                "tokenUsage": usage as Any,
+                "tokenUsage": usage as Any
             ]
         } else {
             return [
@@ -1176,7 +1176,7 @@ enum DebugRPCChat {
                 "status": "Running",
                 "prompt": prompt,
                 "responseText": NSNull(),
-                "userMessageId": userMessageId,
+                "userMessageId": userMessageId
             ]
         }
     }
@@ -1202,7 +1202,7 @@ enum DebugRPCChat {
             "modelName": modelDisplayName(forModelId: session.modelId),
             "isRunning": isRunning,
             "lastMessage": String(lastText.prefix(280)),
-            "updatedAt": iso8601(session.updatedAt),
+            "updatedAt": iso8601(session.updatedAt)
         ]
 
         if let lastAssistant {
@@ -1211,7 +1211,7 @@ enum DebugRPCChat {
                 var bd: [String: Any] = [
                     "index": i,
                     "kind": "\(block.kind)",
-                    "contentLen": block.content.count,
+                    "contentLen": block.content.count
                 ]
                 if block.kind == .text {
                     bd["head"] = String(block.content.prefix(40))
@@ -1255,7 +1255,7 @@ enum DebugRPCChat {
                             "contentLen": stripped.count,
                             "rawLen": s.count,
                             "head": String(stripped.prefix(40)),
-                            "tail": String(stripped.suffix(40)),
+                            "tail": String(stripped.suffix(40))
                         ])
                     }
                 } else if case .toolUse(let tu) = part {
@@ -1263,7 +1263,7 @@ enum DebugRPCChat {
                         "rawId": raw.id,
                         "sortOrder": raw.sortOrder,
                         "kind": "toolUse",
-                        "name": tu.name,
+                        "name": tu.name
                     ])
                 }
             }
@@ -1294,7 +1294,7 @@ enum DebugRPCChat {
                 vmAllBlocks.append([
                     "index": i, "kind": "\(block.kind)",
                     "contentLen": block.content.count,
-                    "id": block.id.uuidString.prefix(8),
+                    "id": block.id.uuidString.prefix(8)
                 ])
             }
         }
@@ -1306,7 +1306,7 @@ enum DebugRPCChat {
             "showThinking": showThinking,
             "vmMsgCount": vmMsgCount,
             "vmAssistantCount": vmAssistantCount,
-            "vmLastAssistantAllBlocks": vmAllBlocks,
+            "vmLastAssistantAllBlocks": vmAllBlocks
         ]
     }
 
@@ -1365,7 +1365,7 @@ enum DebugRPCChat {
                     "code": c.contains("```") ? 1 : 0,
                     "hA": hA, "hA2": hA2, "hB": hB, "d": hB - hA, "d2": hB - hA2,
                     "tA": (tA * 10).rounded() / 10, "tB": (tB * 10).rounded() / 10,
-                    "head": String(c.prefix(30)),
+                    "head": String(c.prefix(30))
                 ])
             }
         }
@@ -1435,7 +1435,7 @@ enum DebugRPCChat {
                 // is about could not be observed at all.
                 "desc": f.desc ?? NSNull(),
                 "memberCount": memberIds.count,
-                "lastActivity": activity[f.id].map { $0.timeIntervalSince1970 } ?? NSNull(),
+                "lastActivity": activity[f.id].map { $0.timeIntervalSince1970 } ?? NSNull()
             ])
         }
         return ["count": rows.count, "folders": rows]
@@ -1481,7 +1481,7 @@ enum DebugRPCChat {
                     "id": sess.id,
                     "title": sess.title ?? NSNull(),
                     "category": sess.category ?? NSNull(),
-                    "updatedAt": sess.updatedAt.timeIntervalSince1970,
+                    "updatedAt": sess.updatedAt.timeIntervalSince1970
                 ])
             }
         }
@@ -1496,7 +1496,7 @@ enum DebugRPCChat {
             "createdAt": folder.createdAt.timeIntervalSince1970,
             "updatedAt": folder.updatedAt.timeIntervalSince1970,
             "memberCount": members.count,
-            "members": members,
+            "members": members
         ]
     }
 
@@ -1607,7 +1607,7 @@ enum DebugRPCChat {
                 "summaryLength": m.summary.count,
                 "summaryPreview": String(m.summary.prefix(120)),
                 "compactedCount": m.compactedCount,
-                "createdAt": iso8601(m.createdAt),
+                "createdAt": iso8601(m.createdAt)
             ]
             if includeFullSummary {
                 dict["summary"] = m.summary
@@ -1617,7 +1617,7 @@ enum DebugRPCChat {
         return [
             "sessionId": sid,
             "count": dicts.count,
-            "markers": dicts,
+            "markers": dicts
         ]
     }
 
@@ -1690,9 +1690,9 @@ enum DebugRPCChat {
                     "version": m.version,
                     "anchorMessageId": m.lastCompactedMessageId ?? NSNull(),
                     "summaryLength": m.summary.count,
-                    "compactedCount": m.compactedCount,
+                    "compactedCount": m.compactedCount
                 ]
-            } ?? NSNull(),
+            } ?? NSNull()
         ]
     }
 
@@ -1758,7 +1758,7 @@ enum DebugRPCChat {
             "sortOrder": assignedSortOrder,
             "totalChars": markdown.count,
             "blockCount": blockCount,
-            "role": role.rawValue,
+            "role": role.rawValue
         ]
     }
 
@@ -1778,7 +1778,7 @@ enum DebugRPCChat {
             "ex", "ea", "commodo", "consequat", "duis", "aute", "irure",
             "reprehenderit", "voluptate", "velit", "esse", "cillum",
             "fugiat", "nulla", "pariatur", "excepteur", "sint", "occaecat",
-            "cupidatat", "proident", "culpa",
+            "cupidatat", "proident", "culpa"
         ]
         var rng = SeededLCG(seed: 0xC0FFEE_BEEF)
         func pickWord() -> String { vocab[Int(rng.next()) % vocab.count] }
@@ -1968,7 +1968,7 @@ enum DebugRPCChat {
             "beforeMarkerCount": beforeMarkers.count,
             "afterMarkerCount": afterMarkers.count,
             "removedMarkerId": beforeLatestId ?? NSNull(),
-            "newLatestMarkerId": afterMarkers.last?.id ?? NSNull(),
+            "newLatestMarkerId": afterMarkers.last?.id ?? NSNull()
         ]
     }
 
@@ -2007,7 +2007,7 @@ enum DebugRPCChat {
             "inputTokens": usage.inputTokens,
             "outputTokens": usage.outputTokens,
             "cacheReadTokens": usage.cacheReadTokens,
-            "cacheCreationTokens": usage.cacheCreationTokens,
+            "cacheCreationTokens": usage.cacheCreationTokens
         ]
     }
 

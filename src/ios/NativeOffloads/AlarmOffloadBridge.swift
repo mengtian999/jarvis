@@ -151,7 +151,7 @@ nonisolated struct MinisAlarmMetadata: AlarmMetadata {}
                     "id": alarm.id.uuidString,
                     "label": label,
                     "repeat": repeatMode,
-                    "type": "schedule",
+                    "type": "schedule"
                 ]
                 completion(result, nil)
             } catch {
@@ -203,7 +203,7 @@ nonisolated struct MinisAlarmMetadata: AlarmMetadata {}
                     "id": alarm.id.uuidString,
                     "duration_seconds": Int(duration),
                     "label": label,
-                    "type": "timer",
+                    "type": "timer"
                 ]
                 completion(result, nil)
             } catch {
@@ -230,7 +230,7 @@ nonisolated struct MinisAlarmMetadata: AlarmMetadata {}
                     pruneLabels(keeping: Set(alarms.map { $0.id.uuidString }))
                     for alarm in alarms {
                         var entry: [String: Any] = [
-                            "id": alarm.id.uuidString,
+                            "id": alarm.id.uuidString
                         ]
 
                         // Label (persisted at schedule time — AlarmKit doesn't
@@ -471,6 +471,26 @@ private final class AlarmLabelStore {
             sqlite3_bind_text(stmt, Int32(idx + 1), id, -1, Self.SQLITE_TRANSIENT)
         }
         sqlite3_step(stmt)
+    }
+}
+
+#else // !canImport(AlarmKit)
+
+/// Stub for SDKs without AlarmKit (Xcode 16 / iOS 18). Call sites stay
+/// behind `#available(iOS 26.0, *)` at runtime; this type must still exist
+/// at compile time so those branches type-check.
+@objc public class AlarmOffloadBridge: NSObject {
+    @objc public static func listAlarms(
+        completion: @escaping (NSArray?, Error?) -> Void
+    ) {
+        completion([] as NSArray, nil)
+    }
+
+    @objc public static func cancelAlarm(
+        withId alarmId: String,
+        completion: @escaping (Bool, Error?) -> Void
+    ) {
+        completion(false, nil)
     }
 }
 

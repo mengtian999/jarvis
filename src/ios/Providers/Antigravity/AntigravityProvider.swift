@@ -126,7 +126,7 @@ final class AntigravityProvider: LLMProvider {
 
         var genConfig: [String: Any] = [
             "maxOutputTokens": maxTokens,
-            "temperature": 0.7,
+            "temperature": 0.7
         ]
         let thinkCfg = thinkingLevel.isEnabled ? elevatedThinkingConfig(level: thinkingLevel) : minimalThinkingConfig()
         if !thinkCfg.isEmpty { genConfig["thinkingConfig"] = thinkCfg }
@@ -189,7 +189,7 @@ final class AntigravityProvider: LLMProvider {
 
         var genConfig: [String: Any] = [
             "maxOutputTokens": maxTokens,
-            "temperature": 0.7,
+            "temperature": 0.7
         ]
         let thinkCfg = minimalThinkingConfig()
         if !thinkCfg.isEmpty { genConfig["thinkingConfig"] = thinkCfg }
@@ -317,7 +317,7 @@ final class AntigravityProvider: LLMProvider {
             "requestType": "agent",
             "project": projectID ?? "",
             "requestId": "agent-\(UUID().uuidString)",
-            "request": request,
+            "request": request
         ]
     }
 

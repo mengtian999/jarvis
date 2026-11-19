@@ -274,7 +274,7 @@ enum ProviderMigration {
             kSecAttrService as String: service,
             kSecAttrAccount as String: "api-key",
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
@@ -305,7 +305,7 @@ enum ProviderMigration {
             kSecAttrService as String: "com.openminis.app.active-provider",
             kSecAttrAccount as String: "auth-mode",
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,

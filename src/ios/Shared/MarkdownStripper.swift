@@ -31,7 +31,7 @@ enum MarkdownStripper {
             ("\\*([^*]+)\\*",        "$1"),
             ("(?<!\\w)_([^_]+)_(?!\\w)", "$1"),
             ("~~([^~]+)~~",          "$1"),
-            ("`([^`]*)`",            "$1"),
+            ("`([^`]*)`",            "$1")
         ]
         for (pattern, replacement) in inlinePatterns {
             s = s.replacingOccurrences(of: pattern, with: replacement, options: .regularExpression)

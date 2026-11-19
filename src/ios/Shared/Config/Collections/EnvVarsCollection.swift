@@ -37,7 +37,7 @@ struct EnvVarsCollection: ConfigCollection {
                 displayName: "Value",
                 description: "Hidden — manage via Settings → Environment Variables.",
                 reason: "Env var values are stored in Keychain and never exposed to minis-config"
-            ),
+            )
         ]
     }
 

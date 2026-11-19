@@ -145,7 +145,7 @@ final class KimiOAuthManager: ObservableObject {
             let (json, httpOK) = try await postToken(params: [
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                 "device_code": deviceCode,
-                "client_id": clientID,
+                "client_id": clientID
             ])
             switch KimiDeviceFlow.classifyPoll(json: json, httpOK: httpOK) {
             case let .success(access, refresh, exp):
@@ -221,7 +221,7 @@ final class KimiOAuthManager: ObservableObject {
         let (json, httpOK) = try await postToken(params: [
             "grant_type": "refresh_token",
             "refresh_token": refreshToken,
-            "client_id": clientID,
+            "client_id": clientID
         ])
         guard httpOK, let access = json["access_token"] as? String else {
             let err = (json["error"] as? String) ?? "unknown"

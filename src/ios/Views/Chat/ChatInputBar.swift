@@ -1448,7 +1448,7 @@ struct PastableTextView: UIViewRepresentable {
         tv.addSubview(placeholderLabel)
         NSLayoutConstraint.activate([
             placeholderLabel.leadingAnchor.constraint(equalTo: tv.leadingAnchor),
-            placeholderLabel.topAnchor.constraint(equalTo: tv.topAnchor),
+            placeholderLabel.topAnchor.constraint(equalTo: tv.topAnchor)
         ])
         placeholderLabel.isHidden = !text.isEmpty
 

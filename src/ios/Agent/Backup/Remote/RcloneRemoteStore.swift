@@ -154,7 +154,7 @@ enum RcloneRemoteStore {
         var query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: account,
+            kSecAttrAccount as String: account
         ]
         SecItemDelete(query as CFDictionary)
         guard !secret.isEmpty else { return }
@@ -175,7 +175,7 @@ enum RcloneRemoteStore {
             kSecAttrService as String: keychainService,
             kSecAttrAccount as String: name,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var out: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &out) == errSecSuccess,
@@ -197,7 +197,7 @@ enum RcloneRemoteStore {
         SecItemDelete([
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: keychainService,
-            kSecAttrAccount as String: name,
+            kSecAttrAccount as String: name
         ] as CFDictionary)
     }
 
@@ -367,7 +367,7 @@ enum RcloneRemoteStore {
                     "type": r.backend,
                     "parameters": params,
                     // Don't let rclone try to run an interactive OAuth flow.
-                    "opt": ["nonInteractive": true],
+                    "opt": ["nonInteractive": true]
                 ])
             } catch {
                 logger.error("[Rclone] config/create failed for '\(r.name)': \(error.localizedDescription)")

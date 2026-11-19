@@ -40,7 +40,7 @@ struct GroupsCollection: ConfigCollection {
             // `groups` summary's key. The earlier `members` alias was
             // dropped to avoid showing two identical fields in
             // topic-help.
-            entriesField(for: id),
+            entriesField(for: id)
         ]
     }
 

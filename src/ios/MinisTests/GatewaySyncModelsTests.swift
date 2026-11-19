@@ -11,8 +11,8 @@ final class GatewaySyncModelsTests: XCTestCase {
             "data": [
                 ["id": "auto", "kind": "chat", "display_name": "Jarvis (Default)", "is_default": true],
                 ["id": "image", "kind": "image", "display_name": "Images"],
-                ["id": "video", "kind": "video", "display_name": "Videos"],
-            ],
+                ["id": "video", "kind": "video", "display_name": "Videos"]
+            ]
         ]
 
         XCTAssertEqual(GatewaySync.pickModels(json, kind: "chat").map(\.id), ["auto"])
@@ -23,7 +23,7 @@ final class GatewaySyncModelsTests: XCTestCase {
 
     func testMissingKindTreatedAsChat() {
         let json: [String: Any] = [
-            "data": [["id": "auto", "display_name": "A"]],
+            "data": [["id": "auto", "display_name": "A"]]
         ]
 
         XCTAssertEqual(GatewaySync.pickModels(json, kind: "chat").map(\.id), ["auto"])
@@ -36,8 +36,8 @@ final class GatewaySyncModelsTests: XCTestCase {
             "data": [
                 ["id": "auto", "kind": "chat"],
                 ["id": "auto", "kind": "chat"],
-                ["id": "office", "kind": "chat"],
-            ],
+                ["id": "office", "kind": "chat"]
+            ]
         ]
 
         XCTAssertEqual(GatewaySync.pickModels(json, kind: "chat").map(\.id), ["auto", "office"])
@@ -46,7 +46,7 @@ final class GatewaySyncModelsTests: XCTestCase {
     func testIgnoresLegacyPoolsKey() {
         let json: [String: Any] = [
             "pools": ["cn": ["chat": [["id": "legacy-auto"]]]],
-            "data": [["id": "office", "kind": "chat"]],
+            "data": [["id": "office", "kind": "chat"]]
         ]
 
         // 只读 data[]，不再读 pools
@@ -57,8 +57,8 @@ final class GatewaySyncModelsTests: XCTestCase {
         let json: [String: Any] = [
             "data": [
                 ["id": "auto", "kind": "chat", "context_window": 200000, "max_output_tokens": 32000],
-                ["id": "office", "kind": "chat"],
-            ],
+                ["id": "office", "kind": "chat"]
+            ]
         ]
 
         let tiers = GatewaySync.pickModels(json, kind: "chat")
@@ -76,8 +76,8 @@ final class GatewaySyncModelsTests: XCTestCase {
         let json: [String: Any] = [
             "data": [
                 ["id": "auto", "kind": "chat", "display_name": "贾维斯 (自动)", "display_name_en": "Jarvis (Auto)"],
-                ["id": "office", "kind": "chat", "display_name": "办公友好", "display_name_en": "Office friendly"],
-            ],
+                ["id": "office", "kind": "chat", "display_name": "办公友好", "display_name_en": "Office friendly"]
+            ]
         ]
 
         let tiers = GatewaySync.pickModels(json, kind: "chat")
@@ -88,7 +88,7 @@ final class GatewaySyncModelsTests: XCTestCase {
 
     func testFallsBackEnglishNameToChineseWhenGatewayOmitsIt() {
         let json: [String: Any] = [
-            "data": [["id": "auto", "kind": "chat", "display_name": "贾维斯 (自动)"]],
+            "data": [["id": "auto", "kind": "chat", "display_name": "贾维斯 (自动)"]]
         ]
 
         let tier = GatewaySync.pickModels(json, kind: "chat").first

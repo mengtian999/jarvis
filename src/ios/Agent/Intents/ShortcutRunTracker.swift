@@ -355,7 +355,7 @@ enum ShortcutRunTracker {
         content.categoryIdentifier = notificationCategoryId
         content.userInfo = [
             "sessionId": record.sessionId,
-            "shortcutDiagCategory": category.rawValue,
+            "shortcutDiagCategory": category.rawValue
         ]
         let request = UNNotificationRequest(
             identifier: "shortcutDiag-orphan-\(record.id)",

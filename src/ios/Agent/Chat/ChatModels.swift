@@ -267,7 +267,7 @@ final class AssistantBlock: Identifiable, ObservableObject {
     static let thinkingFlushTiers: [(maxLength: Int, interval: TimeInterval)] = [
         (1_000, 0.3),
         (3_000, 0.6),
-        (Int.max, 1.0),
+        (Int.max, 1.0)
     ]
 
     /// Flush interval for a thinking buffer of `length` chars (see tier table).

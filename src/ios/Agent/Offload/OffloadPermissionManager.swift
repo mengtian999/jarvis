@@ -78,7 +78,7 @@ struct PermissionRequest: Identifiable {
     /// enough for the permission-row preview where we just want to suppress
     /// the long tail past `&&`, redirects, etc. that confused users.
     private static let shellSeparators: Set<String> = [
-        "&&", "||", ";", "|", ">", ">>", "<", "<<", "&",
+        "&&", "||", ";", "|", ">", ">>", "<", "<<", "&"
     ]
 
     private static func firstCommandTokens(_ command: String) -> [String] {
@@ -143,7 +143,7 @@ final class OffloadPermissionManager: ObservableObject {
         .init(name: "apple-maps", displayLabel: "Maps", description: "", category: .system, showInSettings: false),
         .init(name: "apple-weather", displayLabel: "Weather", description: "", category: .system, showInSettings: false),
         .init(name: "apple-nlp", displayLabel: "NLP", description: "", category: .system, showInSettings: false),
-        .init(name: "apple-vision", displayLabel: "Vision", description: "", category: .system, showInSettings: false),
+        .init(name: "apple-vision", displayLabel: "Vision", description: "", category: .system, showInSettings: false)
     ]
 
     @Published var pendingRequest: PermissionRequest?

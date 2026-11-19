@@ -1128,7 +1128,7 @@ struct InlineVoiceInputView: View {
                 let tips = [
                     AppLocalized("Double-tap text to edit", comment: "Voice tip: edit transcript"),
                     AppLocalized("Tap mic to continue", comment: "Voice tip: resume dictation"),
-                    AppLocalized("Hold ⌫ to clear all", comment: "Voice tip: long press delete to clear"),
+                    AppLocalized("Hold ⌫ to clear all", comment: "Voice tip: long press delete to clear")
                 ]
                 return tips[viewModel.resultTipIndex % tips.count]
             }
@@ -1138,7 +1138,7 @@ struct InlineVoiceInputView: View {
                 AppLocalized("Tap to transcribe", comment: "Voice tip: tap mic to stop and transcribe"),
                 AppLocalized("Listening…", comment: "Voice tip: steady recording"),
                 AppLocalized("Long press to paste", comment: "Voice tip: paste from clipboard"),
-                AppLocalized("Listening…", comment: "Voice tip: steady recording"),
+                AppLocalized("Listening…", comment: "Voice tip: steady recording")
             ]
             return tips[viewModel.recordingTipIndex % tips.count]
         case .processing: return AppLocalized("Recognizing…", comment: "Inline voice processing")
@@ -1146,7 +1146,7 @@ struct InlineVoiceInputView: View {
             let tips = [
                 AppLocalized("Double-tap text to edit", comment: "Voice tip: edit transcript"),
                 AppLocalized("Tap mic to continue", comment: "Voice tip: resume dictation"),
-                AppLocalized("Hold ⌫ to clear all", comment: "Voice tip: long press delete to clear"),
+                AppLocalized("Hold ⌫ to clear all", comment: "Voice tip: long press delete to clear")
             ]
             return tips[viewModel.resultTipIndex % tips.count]
         }

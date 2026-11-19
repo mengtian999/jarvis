@@ -183,7 +183,7 @@ final class CorrectionAdmissionTests: XCTestCase {
         ]
         let shouldReject: [(String, String)] = [
             ("挂载", "规则"), ("secure", "SSH key"),
-            ("最后是", "是最后"),
+            ("最后是", "是最后")
         ]
         for (a, b) in shouldCollect {
             XCTAssertTrue(judge(a, b, sentence: 40).isAdmitted,

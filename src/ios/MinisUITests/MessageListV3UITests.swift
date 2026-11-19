@@ -457,7 +457,7 @@ final class MessageListV3UITests: XCTestCase {
             ("fast", .fast),
             ("veryFast", XCUIGestureVelocity(3500)),
             ("extreme", XCUIGestureVelocity(5000)),
-            ("max", XCUIGestureVelocity(8000)),
+            ("max", XCUIGestureVelocity(8000))
         ]
 
         for (label, vel) in speeds {
@@ -503,7 +503,7 @@ final class MessageListV3UITests: XCTestCase {
             ("fast", .fast),
             ("veryFast", XCUIGestureVelocity(3500)),
             ("extreme", XCUIGestureVelocity(5000)),
-            ("max", XCUIGestureVelocity(8000)),
+            ("max", XCUIGestureVelocity(8000))
         ]
 
         // Fling down at increasing speeds — full range swipe
@@ -580,7 +580,7 @@ final class MessageListV3UITests: XCTestCase {
             ("fast", .fast),
             ("veryFast", XCUIGestureVelocity(3500)),
             ("extreme", XCUIGestureVelocity(5000)),
-            ("max", XCUIGestureVelocity(8000)),
+            ("max", XCUIGestureVelocity(8000))
         ]
 
         for (label, vel) in streamingSpeeds {
@@ -628,7 +628,7 @@ final class MessageListV3UITests: XCTestCase {
             ("fast", .fast),
             ("veryFast", XCUIGestureVelocity(3500)),
             ("extreme", XCUIGestureVelocity(5000)),
-            ("max", XCUIGestureVelocity(8000)),
+            ("max", XCUIGestureVelocity(8000))
         ]
 
         for (label, vel) in speeds {
@@ -673,7 +673,7 @@ final class MessageListV3UITests: XCTestCase {
             ("fast", .fast),
             ("veryFast", XCUIGestureVelocity(3500)),
             ("extreme", XCUIGestureVelocity(5000)),
-            ("max", XCUIGestureVelocity(8000)),
+            ("max", XCUIGestureVelocity(8000))
         ]
 
         for (label, vel) in speeds {
@@ -722,7 +722,7 @@ final class MessageListV3UITests: XCTestCase {
         let streamingSpeeds: [(String, XCUIGestureVelocity)] = [
             ("fast", .fast),
             ("extreme", XCUIGestureVelocity(5000)),
-            ("max", XCUIGestureVelocity(8000)),
+            ("max", XCUIGestureVelocity(8000))
         ]
 
         for (label, vel) in streamingSpeeds {

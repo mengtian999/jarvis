@@ -13,7 +13,11 @@
 #include "kernel/native_offload.h"
 #include <unistd.h>
 
+#if __has_include("Jarvis-Swift.h")
 #import "Jarvis-Swift.h"
+#elif __has_include("Minis-Swift.h")
+#import "Minis-Swift.h"
+#endif
 
 static NSString *const TOOL_NAME = @"apple-player";
 

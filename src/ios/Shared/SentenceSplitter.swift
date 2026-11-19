@@ -15,7 +15,7 @@ enum SentenceSplitter {
     /// terminators (design §6 lists 。！？；.!?; ).
     static let terminators: Set<Character> = [
         "。", "！", "？", "；", "…",
-        ".", "!", "?", ";",
+        ".", "!", "?", ";"
     ]
 
     static func isTerminator(_ c: Character) -> Bool { terminators.contains(c) }

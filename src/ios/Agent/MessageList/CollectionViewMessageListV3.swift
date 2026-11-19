@@ -1521,9 +1521,11 @@ extension CollectionViewMessageListV3 {
             // [T-role-forward] Available on user + assistant rows (any
             // forwardable content); suppressed on compacted/system rows and
             // while the loop runs (rows keep mutating).
-            bridge.onForward = (message.isCompactedHistory || message.role == .compactDivider || message.role == .systemInfo || vm.isProcessing)
+            let forwardHandler: (() -> Void)? =
+                (message.isCompactedHistory || message.role == .compactDivider || message.role == .systemInfo || vm.isProcessing)
                 ? nil
                 : { forward?(message.id) }
+            bridge.onForward = forwardHandler
 
             bridge.onShowCompactSummary = { [weak self] summary in
                 guard let self else { return }

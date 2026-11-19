@@ -352,7 +352,7 @@ enum VisionGroupResolver {
             "image is blank", "image is empty", "content area is blank",
             "see any image", "receive any image", "receive an image",
             "wasn't attached", "was not attached", "wasn't provided", "was not provided",
-            "didn't receive", "did not receive",
+            "didn't receive", "did not receive"
         ].contains(where: { t.contains($0) })
         guard saysNoImage else { return false }
 
@@ -368,7 +368,7 @@ enum VisionGroupResolver {
             "there is no image", "there's no image", "no image appears",
             "no image was provided", "no image was attached",
             "re-attach", "reattach", "re-upload", "reupload",
-            "try attaching", "please provide", "please upload", "please attach",
+            "try attaching", "please provide", "please upload", "please attach"
         ].contains(where: { t.contains($0) })
         return firstPersonOrRequest
     }
@@ -440,7 +440,7 @@ enum VisionGroupResolver {
         let work = Task { () throws -> String in
             let messages = [AgentMessage(role: .user, parts: [
                 .text(instruction),
-                .imageData(data: imageData, mimeType: mimeType, linuxPath: nil),
+                .imageData(data: imageData, mimeType: mimeType, linuxPath: nil)
             ])]
             // thinkingLevel .off for the same reason title generation uses it:
             // some models otherwise return an empty body with a reasoning-only

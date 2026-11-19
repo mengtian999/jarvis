@@ -29,7 +29,7 @@ final class GeminiOAuthManager: NSObject, ObservableObject {
     private let setupClientMetadata: [String: String] = [
         "ideType": "GEMINI_CLI",
         "platform": "DARWIN_ARM64",
-        "pluginType": "GEMINI",
+        "pluginType": "GEMINI"
     ]
 
     // MARK: - Published State
@@ -101,7 +101,7 @@ final class GeminiOAuthManager: NSObject, ObservableObject {
             URLQueryItem(name: "access_type", value: "offline"),
             URLQueryItem(name: "prompt", value: "consent"),
             URLQueryItem(name: "code_challenge", value: pkce.challenge),
-            URLQueryItem(name: "code_challenge_method", value: "S256"),
+            URLQueryItem(name: "code_challenge_method", value: "S256")
         ]
         let authorizationURL = components.url!
         logger.info("Authorization URL: \(authorizationURL.absoluteString)")
@@ -226,7 +226,7 @@ final class GeminiOAuthManager: NSObject, ObservableObject {
             kSecAttrService as String: legacyKeychainService,
             kSecAttrAccount as String: legacyKeychainAccount,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
@@ -238,7 +238,7 @@ final class GeminiOAuthManager: NSObject, ObservableObject {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: legacyKeychainService,
-            kSecAttrAccount as String: legacyKeychainAccount,
+            kSecAttrAccount as String: legacyKeychainAccount
         ]
         SecItemDelete(query as CFDictionary)
     }
@@ -269,7 +269,7 @@ final class GeminiOAuthManager: NSObject, ObservableObject {
             "client_secret": clientSecret,
             "code": code,
             "redirect_uri": redirectURI,
-            "code_verifier": codeVerifier,
+            "code_verifier": codeVerifier
         ]
 
         return try await postTokenRequest(body: body, context: "Token exchange")
@@ -280,7 +280,7 @@ final class GeminiOAuthManager: NSObject, ObservableObject {
             "grant_type": "refresh_token",
             "client_id": clientID,
             "client_secret": clientSecret,
-            "refresh_token": refreshToken,
+            "refresh_token": refreshToken
         ]
 
         var storage = try await postTokenRequest(body: body, context: "Token refresh")
@@ -443,7 +443,7 @@ final class GeminiOAuthManager: NSObject, ObservableObject {
         // Match Gemini CLI: FREE tier onboarding with metadata
         let onboardBody: [String: Any] = [
             "tierId": "FREE",
-            "metadata": setupClientMetadata,
+            "metadata": setupClientMetadata
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: onboardBody)
 

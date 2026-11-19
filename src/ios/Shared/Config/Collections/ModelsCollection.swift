@@ -44,7 +44,7 @@ struct ModelsCollection: ConfigCollection {
             contextWindowField(for: id),
             contextWindowOverrideField(for: id),
             supportsToolsField(for: id),
-            supportsVisionField(for: id),
+            supportsVisionField(for: id)
         ]
     }
 
@@ -248,7 +248,7 @@ struct ModelsCollection: ConfigCollection {
         ("video_input",  .videoInput),
         ("image_output", .imageOutput),
         ("audio_output", .audioOutput),
-        ("video_output", .videoOutput),
+        ("video_output", .videoOutput)
     ]
 
     private static func encodeModality(_ m: ModelModality) -> [String] {

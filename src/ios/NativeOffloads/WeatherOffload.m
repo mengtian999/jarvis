@@ -16,7 +16,11 @@
 #import <Foundation/Foundation.h>
 #import <CoreLocation/CoreLocation.h>
 #import "NativeOffloadUtils.h"
+#if __has_include("Jarvis-Swift.h")
 #import "Jarvis-Swift.h"
+#elif __has_include("Minis-Swift.h")
+#import "Minis-Swift.h"
+#endif
 #include "kernel/native_offload.h"
 #include <unistd.h>
 

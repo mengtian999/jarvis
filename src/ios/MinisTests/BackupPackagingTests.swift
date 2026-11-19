@@ -201,7 +201,7 @@ final class BackupPackagingTests: XCTestCase {
         let zip = try makeZip(files: [
             "manifest.json": Data(#"{"format":"jarvisbak/1"}"#.utf8),
             "data/sessions.jsonl": Data("{\"id\":1}\n{\"id\":2}\n".utf8),
-            "blobs/aa/hash": Data(repeating: 7, count: 5000),
+            "blobs/aa/hash": Data(repeating: 7, count: 5000)
         ])
         let names = Set(try entries(of: zip).map(\.name))
         for expected in ["manifest.json", "data/sessions.jsonl", "blobs/aa/hash"] {
@@ -215,7 +215,7 @@ final class BackupPackagingTests: XCTestCase {
         let payloads: [String: Data] = [
             "manifest.json": Data(#"{"format":"jarvisbak/1","device_name":"x"}"#.utf8),
             "data/a.jsonl": Data((0..<200).map { "line \($0)\n" }.joined().utf8),
-            "blobs/bb/big": Data(repeating: 0x33, count: 60_000),
+            "blobs/bb/big": Data(repeating: 0x33, count: 60_000)
         ]
         let zip = try makeZip(files: payloads)
         let out = dir.appendingPathComponent("extracted", isDirectory: true)

@@ -74,7 +74,7 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "21m00Tcm4TlvDq8ikWAM", displayName: "Rachel (EN, F)", provider: "elevenlabs", modalityOverride: .audioOutput),
                 LLMModel(id: "pNInz6obpgDQGcFmaJgB", displayName: "Adam (EN, M)", provider: "elevenlabs", modalityOverride: .audioOutput),
                 LLMModel(id: "EXAVITQu4vr4xnSDxMaL", displayName: "Bella (EN, F)", provider: "elevenlabs", modalityOverride: .audioOutput),
-                LLMModel(id: "ErXwobaYiN019PkySvjV", displayName: "Antoni (EN, M)", provider: "elevenlabs", modalityOverride: .audioOutput),
+                LLMModel(id: "ErXwobaYiN019PkySvjV", displayName: "Antoni (EN, M)", provider: "elevenlabs", modalityOverride: .audioOutput)
             ],
             symbol: "waveform",
             tint: .black,
@@ -93,7 +93,7 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "nova-3", displayName: "Nova-3 (ASR)", provider: "deepgram", modalityOverride: .audioInput),
                 LLMModel(id: "aura-asteria-en", displayName: "Aura Asteria (TTS, EN F)", provider: "deepgram", modalityOverride: .audioOutput),
                 LLMModel(id: "aura-luna-en", displayName: "Aura Luna (TTS, EN F)", provider: "deepgram", modalityOverride: .audioOutput),
-                LLMModel(id: "aura-orion-en", displayName: "Aura Orion (TTS, EN M)", provider: "deepgram", modalityOverride: .audioOutput),
+                LLMModel(id: "aura-orion-en", displayName: "Aura Orion (TTS, EN M)", provider: "deepgram", modalityOverride: .audioOutput)
             ],
             symbol: "mic.and.signal.meter",
             tint: .green,
@@ -152,7 +152,7 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "ja-JP-ShioriNeural", displayName: "Shiori (JA, F)", provider: "azure-tts", modalityOverride: .audioOutput),
                 // Korean
                 LLMModel(id: "ko-KR-SunHiNeural", displayName: "SunHi (KO, F)", provider: "azure-tts", modalityOverride: .audioOutput),
-                LLMModel(id: "ko-KR-InJoonNeural", displayName: "InJoon (KO, M)", provider: "azure-tts", modalityOverride: .audioOutput),
+                LLMModel(id: "ko-KR-InJoonNeural", displayName: "InJoon (KO, M)", provider: "azure-tts", modalityOverride: .audioOutput)
             ],
             symbol: "cloud",
             tint: .blue,
@@ -170,7 +170,7 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "speech-2.8-hd", displayName: "MiniMax Speech 2.8 HD",
                          provider: "minimax", modalityOverride: .audioOutput),
                 LLMModel(id: "speech-2.8-turbo", displayName: "MiniMax Speech 2.8 Turbo",
-                         provider: "minimax", modalityOverride: .audioOutput),
+                         provider: "minimax", modalityOverride: .audioOutput)
             ],
             symbol: "waveform",
             tint: .pink,
@@ -188,7 +188,7 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "paraformer-realtime-v2", displayName: "Paraformer Realtime v2",
                          provider: "alibaba", modalityOverride: .audioInput),
                 LLMModel(id: "cosyvoice-v2", displayName: "CosyVoice v2",
-                         provider: "alibaba", modalityOverride: .audioOutput),
+                         provider: "alibaba", modalityOverride: .audioOutput)
             ],
             symbol: "mic.and.signal.meter",
             tint: .orange,
@@ -224,7 +224,7 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "zh_female_gaolengyujie_moon_bigtts", displayName: "高冷御姐 (御姐, 女)",
                          provider: "doubao", modalityOverride: .audioOutput),
                 LLMModel(id: "multi_female_shuangkuaisisi_moon_bigtts", displayName: "爽快思思 (多语, 女)",
-                         provider: "doubao", modalityOverride: .audioOutput),
+                         provider: "doubao", modalityOverride: .audioOutput)
             ],
             symbol: "mic.and.signal.meter",
             tint: .blue,
@@ -244,7 +244,7 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "xiaoyan", displayName: "讯飞·晓燕 (TTS, 中文女)",
                          provider: "xunfei", modalityOverride: .audioOutput),
                 LLMModel(id: "aisjiuxu", displayName: "讯飞·许久 (TTS, 中文男)",
-                         provider: "xunfei", modalityOverride: .audioOutput),
+                         provider: "xunfei", modalityOverride: .audioOutput)
             ],
             symbol: "mic",
             tint: .indigo,
@@ -278,11 +278,11 @@ struct VoiceProviderTemplate: Identifiable {
                 LLMModel(id: "Milo", displayName: "Milo (EN, M)",
                          provider: "mimo", modalityOverride: .audioOutput),
                 LLMModel(id: "Dean", displayName: "Dean (EN, M)",
-                         provider: "mimo", modalityOverride: .audioOutput),
+                         provider: "mimo", modalityOverride: .audioOutput)
             ],
             symbol: "mic.and.signal.meter",
             tint: .orange,
             note: nil
-        ),
+        )
     ]
 }

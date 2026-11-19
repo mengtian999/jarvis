@@ -15,7 +15,7 @@ final class ToolPreflightTests: XCTestCase {
                 parameters: [
                     "path": AgentToolParam(type: .string, description: "File path"),
                     "old_string": AgentToolParam(type: .string, description: "Text to replace"),
-                    "new_string": AgentToolParam(type: .string, description: "Replacement. Use empty string to delete old_string."),
+                    "new_string": AgentToolParam(type: .string, description: "Replacement. Use empty string to delete old_string.")
                 ],
                 required: ["path", "old_string", "new_string"]
             ),
@@ -23,10 +23,10 @@ final class ToolPreflightTests: XCTestCase {
                 name: "shell_execute",
                 description: "Run a shell command",
                 parameters: [
-                    "command": AgentToolParam(type: .string, description: "Command"),
+                    "command": AgentToolParam(type: .string, description: "Command")
                 ],
                 required: ["command"]
-            ),
+            )
         ]
     }
 
@@ -40,7 +40,7 @@ final class ToolPreflightTests: XCTestCase {
         let err = validate("file_edit", [
             "path": "/var/jarvis/workspace/a.txt",
             "old_string": "delete me",
-            "new_string": "",
+            "new_string": ""
         ])
         XCTAssertNil(err, "empty new_string is the documented delete form and must pass preflight")
     }
@@ -48,7 +48,7 @@ final class ToolPreflightTests: XCTestCase {
     func testFileEdit_missingNewString_isBlocked() {
         let err = validate("file_edit", [
             "path": "/var/jarvis/workspace/a.txt",
-            "old_string": "delete me",
+            "old_string": "delete me"
         ])
         XCTAssertNotNil(err)
         XCTAssertTrue(err?.contains("new_string") == true)
@@ -58,7 +58,7 @@ final class ToolPreflightTests: XCTestCase {
         let err = validate("file_edit", [
             "path": "/var/jarvis/workspace/a.txt",
             "old_string": "delete me",
-            "new_string": NSNull(),
+            "new_string": NSNull()
         ])
         XCTAssertNotNil(err, "JSON null is a missing value, not an empty string")
         XCTAssertTrue(err?.contains("new_string") == true)
@@ -69,7 +69,7 @@ final class ToolPreflightTests: XCTestCase {
         let err = validate("file_edit", [
             "path": "/var/jarvis/workspace/a.txt",
             "old_string": "",
-            "new_string": "x",
+            "new_string": "x"
         ])
         XCTAssertNotNil(err)
         XCTAssertTrue(err?.contains("old_string") == true)
@@ -105,7 +105,7 @@ final class ToolPreflightTests: XCTestCase {
         XCTAssertNil(validate("file_edit", [
             "path": "/var/jarvis/workspace/a.txt",
             "old_string": "  ",
-            "new_string": "\n",
+            "new_string": "\n"
         ]))
     }
 }

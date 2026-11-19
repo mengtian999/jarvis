@@ -363,13 +363,13 @@ final class DebugServer: @unchecked Sendable {
             "clients": [
                 "python": decodeSkillB64(DebugSkillGenerated.clientPythonB64),
                 "node": decodeSkillB64(DebugSkillGenerated.clientNodeB64),
-                "bash": decodeSkillB64(DebugSkillGenerated.clientBashB64),
+                "bash": decodeSkillB64(DebugSkillGenerated.clientBashB64)
             ],
             "client_paths": [
                 "python": "/skill/examples/python",
                 "node": "/skill/examples/node",
-                "bash": "/skill/examples/bash",
-            ],
+                "bash": "/skill/examples/bash"
+            ]
         ]
         let data = (try? JSONSerialization.data(withJSONObject: payload, options: .withoutEscapingSlashes)) ?? Data("{}".utf8)
         sendResponse(fd, status: "200 OK", body: String(data: data, encoding: .utf8) ?? "{}")

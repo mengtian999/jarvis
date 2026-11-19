@@ -46,7 +46,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                     "session_id": m.id,
                     "started_at": dateFmt.string(from: m.startedAt),
                     "last_active": dateFmt.string(from: m.lastActive),
-                    "message_count": m.messageCount,
+                    "message_count": m.messageCount
                 ]
                 if let t = m.title { dict["title"] = t }
                 if let p = m.preview { dict["preview"] = p }
@@ -59,7 +59,7 @@ private let logger = AppLogger(category: "SessionsOffload")
 
         return [
             "count": result.count,
-            "sessions": result,
+            "sessions": result
         ] as NSDictionary
     }
 
@@ -99,7 +99,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                     "message_id": m.messageId,
                     "role": m.role,
                     "created_at": dateFmt.string(from: m.createdAt),
-                    "snippet": m.snippet,
+                    "snippet": m.snippet
                 ] as [String: Any]
             }
             sem.signal()
@@ -108,7 +108,7 @@ private let logger = AppLogger(category: "SessionsOffload")
 
         return [
             "count": result.count,
-            "messages": result,
+            "messages": result
         ] as NSDictionary
     }
 
@@ -157,7 +157,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                     "message_id": m.messageId,
                     "role": m.role,
                     "created_at": dateFmt.string(from: m.createdAt),
-                    "text": m.text,
+                    "text": m.text
                 ]
                 if m.truncated { dict["truncated"] = true }
                 return dict
@@ -174,7 +174,7 @@ private let logger = AppLogger(category: "SessionsOffload")
             "max_chars": maxChars,
             "total": totalCount,
             "count": result.count,
-            "messages": result,
+            "messages": result
         ] as NSDictionary
     }
 
@@ -277,7 +277,7 @@ private let logger = AppLogger(category: "SessionsOffload")
             guard let sid = vm.sessionId else {
                 output = [
                     "ok": false,
-                    "error": "session_unavailable",
+                    "error": "session_unavailable"
                 ]
                 sem.signal()
                 return
@@ -290,7 +290,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                     output = [
                         "ok": false,
                         "error": "model_not_found",
-                        "model_entry_id": entryId,
+                        "model_entry_id": entryId
                     ]
                     sem.signal()
                     return
@@ -324,7 +324,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                 "model_name": modelName,
                 "status": "Running",
                 "prompt": prompt,
-                "response_text": "",
+                "response_text": ""
             ]
             sem.signal()
         }
@@ -375,7 +375,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                 output = [
                     "ok": false,
                     "error": "message_not_found",
-                    "session_id": sessionId,
+                    "session_id": sessionId
                 ]
                 sem.signal()
                 return
@@ -409,7 +409,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                 "model_name": modelName,
                 "status": "Retrying",
                 "prompt": String(targetMessage.content.prefix(100)),
-                "response_text": "",
+                "response_text": ""
             ]
             sem.signal()
         }
@@ -436,7 +436,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                     "ok": false,
                     "action": "open",
                     "error": "session_not_found",
-                    "session_id": sessionId,
+                    "session_id": sessionId
                 ]
                 sem.signal()
                 return
@@ -452,7 +452,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                 "ok": true,
                 "action": "open",
                 "session_id": session.id,
-                "title": session.title ?? "",
+                "title": session.title ?? ""
             ]
             sem.signal()
         }
@@ -478,7 +478,7 @@ private let logger = AppLogger(category: "SessionsOffload")
                 output = [
                     "ok": false,
                     "error": "session_not_found",
-                    "session_id": sessionId,
+                    "session_id": sessionId
                 ]
                 sem.signal()
                 return
@@ -526,8 +526,8 @@ private let logger = AppLogger(category: "SessionsOffload")
                     "is_running": isRunning,
                     "last_message": lastMessage,
                     "last_tool": lastTool,
-                    "updated_at": dateFmt.string(from: session.updatedAt),
-                ] as [String: Any],
+                    "updated_at": dateFmt.string(from: session.updatedAt)
+                ] as [String: Any]
             ]
             sem.signal()
         }

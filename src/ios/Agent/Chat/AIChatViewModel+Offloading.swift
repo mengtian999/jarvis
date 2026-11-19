@@ -687,7 +687,7 @@ extension AIChatViewModel {
             (Self.minisMemoryPersistentDir, Self.minisMemoryLinuxDir),
             (Self.minisSkillsPersistentDir, Self.minisSkillsLinuxDir),
             (Self.minisSharedPersistentDir, Self.minisSharedLinuxDir),
-            (Self.minisMcpServersPersistentDir, Self.minisMcpServersLinuxDir),
+            (Self.minisMcpServersPersistentDir, Self.minisMcpServersLinuxDir)
         ]
 
         for (persistDir, linuxDir) in mappings {

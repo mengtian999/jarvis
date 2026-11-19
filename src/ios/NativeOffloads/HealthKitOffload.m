@@ -2499,10 +2499,12 @@ static NSDictionary *logCategoryTypeInfo(NSString *name) {
             table[@"sleep-apnea-event"]         = Cat(HKCategoryTypeIdentifierSleepApneaEvent, @"sleep", YES, nil,
                                         @"Sleep apnea detection event — iOS 18+.");
         }
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 260200
         if (@available(iOS 26.2, *)) {
             table[@"hypertension-event"]        = Cat(HKCategoryTypeIdentifierHypertensionEvent, @"cardio-event", NO, nil,
                                         @"Hypertension notification — iOS 26.2+.");
         }
+#endif
     });
     return table[[name lowercaseString]];
 }

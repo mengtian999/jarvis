@@ -27,7 +27,7 @@ final class ICloudSharedZoneTransport: NSObject, SyncTransport {
 
     // MARK: - Configuration
 
-    static let containerIdentifier = "iCloud.com.openminis.app"
+    static let containerIdentifier = "iCloud.com.bitjarvis.app"
 
     /// Fixed zone names. Never include device id.
     static let sharedZoneName  = "minis-shared"
@@ -73,7 +73,7 @@ final class ICloudSharedZoneTransport: NSObject, SyncTransport {
         // [T-mcp-per-server-sync] Per-server MCP records (recordName =
         // server name). Same secrets-zone placement as the legacy
         // whole-file record: headers/env can hold literal tokens.
-        "MCPServerItem":        secretsZoneName,
+        "MCPServerItem":        secretsZoneName
     ]
 
     /// Asset threshold — payloads larger than this are written as a
@@ -232,7 +232,7 @@ final class ICloudSharedZoneTransport: NSObject, SyncTransport {
         // pull the full set (a folder created months ago would never fall
         // inside the 24h window), and sessions arriving before their folder
         // render as ungrouped until this pull anchors.
-        "FolderV2",
+        "FolderV2"
     ]
     /// Per-type "we have completed at least one full-history pull AND the
     /// consumer was ready to apply it" flag. Until set, the type pulls full
@@ -530,7 +530,7 @@ final class ICloudSharedZoneTransport: NSObject, SyncTransport {
         engine.state.add(pendingDatabaseChanges: [
             .saveZone(CKRecordZone(zoneID: CKRecordZone.ID(zoneName: Self.sharedZoneName))),
             .saveZone(CKRecordZone(zoneID: CKRecordZone.ID(zoneName: Self.devicesZoneName))),
-            .saveZone(CKRecordZone(zoneID: CKRecordZone.ID(zoneName: Self.secretsZoneName))),
+            .saveZone(CKRecordZone(zoneID: CKRecordZone.ID(zoneName: Self.secretsZoneName)))
         ])
         logger.info("[SyncTransport] start STEP=zonesQueued")
         // Direct zone create — blocks until server commits. Run BEFORE
@@ -699,7 +699,7 @@ final class ICloudSharedZoneTransport: NSObject, SyncTransport {
             ("EnvVarItem", "updatedAt"),
             ("SoulV2", "updatedAt"),
             ("MemoryGlobalV2", "updatedAt"),
-            ("MemoryDailyV2", "updatedAt"),
+            ("MemoryDailyV2", "updatedAt")
         ]
         var totalFetched = 0
         var byType: [String: Int] = [:]
@@ -820,7 +820,7 @@ final class ICloudSharedZoneTransport: NSObject, SyncTransport {
         let providerDBReady = ProviderConfigStore.shared.db != nil
         let providerGatedTypes: Set<String> = [
             "ProviderInstanceV3", "ProviderModelEntryV3", "ProviderModelGroupV3", "ProviderConfigV2",
-            "ProviderThinkingRuleV3",
+            "ProviderThinkingRuleV3"
         ]
         // [T-icloud-provider-anchor-per-type] Anchor each full-history type on
         // ITS OWN successful pull (no error for THAT type), not on a clean batch.
@@ -931,7 +931,7 @@ final class ICloudSharedZoneTransport: NSObject, SyncTransport {
         let typesAndPredicate: [(String, NSPredicate)] = [
             ("SessionV2", NSPredicate(format: "sessionId == %@", sessionId)),
             ("MessageV2", NSPredicate(format: "sessionId == %@", sessionId)),
-            ("CompactMarkerV2", NSPredicate(format: "sessionId == %@", sessionId)),
+            ("CompactMarkerV2", NSPredicate(format: "sessionId == %@", sessionId))
         ]
         for (type, predicate) in typesAndPredicate {
             logger.info("[iCloudTrace] fetchSessionPortables querying type=\(type) sid=\(sessionId.prefix(8))")

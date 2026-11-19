@@ -152,7 +152,7 @@ import OSLog
         var dict: [String: Any] = [
             "source": source,
             "count": lines.count,
-            "lines": lines,
+            "lines": lines
         ]
         if let note { dict["note"] = note }
         guard let data = try? JSONSerialization.data(withJSONObject: dict, options: []),

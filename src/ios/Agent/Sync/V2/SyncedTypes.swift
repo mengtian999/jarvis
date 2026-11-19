@@ -49,7 +49,7 @@ struct SyncedSession: Syncable {
                 // and omit it on write, both of which decode as nil here.
                 F.optionalString("folderId", \SyncedSession.folderId),
                 // [T-role-session-bound] same additive pattern as folderId.
-                F.optionalString("roleId",   \SyncedSession.roleId),
+                F.optionalString("roleId",   \SyncedSession.roleId)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedSession.updatedAt),
             version: 1
@@ -130,7 +130,7 @@ struct SyncedMessage: Syncable {
                 F.optionalString("modelId",           \SyncedMessage.modelId),
                 F.optionalString("modelDisplayName",  \SyncedMessage.modelDisplayName),
                 F.optionalString("providerType",      \SyncedMessage.providerType),
-                F.optionalString("providerInstanceId", \SyncedMessage.providerInstanceId),
+                F.optionalString("providerInstanceId", \SyncedMessage.providerInstanceId)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedMessage.updatedAt),
             version: 1
@@ -156,7 +156,7 @@ struct SyncedMessage: Syncable {
             sortOrder: m.sortOrder,
             createdAt: m.createdAt,
             updatedAt: updatedAt,
-            roleId: m.roleId
+            roleId: m.roleId,
             modelId: m.modelId,
             modelDisplayName: m.modelDisplayName,
             providerType: m.providerType,
@@ -200,7 +200,7 @@ struct SyncedCompactMarker: Syncable {
                 F.optionalString("boundaryMessageId",    \SyncedCompactMarker.boundaryMessageId),
                 F.optionalString("firstKeptMessageId",   \SyncedCompactMarker.firstKeptMessageId),
                 F.optionalString("lastCompactedMessageId", \SyncedCompactMarker.lastCompactedMessageId),
-                F.int("markerVersion",                   \SyncedCompactMarker.version),
+                F.int("markerVersion",                   \SyncedCompactMarker.version)
             ],
             conflictPolicy: .alwaysAccept,
             version: 1
@@ -250,7 +250,7 @@ struct SyncedSessionFile: Syncable {
                 F.string("relativePath",     \SyncedSessionFile.relativePath),
                 F.int("fileSize",            \SyncedSessionFile.fileSize),
                 F.optionalString("mimeType", \SyncedSessionFile.mimeType),
-                F.date("updatedAt",          \SyncedSessionFile.updatedAt),
+                F.date("updatedAt",          \SyncedSessionFile.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByServerEtag,
             version: 1
@@ -289,7 +289,7 @@ struct SyncedSkill: Syncable {
                 F.int("isEnabled",            \SyncedSkill.isEnabled),
                 F.date("installedAt",         \SyncedSkill.installedAt),
                 F.date("updatedAt",           \SyncedSkill.updatedAt),
-                F.optionalString("bodyText",  \SyncedSkill.bodyText),
+                F.optionalString("bodyText",  \SyncedSkill.bodyText)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedSkill.updatedAt),
             version: 1
@@ -315,7 +315,7 @@ struct SyncedProviderConfig: Syncable {
             fields: [
                 F.string("configJson",   \SyncedProviderConfig.configJson),
                 F.string("secretsJson",  \SyncedProviderConfig.secretsJsonBase64),
-                F.date("updatedAt",      \SyncedProviderConfig.updatedAt),
+                F.date("updatedAt",      \SyncedProviderConfig.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedProviderConfig.updatedAt),
             version: 1
@@ -342,7 +342,7 @@ struct SyncedMCPServers: Syncable {
             scope: .global,
             fields: [
                 F.string("serversJson", \SyncedMCPServers.serversJson),
-                F.date("updatedAt",     \SyncedMCPServers.updatedAt),
+                F.date("updatedAt",     \SyncedMCPServers.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedMCPServers.updatedAt),
             version: 1
@@ -385,7 +385,7 @@ struct SyncedMCPServer: Syncable {
                 F.string("serverName", \SyncedMCPServer.id),
                 F.string("entryJson",  \SyncedMCPServer.entryJson),
                 F.date("createdAt",    \SyncedMCPServer.createdAt),
-                F.date("updatedAt",    \SyncedMCPServer.updatedAt),
+                F.date("updatedAt",    \SyncedMCPServer.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedMCPServer.updatedAt),
             version: 1
@@ -465,7 +465,7 @@ struct SyncedProviderInstanceV3: Syncable {
                 F.date("updatedAt",                \SyncedProviderInstanceV3.updatedAt),
                 F.optionalString("extrasJson",     \SyncedProviderInstanceV3.extrasJson),
                 F.optionalString("customUserAgent", \SyncedProviderInstanceV3.customUserAgent),
-                F.int("azureMode",                 \SyncedProviderInstanceV3.azureMode),
+                F.int("azureMode",                 \SyncedProviderInstanceV3.azureMode)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedProviderInstanceV3.updatedAt),
             version: 1
@@ -514,7 +514,7 @@ struct SyncedProviderModelEntryV3: Syncable {
                 F.int("sortOrder",              \SyncedProviderModelEntryV3.sortOrder),
                 F.date("updatedAt",             \SyncedProviderModelEntryV3.updatedAt),
                 F.optionalString("extrasJson",  \SyncedProviderModelEntryV3.extrasJson),
-                F.optionalString("legacyUuid",  \SyncedProviderModelEntryV3.legacyUuid),
+                F.optionalString("legacyUuid",  \SyncedProviderModelEntryV3.legacyUuid)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedProviderModelEntryV3.updatedAt),
             version: 1
@@ -557,7 +557,7 @@ struct SyncedProviderModelGroupV3: Syncable {
                 F.int("sortOrder",               \SyncedProviderModelGroupV3.sortOrder),
                 F.date("updatedAt",              \SyncedProviderModelGroupV3.updatedAt),
                 F.optionalString("extrasJson",   \SyncedProviderModelGroupV3.extrasJson),
-                F.optionalString("removedMembersJson", \SyncedProviderModelGroupV3.removedMembersJson),
+                F.optionalString("removedMembersJson", \SyncedProviderModelGroupV3.removedMembersJson)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedProviderModelGroupV3.updatedAt),
             version: 1
@@ -607,7 +607,7 @@ struct SyncedProviderThinkingRuleV3: Syncable {
                 F.optionalString("echoTiming",   \SyncedProviderThinkingRuleV3.echoTiming),
                 F.string("label",                \SyncedProviderThinkingRuleV3.label),
                 F.date("createdAt",              \SyncedProviderThinkingRuleV3.createdAt),
-                F.date("updatedAt",              \SyncedProviderThinkingRuleV3.updatedAt),
+                F.date("updatedAt",              \SyncedProviderThinkingRuleV3.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedProviderThinkingRuleV3.updatedAt),
             version: 1
@@ -639,7 +639,7 @@ struct SyncedEnvVars: Syncable {
             fields: [
                 F.string("envVarsJson",     \SyncedEnvVars.envVarsJson),
                 F.string("envSecretsJson",  \SyncedEnvVars.envSecretsJsonBase64),
-                F.date("updatedAt",         \SyncedEnvVars.updatedAt),
+                F.date("updatedAt",         \SyncedEnvVars.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedEnvVars.updatedAt),
             version: 1
@@ -685,7 +685,7 @@ struct SyncedEnvVar: Syncable {
                 F.string("valueB64",  \SyncedEnvVar.valueB64),
                 F.string("note",      \SyncedEnvVar.note),
                 F.date("createdAt",   \SyncedEnvVar.createdAt),
-                F.date("updatedAt",   \SyncedEnvVar.updatedAt),
+                F.date("updatedAt",   \SyncedEnvVar.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedEnvVar.updatedAt),
             version: 1
@@ -717,7 +717,7 @@ struct SyncedDevice: Syncable {
                 F.date("lastSeen",      \SyncedDevice.lastSeen),
                 F.string("osVersion",   \SyncedDevice.osVersion),
                 F.string("uploadTypes", \SyncedDevice.uploadTypes),
-                F.int("appVersion",     \SyncedDevice.appVersion),
+                F.int("appVersion",     \SyncedDevice.appVersion)
             ],
             conflictPolicy: .alwaysAccept,
             version: 1
@@ -750,7 +750,7 @@ struct SyncedSoul: Syncable {
             scope: .global,
             fields: [
                 F.string("contentMarkdown", \SyncedSoul.contentMarkdown),
-                F.date("updatedAt",          \SyncedSoul.updatedAt),
+                F.date("updatedAt",          \SyncedSoul.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedSoul.updatedAt),
             version: 1
@@ -776,7 +776,7 @@ struct SyncedMemoryGlobal: Syncable {
             scope: .global,
             fields: [
                 F.string("contentMarkdown", \SyncedMemoryGlobal.contentMarkdown),
-                F.date("updatedAt",          \SyncedMemoryGlobal.updatedAt),
+                F.date("updatedAt",          \SyncedMemoryGlobal.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedMemoryGlobal.updatedAt),
             version: 1
@@ -804,7 +804,7 @@ struct SyncedMemoryDaily: Syncable {
             fields: [
                 F.string("dateKey",     \SyncedMemoryDaily.id),
                 F.string("entriesJson", \SyncedMemoryDaily.entriesJson),
-                F.date("updatedAt",     \SyncedMemoryDaily.updatedAt),
+                F.date("updatedAt",     \SyncedMemoryDaily.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedMemoryDaily.updatedAt),
             version: 1
@@ -849,7 +849,7 @@ struct SyncedFolder: Syncable {
                 F.optionalDate("pinnedAt",  \SyncedFolder.pinnedAt),
                 F.optionalString("desc",    \SyncedFolder.desc),
                 F.date("createdAt",         \SyncedFolder.createdAt),
-                F.date("updatedAt",         \SyncedFolder.updatedAt),
+                F.date("updatedAt",         \SyncedFolder.updatedAt)
             ],
             conflictPolicy: .lastWriteWinsByField(\SyncedFolder.updatedAt),
             version: 1
@@ -892,10 +892,7 @@ enum SyncedTypesBootstrap {
         r.register(SyncedSoul.self)
         r.register(SyncedMemoryGlobal.self)
         r.register(SyncedMemoryDaily.self)
-        // 角色同步类型
-        r.register(SyncedRole.self)           // 单个角色配置
-        r.register(SyncedRolesCollection.self) // 角色集合索引
-        // [T-group-chat] P4: agent groups (multi-role chat rosters).
-        r.register(SyncedAgentGroup.self)
+        // Role / group sync types (SyncedRole / SyncedAgentGroup) live in
+        // SyncedTypesExtensions.swift — registered there when that file is linked.
     }
 }

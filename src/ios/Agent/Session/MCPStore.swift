@@ -555,7 +555,7 @@ final class MCPStore: ObservableObject {
     /// [T-mcp-startup-timeout]
     private static let startupTimeoutKeys = [
         "startupTimeoutSeconds", "startup_timeout_sec", "startupTimeout",
-        "handshakeTimeout", "initializeTimeout",
+        "handshakeTimeout", "initializeTimeout"
     ]
     /// [T-mcp-static-oauth] Parse an `oauth` object from imported JSON.
     private static func oauthConfig(from obj: [String: Any]?) -> MCPOAuthConfig? {

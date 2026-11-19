@@ -126,7 +126,7 @@ final class GatewayClient: @unchecked Sendable {
             "install_id": installId,
             "platform": platform,
             "app_version": appVersion,
-            "device_info_hash": deviceInfoHash(),
+            "device_info_hash": deviceInfoHash()
         ]
         let bodyData = try JSONSerialization.data(withJSONObject: body)
 
@@ -219,10 +219,10 @@ final class GatewayClient: @unchecked Sendable {
             "messages": [
                 [
                     "role": "system",
-                    "content": "Translate the user's message into \(targetLanguage). Output only the translation. No explanation, no quotes, no prefixes, no reasoning.",
+                    "content": "Translate the user's message into \(targetLanguage). Output only the translation. No explanation, no quotes, no prefixes, no reasoning."
                 ],
-                ["role": "user", "content": text],
-            ],
+                ["role": "user", "content": text]
+            ]
         ]
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         sign(&request)
@@ -315,7 +315,7 @@ final class GatewayClient: @unchecked Sendable {
             kSecAttrService as String: Self.kcService,
             kSecAttrAccount as String: Self.kcAccount,
             kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
+            kSecMatchLimit as String: kSecMatchLimitOne
         ]
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
@@ -328,7 +328,7 @@ final class GatewayClient: @unchecked Sendable {
         let baseQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: Self.kcService,
-            kSecAttrAccount as String: Self.kcAccount,
+            kSecAttrAccount as String: Self.kcAccount
         ]
         SecItemDelete(baseQuery as CFDictionary) // idempotent overwrite
         var addQuery = baseQuery
@@ -343,7 +343,7 @@ final class GatewayClient: @unchecked Sendable {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: Self.kcService,
-            kSecAttrAccount as String: Self.kcAccount,
+            kSecAttrAccount as String: Self.kcAccount
         ]
         SecItemDelete(query as CFDictionary)
         logger.info("Identity cleared")

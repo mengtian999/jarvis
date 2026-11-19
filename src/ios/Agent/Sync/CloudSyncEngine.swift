@@ -225,7 +225,7 @@ final class PendingRecordChanges: @unchecked Sendable {
 final class CloudSyncEngine: ObservableObject {
     static let shared = CloudSyncEngine()
 
-    private lazy var container = CKContainer(identifier: "iCloud.com.openminis.app")
+    private lazy var container = CKContainer(identifier: "iCloud.com.bitjarvis.app")
     private let devicesZoneName = "devices"
 
     private var syncEngine: CKSyncEngine?
@@ -285,7 +285,7 @@ final class CloudSyncEngine: ObservableObject {
 
     /// Record types that belong to a session (persisted per-session).
     private static let sessionRecordTypes: Set<String> = [
-        "Session", "Message", "CompactMarker", "SessionFile",
+        "Session", "Message", "CompactMarker", "SessionFile"
     ]
     /// Timestamp of last ProviderConfig re-upload trigger — throttles bidirectional sync ping-pong.
     private static var lastProviderConfigReuploadDate: Date = .distantPast

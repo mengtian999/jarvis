@@ -119,7 +119,7 @@ final class XAIOAuthManager: NSObject, ObservableObject {
             URLQueryItem(name: "state", value: state),
             URLQueryItem(name: "nonce", value: nonce),
             URLQueryItem(name: "plan", value: "generic"),
-            URLQueryItem(name: "referrer", value: "jarvis"),
+            URLQueryItem(name: "referrer", value: "jarvis")
         ]
         let authorizationURL = components.url!
         logger.info("Authorization URL: \(authorizationURL.absoluteString)")
@@ -307,7 +307,7 @@ final class XAIOAuthManager: NSObject, ObservableObject {
         let body: [String: String] = [
             "grant_type": "refresh_token",
             "client_id": clientID,
-            "refresh_token": refreshToken,
+            "refresh_token": refreshToken
         ]
         return try await postTokenRequest(
             body: body,
