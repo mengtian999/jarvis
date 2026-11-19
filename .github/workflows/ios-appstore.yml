@@ -191,7 +191,17 @@ jobs:
           printf '%s' "$APP_STORE_CONNECT_API_KEY" \
             > "$HOME/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
           IPA=$(ls "$RUNNER_TEMP"/ipa/*.ipa | head -1)
+          # altool can print ERROR and still exit 0 — capture output and fail hard.
+          set +e
+          OUT=$(mktemp)
           xcrun altool --upload-app -f "$IPA" -t ios \
             --apiKey "$APP_STORE_CONNECT_KEY_ID" \
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            --verbose
+            --verbose 2>&1 | tee "$OUT"
+          EC=${PIPESTATUS[0]}
+          set -e
+          if [[ $EC -ne 0 ]] || grep -qE 'Failed to upload|ENTITY_ERROR|ERROR: \[altool' "$OUT"; then
+            echo "ASC upload failed (exit=$EC)"
+            exit 1
+          fi
+          echo "ASC upload succeeded"
