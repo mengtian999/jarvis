@@ -5,6 +5,8 @@
 package com.jarvis.app.ui.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -331,7 +333,12 @@ private fun RoleEditorDialog(
             Text(stringResource(if (existing == null) R.string.role_create_title else R.string.role_edit_title))
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+           ) {
                 // 头像预览 + 更换
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     AsyncImage(
@@ -390,6 +397,7 @@ private fun RoleEditorDialog(
                     onValueChange = { body = it },
                     label = { Text(stringResource(R.string.role_body)) },
                     minLines = 3,
+                    maxLines = 8,
                     modifier = Modifier.fillMaxWidth()
                 )
 
