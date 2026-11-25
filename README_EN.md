@@ -96,10 +96,11 @@ App Store releases can lag behind: every update waits on review, and we hold bui
 
 On Android, the latest APK is available from:
 
+- [AtomGit Releases (preferred in China)](https://atomgit.com/gcw_KxmcQJPr/jarvis/releases)
 - [GitHub Releases](https://github.com/mengtian999/jarvis/releases)
-- [Gitee Releases (CN mirror)](https://gitee.com/dreamsky111333/jarvis/releases)
+- [Gitee Releases (fallback mirror)](https://gitee.com/dreamsky111333/jarvis/releases)
 
-The app ships a dual-source update check: GitHub is tried first for overseas users and automatically falls back to Gitee in China — no manual switching needed.
+The app ships a three-source update check: AtomGit is tried first, followed by GitHub and Gitee as automatic fallbacks — no manual switching needed. On unmetered Wi-Fi, updates are checked and downloaded in the background. A notification is shown when the APK is ready, and the system installer is launched only after explicit user confirmation.
 
 ---
 

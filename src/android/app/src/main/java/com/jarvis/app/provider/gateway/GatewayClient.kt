@@ -135,21 +135,91 @@ class GatewayClient(
      * The im_translate tier is not listed in /v1/models (hidden=true), but is
      * callable by name. The system prompt forces raw translation output.
      */
-    suspend fun translate(text: String, targetLanguage: String): String = withContext(Dispatchers.IO) {
+    suspend fun translate(text: String, targetLanguage: String): String = chatOnce(
+        model = "im_translate",
+        maxTokens = 1024,
+        system = "Translate the user's message into $targetLanguage. Output only the translation. No explanation, no quotes, no prefixes, no reasoning.",
+        user = text,
+    )
+
+    /**
+     * Compact summary via the hidden `utility_large` tier (gateway-side AMD pool).
+     * Same hidden-tier direct-call pattern as [translate]: model name is fixed,
+     * upstream pool is managed server-side, no keys ever reach the client.
+     */
+    suspend fun compactSummary(transcript: String): String = chatOnce(
+        model = "utility_large",
+        maxTokens = 2048,
+        system = "You are a conversation compaction assistant. Summarize the conversation transcript faithfully and concisely, preserving key decisions, facts, open questions and user preferences. Output the summary only.",
+        user = transcript,
+    )
+
+    /**
+     * Describe an image via the hidden `vision_aux` tier (gateway-side vision model).
+     * [imageDataBase64] is raw base64 (no data: prefix). Returns the model's textual
+     * description; empty string on empty upstream reply (caller decides fallback).
+     */
+    suspend fun describeImage(imageDataBase64: String, mimeType: String = "image/jpeg", prompt: String): String = withContext(Dispatchers.IO) {
+        val id = ensureDevice()
+        val content = org.json.JSONArray()
+        content.put(JSONObject().apply {
+            put("type", "text")
+            put("text", prompt)
+        })
+        content.put(JSONObject().apply {
+            put("type", "image_url")
+            put("image_url", JSONObject().put("url", "data:$mimeType;base64,$imageDataBase64"))
+        })
+        val messages = org.json.JSONArray()
+        messages.put(JSONObject().apply {
+            put("role", "user")
+            put("content", content)
+        })
+        val body = JSONObject().apply {
+            put("model", "vision_aux")
+            put("stream", false)
+            put("max_tokens", 2048)
+            put("messages", messages)
+        }
+        val request = Request.Builder()
+            .url("$baseURL/v1/chat/completions")
+            .post(body.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
+            .header("Authorization", "Bearer ${id.token}")
+            .build()
+            .let { sign(it) }
+        val resp = executeRequest(request)
+        resp.optJSONArray("choices")?.optJSONObject(0)?.optJSONObject("message")?.optString("content") ?: ""
+    }
+
+    /**
+     * Title generation via the hidden `utility_small` tier. Same prompt shape as
+     * the provider path (full prompt passed as user turn); the tier is cheap,
+     * thinking-free and callable even with no sub-model configured. Throws on
+     * network/gateway errors — the caller degrades to the provider path.
+     */
+    suspend fun generateTitleViaUtilitySmall(prompt: String): String = chatOnce(
+        model = "utility_small",
+        maxTokens = 512,
+        system = "You generate concise chat session titles. Respond with valid JSON only.",
+        user = prompt,
+    )
+
+    /** Single-turn non-stream chat via a (possibly hidden) tier. Returns assistant content or "". */
+    private suspend fun chatOnce(model: String, maxTokens: Int, system: String, user: String): String = withContext(Dispatchers.IO) {
         val id = ensureDevice()
         val messages = org.json.JSONArray()
         messages.put(JSONObject().apply {
             put("role", "system")
-            put("content", "Translate the user's message into $targetLanguage. Output only the translation. No explanation, no quotes, no prefixes, no reasoning.")
+            put("content", system)
         })
         messages.put(JSONObject().apply {
             put("role", "user")
-            put("content", text)
+            put("content", user)
         })
         val body = JSONObject().apply {
-            put("model", "im_translate")
+            put("model", model)
             put("stream", false)
-            put("max_tokens", 1024)
+            put("max_tokens", maxTokens)
             put("messages", messages)
         }
         val request = Request.Builder()

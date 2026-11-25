@@ -473,6 +473,28 @@ extension AIChatViewModel {
         folderNames: [String] = [],
         folderContext: [String] = []
     ) async throws -> (String, String?, String?) {
+        // [T-gateway-utility-small] Candidate-chain head: try the gateway's hidden
+        // utility_small tier first (cheap AMD pool, no thinking). Any failure --
+        // gateway down, empty reply, no device identity -- silently falls through
+        // to the existing sub-model path. Same degrade-quietly pattern as
+        // im_translate; the tier is absent from /v1/models but callable by name.
+        do {
+            let prompt = Self.titlePrompt(
+                conversationSummary: conversationSummary,
+                folderNames: folderNames,
+                folderContext: folderContext
+            )
+            let gwText = try await GatewayClient.shared.generateTitleViaUtilitySmall(prompt)
+            let trimmedGw = gwText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedGw.isEmpty {
+                logger.info("[TitleGen] gateway utility_small hit (\(trimmedGw.count) chars)")
+                return try Self.parseTitleJSON(trimmedGw, folderNames: folderNames)
+            }
+            logger.info("[TitleGen] gateway utility_small empty -- falling back to sub-model")
+        } catch {
+            logger.info("[TitleGen] gateway utility_small failed: \(error.localizedDescription.prefix(120)) -- falling back to sub-model")
+        }
+
         guard let entry = subEntry else {
             throw NSError(domain: "TitleGen", code: -1, userInfo: [NSLocalizedDescriptionKey: "No sub model available"])
         }
@@ -650,6 +672,46 @@ extension AIChatViewModel {
 
         logger.error("[TitleGen] All parsing strategies failed. Response was: \(responseText)")
         throw NSError(domain: "TitleGen", code: -2, userInfo: [NSLocalizedDescriptionKey: "Failed to parse title from response: \(responseText.prefix(200))"])
+    }
+
+    /// Shared prompt builder for title generation (gateway + sub-model paths),
+    /// so the two never drift. Mirrors the sub-model path prompt byte-for-byte
+    /// when called with the same inputs.
+    private static func titlePrompt(
+        conversationSummary: String,
+        folderNames: [String],
+        folderContext: [String]
+    ) -> String {
+        let langInjection = titleLanguageInjection()
+        let folderSegment: String
+        let exampleLine: String
+        if folderNames.isEmpty {
+            folderSegment = ""
+            exampleLine = #"{"title": "Debug Login Page Issue", "category": "code"}"#
+        } else {
+            let list = (folderContext.isEmpty ? folderNames.map { "\"\($0)\"" } : folderContext)
+                .joined(separator: "; ")
+            folderSegment = """
+            The user organizes chats into groups. Existing groups: [\(list)]. \
+            If this conversation clearly belongs to one of these groups, set "folder" to that exact group name. \
+            If it does not clearly match any group, or you are unsure, set "folder" to null. \
+            Never invent a new group name.
+
+            """
+            exampleLine = #"{"title": "Debug Login Page Issue", "category": "code", "folder": null}"#
+        }
+        return """
+        Based on the following conversation, generate a short title (max 6 words) that captures the topic. \
+        Also pick a task category from: code, writing, research, analysis, creative, chat, math, translation, health, finance, travel, education, design, productivity, support, other.
+
+        \(folderSegment)\(langInjection)
+
+        You MUST respond with valid JSON only. Example:
+        \(exampleLine)
+
+        Conversation:
+        \(conversationSummary)
+        """
     }
 
     /// Build a bilingual instruction asking the title-generation model to use

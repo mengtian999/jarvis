@@ -239,6 +239,96 @@ final class GatewayClient: @unchecked Sendable {
         return content
     }
 
+    // MARK: - Hidden utility tiers (gateway-side AMD pool)
+
+    /// Single-turn non-stream chat via a (possibly hidden) tier. Returns the
+    /// assistant message content. Shared by title / compact helpers.
+    private func chatOnce(model: String, maxTokens: Int, system: String, user: String) async throws -> String {
+        let id = try await ensureDevice()
+        var request = URLRequest(url: URL(string: "\(baseURL)/v1/chat/completions")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(id.token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = [
+            "model": model,
+            "stream": false,
+            "max_tokens": maxTokens,
+            "messages": [
+                ["role": "system", "content": system],
+                ["role": "user", "content": user],
+            ],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        sign(&request)
+
+        let (data, _) = try await send(request)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let message = choices.first?["message"] as? [String: Any]
+        else {
+            throw GatewayError.parseFailed("Invalid chat response from \(model)")
+        }
+        return (message["content"] as? String) ?? ""
+    }
+
+    /// Title generation via the hidden `utility_small` tier. Same prompt shape
+    /// as the provider path; cheap, thinking-free, callable with no sub-model
+    /// configured. Throws on errors: caller degrades to the provider path.
+    func generateTitleViaUtilitySmall(_ prompt: String) async throws -> String {
+        try await chatOnce(
+            model: "utility_small",
+            maxTokens: 512,
+            system: "You generate concise chat session titles. Respond with valid JSON only.",
+            user: prompt,
+        )
+    }
+
+    /// Compact summary via the hidden `utility_large` tier.
+    func compactSummary(_ transcript: String) async throws -> String {
+        try await chatOnce(
+            model: "utility_large",
+            maxTokens: 2048,
+            system: "You are a conversation compaction assistant. Summarize the conversation transcript faithfully and concisely, preserving key decisions, facts, open questions and user preferences. Output the summary only.",
+            user: transcript,
+        )
+    }
+
+    /// Describe an image via the hidden `vision_aux` tier (gateway vision model).
+    /// `imageDataBase64` is raw base64 (no data: prefix). Returns the textual
+    /// description; empty string on empty upstream reply.
+    func describeImage(_ imageDataBase64: String, mimeType: String = "image/jpeg", prompt: String) async throws -> String {
+        let id = try await ensureDevice()
+        var request = URLRequest(url: URL(string: "\(baseURL)/v1/chat/completions")!)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(id.token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = [
+            "model": "vision_aux",
+            "stream": false,
+            "max_tokens": 2048,
+            "messages": [
+                [
+                    "role": "user",
+                    "content": [
+                        ["type": "text", "text": prompt],
+                        ["type": "image_url", "image_url": ["url": "data:\(mimeType);base64,\(imageDataBase64)"]],
+                    ],
+                ],
+            ],
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        sign(&request)
+
+        let (data, _) = try await send(request)
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let message = choices.first?["message"] as? [String: Any]
+        else {
+            throw GatewayError.parseFailed("Invalid vision response")
+        }
+        return (message["content"] as? String) ?? ""
+    }
+
     // MARK: - Signing (Route A, §1.3)
 
     /// Sign a URLRequest with HMAC-SHA256.

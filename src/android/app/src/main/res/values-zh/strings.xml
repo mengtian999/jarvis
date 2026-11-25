@@ -55,6 +55,9 @@
     <string name="check_update_install_launch_failed">启动安装程序失败。请检查\"安装未知应用\"权限或手动打开下载的 APK。</string>
     <string name="check_update_install_hint">提示：如果安装时无任何反馈，可能是签名不匹配，请先卸载旧版本再重新点击下载。</string>
     <string name="check_update_open_install_settings">打开设置</string>
+    <string name="update_ready_channel">应用更新</string>
+    <string name="update_ready_title">新版本已准备好</string>
+    <string name="update_ready_message">点确定立即更新</string>
     <string name="permissions_title">权限</string>
     <string name="permissions_reset_all">全部重置</string>
     <string name="permissions_reset_dialog_title">重置全部权限？</string>

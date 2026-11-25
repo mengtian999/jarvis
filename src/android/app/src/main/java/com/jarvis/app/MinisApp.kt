@@ -502,6 +502,11 @@ class MinisApp : Application(), ImageLoaderFactory {
         // DNS servers after Wi-Fi ↔ cellular swaps or VPN toggles.
         networkMonitor.start(this)
 
+        // Wi-Fi-only background update check now, then once per day. Worker
+        // scheduling must never prevent the rest of application startup.
+        runCatching { com.jarvis.app.update.WifiUpdateScheduler.schedule(this) }
+            .onFailure { Log.w("MinisApp", "Wi-Fi update scheduling failed: ${it.message}") }
+
         // Register global /var/jarvis/{memory,skills,shared} bind mounts up-front
         // so direct file I/O tools (file_read) resolve these paths even before
         // PRoot has booted or any shell has started.

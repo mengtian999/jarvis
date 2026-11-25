@@ -22,9 +22,9 @@ import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 
 /**
- * Checks GitHub releases for an APK newer than [BuildConfig.VERSION_NAME] and
- * coordinates download → install. iOS has no equivalent (sideloading is not
- * permitted) so this is Android-only.
+ * Checks AtomGit, GitHub and Gitee releases for an APK newer than
+ * [BuildConfig.VERSION_NAME] and coordinates download → install. iOS has no
+ * equivalent (sideloading is not permitted) so this is Android-only.
  *
  * Comparison strategy: strip a leading `v` from `tag_name`, then split both
  * the tag and the local versionName on `.` and compare numerically component
@@ -36,6 +36,8 @@ object UpdateChecker {
     private const val TAG = "UpdateChecker"
     private const val OWNER = "mengtian999"
     private const val REPO = "jarvis"
+    private const val ATOMGIT_OWNER = "gcw_KxmcQJPr"
+    private const val ATOMGIT_REPO = "jarvis"
     // Gitee mirror: used as a fallback when GitHub is unreachable / geo-
     // blocked (mainland China). Same repo content, faster to download there.
     private const val GITEE_OWNER = "dreamsky111333"
@@ -102,15 +104,16 @@ object UpdateChecker {
      * coroutine scope.
      */
     suspend fun check(): CheckResult = withContext(Dispatchers.IO) {
+        val atomgitUrl = "https://api.atomgit.com/api/v5/repos/$ATOMGIT_OWNER/$ATOMGIT_REPO/releases?per_page=30"
         val githubUrl = "https://api.github.com/repos/$OWNER/$REPO/releases?per_page=30"
         val giteeUrl = "https://gitee.com/api/v5/repos/$GITEE_OWNER/$GITEE_REPO/releases"
-        AppLogger.info(TAG, "GET $githubUrl (local=${BuildConfig.VERSION_NAME})")
+        AppLogger.info(TAG, "GET $atomgitUrl (local=${BuildConfig.VERSION_NAME})")
         try {
-            // Prefer GitHub when reachable (overseas); fall back to the
-            // Gitee mirror when GitHub is blocked or geo-limited (China).
-            val arr = fetchReleasesJson(githubUrl, giteeUrl)
+            // AtomGit 优先，依次回退 GitHub / Gitee；三个源使用相同的
+            // tag_name + assets[].browser_download_url 数据结构。
+            val arr = fetchReleasesJson(atomgitUrl, githubUrl, giteeUrl)
             if (arr == null) {
-                AppLogger.info(TAG, "releases list empty on both sources")
+                AppLogger.info(TAG, "releases list empty on all sources")
                 return@withContext CheckResult.NoReleaseAvailable
             }
 
@@ -231,29 +234,40 @@ object UpdateChecker {
         }
     }
 
-    /** Public so UI can deep-link users to manual download when GitHub is blocked. */
-    const val RELEASES_URL: String = "https://github.com/mengtian999/jarvis/releases"
+    /** Public so UI can deep-link users to the domestic release page. */
+    const val RELEASES_URL: String = "https://atomgit.com/gcw_KxmcQJPr/jarvis/releases"
 
     /**
-     * Fetch the releases list, trying GitHub first then the Gitee mirror.
-     * Returns the first source's parsed JSON array, or null if both sources
-     * report no releases. Throws (IO) if every source is unreachable so the
-     * caller can surface [CheckResult.NetworkUnreachable].
+     * Fetch releases in AtomGit → GitHub → Gitee order. Internal visibility
+     * allows local unit tests to exercise the complete fallback chain with
+     * MockWebServer instead of real public endpoints.
      */
-    private fun fetchReleasesJson(githubUrl: String, giteeUrl: String): JSONArray? {
-        // Try GitHub first. Overseas this is the right source; in China it
-        // fails fast (UnknownHost / 403 geo-block) and we fall through.
-        try {
-            val gh = fetchJsonArray(githubUrl, githubStyle = true)
-            if (gh != null) return gh
-            AppLogger.warning(TAG, "GitHub releases empty; trying Gitee")
-        } catch (e: Exception) {
-            AppLogger.warning(TAG, "GitHub unreachable (${e.javaClass.simpleName}: ${e.message}); trying Gitee")
+    internal fun fetchReleasesJson(
+        atomgitUrl: String,
+        githubUrl: String,
+        giteeUrl: String,
+    ): JSONArray? {
+        val sources = listOf(
+            Triple("AtomGit", atomgitUrl, false),
+            Triple("GitHub", githubUrl, true),
+            Triple("Gitee", giteeUrl, false),
+        )
+        var lastError: Exception? = null
+        for ((name, url, githubStyle) in sources) {
+            try {
+                val releases = fetchJsonArray(url, githubStyle = githubStyle)
+                if (releases != null) return releases
+                AppLogger.warning(TAG, "$name releases empty; trying next source")
+            } catch (e: Exception) {
+                lastError = e
+                AppLogger.warning(
+                    TAG,
+                    "$name unreachable (${e.javaClass.simpleName}: ${e.message}); trying next source",
+                )
+            }
         }
-        // Gitee mirror fallback (fast in mainland China).
-        val gitee = fetchJsonArray(giteeUrl, githubStyle = false)
-        if (gitee == null) AppLogger.warning(TAG, "Gitee releases empty too")
-        return gitee
+        if (lastError != null) throw lastError
+        return null
     }
 
     /**

@@ -1129,6 +1129,23 @@ extension AIChatViewModel {
         framed as "what was discussed / what was done", NOT as an ongoing goal or todo list.
         """
 
+        // [T-gateway-utility-large-compact] Try the gateway's hidden utility_large
+        // tier first (server-side AMD pool, cheap). Any failure -- gateway down,
+        // empty reply, no identity -- silently falls back to the main model so the
+        // existing split-retry ladder keeps working unchanged.
+        do {
+            let gwSummary = try await GatewayClient.shared.compactSummary(compactUserMessage)
+            let trimmedGw = gwSummary.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedGw.isEmpty {
+                logger.info("[Compact] gateway utility_large hit (\(trimmedGw.count) chars)")
+                statusMsg?.content = "Compacting conversation... (\(trimmedGw.count) chars)"
+                return trimmedGw
+            }
+            logger.info("[Compact] gateway utility_large empty -- falling back to main model")
+        } catch {
+            logger.info("[Compact] gateway utility_large failed: \(error.localizedDescription.prefix(120)) -- falling back to main model")
+        }
+
         let stream = try await provider.streamMessage(
             messages: [LLMMessage(role: .user, content: compactUserMessage)],
             systemPrompt: systemPrompt,

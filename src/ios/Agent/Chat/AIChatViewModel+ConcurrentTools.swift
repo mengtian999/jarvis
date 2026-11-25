@@ -759,14 +759,54 @@ extension AIChatViewModel {
                         toolSuccess = true
                         ctLogger.info("[read_image] vision-group described image (\(outcome.description.count) chars) via \(outcome.modelName), priorFailures=\(outcome.priorFailures.count)")
                     } catch {
-                        // Deliberately a SUCCESSFUL result carrying failure text:
-                        // an errored tool result tends to make models retry in a
-                        // loop, whereas this lets the model tell the user plainly.
+                        // [T-gateway-vision-aux] Last-resort: the gateway's hidden
+                        // vision_aux tier. Runs only after every Vision Group member
+                        // failed (or none exist). Empty reply or error keeps the
+                        // original failure text, so the tool-result contract is
+                        // unchanged.
                         let reason = (error as? VisionGroupResolver.VisionError)?.errorDescription
                             ?? error.localizedDescription
-                        toolOutput = meta + "\n\n" + VisionGroupResolver.failureText(reason)
-                        toolSuccess = true
-                        ctLogger.error("[read_image] vision-group describe FAILED: \(reason)")
+                        var gwFallback: String? = nil
+                        do {
+                            let instruction: String
+                            if let vp = visionPrompt, !vp.isEmpty {
+                                instruction = vp
+                            } else {
+                                instruction = VisionGroupResolver.describePrompt
+                            }
+                            let gwText = try await GatewayClient.shared.describeImage(
+                                inferenceData.base64EncodedString(),
+                                mimeType: "image/jpeg",
+                                prompt: instruction
+                            )
+                            let trimmed = gwText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if !trimmed.isEmpty { gwFallback = trimmed }
+                        } catch let gwErr {
+                            if gwErr is CancellationError { throw gwErr }
+                            ctLogger.error("[read_image] gateway vision_aux failed: \(gwErr.localizedDescription.prefix(120))")
+                        }
+                        if let gwDesc = gwFallback {
+                            let outcome = VisionGroupResolver.VisionOutcome(
+                                modelName: "gateway vision_aux",
+                                description: gwDesc,
+                                priorFailures: [("Vision Group", reason)]
+                            )
+                            let framed = VisionGroupResolver.framedDescription(
+                                outcome,
+                                groupName: nil,
+                                question: visionPrompt
+                            )
+                            toolOutput = meta + "\n\n" + framed
+                            toolSuccess = true
+                            ctLogger.info("[read_image] gateway vision_aux described image (\(gwDesc.count) chars)")
+                        } else {
+                            // Deliberately a SUCCESSFUL result carrying failure text:
+                            // an errored tool result tends to make models retry in a
+                            // loop, whereas this lets the model tell the user plainly.
+                            toolOutput = meta + "\n\n" + VisionGroupResolver.failureText(reason)
+                            toolSuccess = true
+                            ctLogger.error("[read_image] vision-group describe FAILED: \(reason)")
+                        }
                     }
                 }
 

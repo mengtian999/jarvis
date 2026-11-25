@@ -42,6 +42,7 @@ object PendingUpdateStore {
         val apkSize: Long,
         val sha256: String?,
         val downloadedAtMs: Long,
+        val autoDownloaded: Boolean = false,
     )
 
     private var prefs: SharedPreferences? = null
@@ -65,12 +66,18 @@ object PendingUpdateStore {
             put("apkSize", pending.apkSize)
             if (pending.sha256 != null) put("sha256", pending.sha256) else put("sha256", JSONObject.NULL)
             put("downloadedAtMs", pending.downloadedAtMs)
+            put("autoDownloaded", pending.autoDownloaded)
         }
         requirePrefs(context).edit().putString(KEY, json.toString()).apply()
         AppLogger.info(
             TAG,
             "setPending version=${pending.targetVersionName} size=${pending.apkSize} sha256=${pending.sha256 != null}",
         )
+    }
+
+    fun markAutoDownloaded(context: Context) {
+        val pending = getPending(context) ?: return
+        setPending(context, pending.copy(autoDownloaded = true))
     }
 
     /**
@@ -95,6 +102,7 @@ object PendingUpdateStore {
             apkSize = obj.optLong("apkSize"),
             sha256 = obj.optString("sha256", "").takeIf { it.isNotEmpty() && it != "null" },
             downloadedAtMs = obj.optLong("downloadedAtMs"),
+            autoDownloaded = obj.optBoolean("autoDownloaded", false),
         )
         val age = System.currentTimeMillis() - pending.downloadedAtMs
         if (age > MAX_AGE_MS) {

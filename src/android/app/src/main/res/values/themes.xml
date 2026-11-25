@@ -11,5 +11,8 @@
         <item name="android:windowBackground">@android:color/white</item>
         <item name="android:colorBackground">@android:color/white</item>
     </style>
+    <style name="Theme.Jarvis.UpdateDialog" parent="android:Theme.Material.Dialog.Alert">
+        <item name="android:windowBackground">@android:color/white</item>
+    </style>
 </resources>
 

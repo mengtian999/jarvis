@@ -209,6 +209,13 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".update.UpdateReadyActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.Jarvis.UpdateDialog" />
+
         <!-- T-android-dynamic-app-icon: launcher-icon aliases. Exactly
              ONE of these three is enabled at any time; AppIconRepository
              flips the enabled state in response to a Settings → App Icon

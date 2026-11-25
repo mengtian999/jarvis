@@ -77,10 +77,11 @@ Jarvis 有自己的工具体系，但不要求技能必须为它专门编写：*
 
 Android 的 APK 在以下 releases 页面提供最新版：
 
+- [AtomGit Releases（国内优先）](https://atomgit.com/gcw_KxmcQJPr/jarvis/releases)
 - [GitHub Releases](https://github.com/mengtian999/jarvis/releases)
-- [Gitee Releases（国内加速）](https://gitee.com/dreamsky111333/jarvis/releases)
+- [Gitee Releases（备用镜像）](https://gitee.com/dreamsky111333/jarvis/releases)
 
-应用内置双源更新检查：海外优先 GitHub，国内自动回退 Gitee，无需手动切换。
+应用内置三源更新检查：AtomGit 优先，失败后依次回退 GitHub、Gitee，无需手动切换。连接非计费 Wi-Fi 时会自动检查并后台下载更新；下载完成后发送通知，只有用户明确确认才会调起系统安装器。
 
 ---
 

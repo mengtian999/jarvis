@@ -42,6 +42,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.jarvis.app.BuildConfig
 import com.jarvis.app.R
+import com.jarvis.app.data.PendingUpdateStore
 import com.jarvis.app.data.UpdateChecker
 import kotlinx.coroutines.launch
 import com.jarvis.app.ui.components.MinisButton
@@ -94,6 +95,11 @@ fun CheckUpdateSection() {
     LaunchedEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event != Lifecycle.Event.ON_RESUME) return@LifecycleEventObserver
+            // Background-downloaded APKs are installed only from their explicit
+            // confirmation activity, never by merely opening the About page.
+            if (PendingUpdateStore.getPending(context)?.autoDownloaded == true) {
+                return@LifecycleEventObserver
+            }
             if (!UpdateChecker.canInstall(context)) return@LifecycleEventObserver
             awaitingInstallPerm = false
             val pendingFile = UpdateChecker.resumablePendingFile(context) ?: return@LifecycleEventObserver

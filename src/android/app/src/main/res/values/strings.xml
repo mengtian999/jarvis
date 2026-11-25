@@ -59,6 +59,9 @@
     <string name="check_update_install_launch_failed">Failed to launch installer. Check \"install unknown apps\" permission or open the downloaded APK manually.</string>
     <string name="check_update_install_hint">Tip: If installation gives no feedback, the signature may not match — uninstall the previous version first, then download again.</string>
     <string name="check_update_open_install_settings">Open Settings</string>
+    <string name="update_ready_channel">App Updates</string>
+    <string name="update_ready_title">New version is ready</string>
+    <string name="update_ready_message">Tap OK to update now</string>
 
     <!-- Permissions (Settings → Permissions) -->
     <string name="permissions_title">Permissions</string>

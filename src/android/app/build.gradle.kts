@@ -341,6 +341,9 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
+    // Wi-Fi-only background update checks and APK downloads.
+    implementation("androidx.work:work-runtime-ktx:2.10.3")
+
     // T283: ACRA — local crash report capture. acra-core only (no http
     // sender, no network permission). CrashFileSender writes reports to
     // filesDir/logs/ where LogManagementScreen surfaces them.

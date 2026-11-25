@@ -32,6 +32,7 @@ import com.jarvis.app.data.model.AgentToolDefinition
 import com.jarvis.app.data.model.LLMError
 import com.jarvis.app.data.model.LLMMessage
 import com.jarvis.app.data.model.LLMModel
+import com.jarvis.app.data.model.LLMResponse
 import com.jarvis.app.data.model.LLMStreamChunk
 import com.jarvis.app.data.model.LLMUsage
 import com.jarvis.app.data.model.ModelGroup
@@ -1237,11 +1238,26 @@ class ChatViewModel(
             // Group correctly LOSE the tool (iOS parity), while a configured
             // Vision Group keeps it.
             supportsImageInput = currentModelHasNativeVision,
+            // [T-gateway-vision-aux] The gateway's hidden vision_aux tier is always
+            // available as a last-resort reader: a text-only main model without a
+            // configured Vision Group can still call read_image (the gateway client
+            // degrades to failure text if the network is down). Same gate-widening
+            // rationale as visionGroupConfigured above.
             visionGroupConfigured = com.jarvis.app.tools.VisionGroupResolver.isConfigured(
                 providerRepository, context,
-            ),
+            ) || gatewayVisionAvailable,
             memoryEnabled = _memoryEnabled.value,
         )
+
+    /**
+     * [T-gateway-vision-aux] The gateway's hidden vision_aux tier is treated as
+     * always-available for tool gating: it costs a property read, not a network
+     * call, and the actual describe attempt degrades to failure text on error
+     * (same contract as a Vision Group whose members all fail). Kept as a val
+     * so future gating (e.g. device offline detection) has a single seam.
+     */
+    private val gatewayVisionAvailable: Boolean
+        get() = true
 
     /**
      * Per-session loop detector. Reset alongside [agentHistory] whenever the
@@ -3247,6 +3263,24 @@ class ChatViewModel(
         val maxOut = maxOf(1024, minOf(8192, contextWindow - estimatedInput))
         val provider = currentProvider
             ?: throw IllegalStateException("No LLM provider available for compaction")
+
+        // [T-gateway-utility-large-compact] Try the gateway's hidden utility_large
+        // tier first (server-side AMD pool, cheap). Any failure — gateway down,
+        // empty reply, timeout — silently falls back to the main model so the
+        // existing split-retry ladder keeps working unchanged.
+        try {
+            val gateway = com.jarvis.app.provider.gateway.GatewayClient(context)
+            val gwSummary = gateway.compactSummary(userMessage)
+            if (gwSummary.isNotBlank()) {
+                AppLogger.info(TAG, "[Compact] gateway utility_large hit len=${gwSummary.length}")
+                return gwSummary
+            }
+            AppLogger.info(TAG, "[Compact] gateway utility_large empty — falling back to main model")
+        } catch (gwErr: Exception) {
+            if (gwErr is CancellationException) throw gwErr
+            AppLogger.info(TAG, "[Compact] gateway utility_large failed: ${gwErr.message?.take(120)} — falling back to main model")
+        }
+
         val response = provider.sendMessage(
             messages = listOf(
                 LLMMessage(role = LLMMessage.Role.USER, content = userMessage)
@@ -10223,8 +10257,41 @@ class ChatViewModel(
                     com.jarvis.app.tools.VisionGroupResolver.groupName(providerRepository),
                     question = customPrompt,
                 )
-            is com.jarvis.app.tools.VisionGroupResolver.VisionResult.Failure ->
-                com.jarvis.app.tools.VisionGroupResolver.failureText(result.reason)
+            is com.jarvis.app.tools.VisionGroupResolver.VisionResult.Failure -> {
+                // [T-gateway-vision-aux] Last-resort: the gateway's hidden
+                // vision_aux tier. Runs only after every Vision Group member
+                // failed (or none exist). Empty reply or error → original
+                // failure text, keeping the tool-result contract unchanged.
+                val gwDesc = try {
+                    val gateway = com.jarvis.app.provider.gateway.GatewayClient(context)
+                    val instruction = customPrompt?.trim().takeUnless { it.isNullOrEmpty() }
+                        ?: com.jarvis.app.tools.VisionGroupResolver.DESCRIBE_PROMPT
+                    val text = gateway.describeImage(
+                        imageDataBase64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP),
+                        mimeType = mime,
+                        prompt = instruction,
+                    )
+                    text.trim().takeUnless { it.isEmpty() }
+                } catch (gwErr: Exception) {
+                    if (gwErr is CancellationException) throw gwErr
+                    android.util.Log.w("VisionGroup", "[Vision] gateway vision_aux failed: ${gwErr.message?.take(120)}")
+                    null
+                }
+                if (gwDesc != null) {
+                    android.util.Log.i("VisionGroup", "[Vision] gateway vision_aux hit len=${gwDesc.length}")
+                    com.jarvis.app.tools.VisionGroupResolver.framedDescription(
+                        com.jarvis.app.tools.VisionGroupResolver.VisionResult.Success(
+                            description = gwDesc,
+                            modelName = "gateway vision_aux",
+                            priorFailures = listOf("Vision Group" to result.reason),
+                        ),
+                        null,
+                        question = customPrompt,
+                    )
+                } else {
+                    com.jarvis.app.tools.VisionGroupResolver.failureText(result.reason)
+                }
+            }
         }
         // Deliberately still success=true even on describe failure: an errored
         // tool result tends to make models retry in a loop, whereas this lets the
@@ -11959,10 +12026,30 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                 // previous manual prefix branch here was redundant.
                 val effectiveSystemPrompt = TITLE_GEN_SYSTEM_PROMPT
 
-                AppLogger.info(
-                    "TitleGen",
-                    "dispatch attempt=$titleGenerationAttempts provider=${provider.javaClass.simpleName} model=${provider.model.id}",
-                )
+                // [T-gateway-utility-small] Candidate-chain head: try the gateway's
+                // hidden utility_small tier first (cheap AMD pool, no thinking). Any
+                // failure (network / empty / gateway unavailable) silently falls
+                // through to the existing sub/primary provider path below — same
+                // degrade-quietly pattern as im_translate.
+                var response: LLMResponse? = null
+                try {
+                    val gateway = com.jarvis.app.provider.gateway.GatewayClient(context)
+                    val gwText = gateway.generateTitleViaUtilitySmall(prompt)
+                    if (gwText.isNotBlank()) {
+                        AppLogger.info("TitleGen", "gateway utility_small hit textLen=${gwText.length}")
+                        response = LLMResponse(text = gwText, stopReason = "end_turn", usage = null)
+                    } else {
+                        AppLogger.info("TitleGen", "gateway utility_small empty — falling back to provider")
+                    }
+                } catch (gwErr: Exception) {
+                    AppLogger.info("TitleGen", "gateway utility_small failed: ${gwErr.message?.take(120)} — falling back to provider")
+                }
+                if (response == null) {
+                    AppLogger.info(
+                        "TitleGen",
+                        "dispatch attempt=$titleGenerationAttempts provider=${provider.javaClass.simpleName} model=${provider.model.id}",
+                    )
+                }
                 // [T-android-titlegen-reasoning] Match iOS callSubModelForTitle:
                 // explicitly disable thinking (thinkingLevel = OFF). The provider
                 // layer's injectThinkingParams honors OFF — e.g. DeepSeek V4 gets
@@ -11974,24 +12061,26 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                 // default), keep the T334 budget bump so it can finish thinking
                 // and still emit the JSON. Unified with regenerateTitle's ladder.
                 val titleMaxTokens = if (provider.model.supportsReasoning == true) 2048 else 100
-                val response = provider.sendMessage(
-                    messages = listOf(LLMMessage(role = LLMMessage.Role.USER, content = prompt)),
-                    systemPrompt = effectiveSystemPrompt,
-                    maxTokens = titleMaxTokens,
-                    // Mirror iOS AIChatViewModel.swift:11244 — pass null so
-                    // gpt-5.x family doesn't reject the request (only
-                    // temperature=1 allowed there). buildRequestBody omits
-                    // the field when null.
-                    temperature = null,
-                    thinkingLevel = ThinkingLevel.OFF,
-                )
+                if (response == null) {
+                    response = provider.sendMessage(
+                        messages = listOf(LLMMessage(role = LLMMessage.Role.USER, content = prompt)),
+                        systemPrompt = effectiveSystemPrompt,
+                        maxTokens = titleMaxTokens,
+                        // Mirror iOS AIChatViewModel.swift:11244 — pass null so
+                        // gpt-5.x family doesn't reject the request (only
+                        // temperature=1 allowed there). buildRequestBody omits
+                        // the field when null.
+                        temperature = null,
+                        thinkingLevel = ThinkingLevel.OFF,
+                    )
+                }
 
                 AppLogger.info(
                     "TitleGen",
-                    "response stopReason=${response.stopReason} textLen=${response.text.length} " +
-                        "raw='${response.text.take(200).replace("\n", "\\n")}'",
+                    "response stopReason=${response?.stopReason} textLen=${response?.text?.length} " +
+                        "raw='${response?.text?.take(200)?.replace("\n", "\\n")}'",
                 )
-                val (title, category, folderName) = parseTitleResponse(response.text)
+                val (title, category, folderName) = parseTitleResponse(response?.text ?: "")
                 if (title.isNotEmpty()) {
                     val sid = realSessionId.ifEmpty { sessionId }
                     chatRepository.updateSessionTitleAndCategory(sid, title, category)
@@ -12057,8 +12146,8 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
                     AppLogger.warning(
                         "TitleGen",
                         "outcome=no-title attempt=$titleGenerationAttempts/$TITLE_MAX_ATTEMPTS " +
-                            "(empty / unparseable response) stopReason=${response.stopReason} " +
-                            "textLen=${response.text.length}",
+                            "(empty / unparseable response) stopReason=${response?.stopReason} " +
+                            "textLen=${response?.text?.length}",
                     )
                     if (titleGenerationAttempts >= TITLE_MAX_ATTEMPTS) {
                         AppLogger.warning("TitleGen", "outcome=gave-up ($titleGenerationAttempts/$TITLE_MAX_ATTEMPTS) — applying first-message fallback title")
