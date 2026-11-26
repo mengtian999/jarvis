@@ -1353,6 +1353,15 @@ struct AIChatView: View {
                     targetVM.respondToForwardedHistory()
                 }
             }
+            // [T-ios-first-run-intro] Drain the first-run greeting request stashed by
+            // the launch task: this draft is the very first chat on a fresh install.
+            // One-shot — re-entering the same draft never re-greets.
+            if let draftId, ViewModelCache.shared.consumePendingIntro(draftId: draftId) {
+                // A draft has no loadSession (hasCompletedInitialLoad never flips), so
+                // unlike the forward path there is nothing to wait for: startIntro
+                // owns its own readiness wait (gateway catalog → provider resolve).
+                vm.startIntro()
+            }
             vm.ensureKernelBooted()
             if let sessionId {
                 if cached.isNew || (vm.messages.isEmpty && !vm.isLoadingSession) {
@@ -2826,9 +2835,24 @@ struct AIChatView: View {
             if vm.sessionId == nil
                 && vm.messages.isEmpty
                 && !vm.isLoadingSession
+                // [T-ios-first-run-intro] The greeting card owns the empty draft while
+                // the first run is connecting / waiting for a retry; the directory
+                // tip would otherwise stack on top of it.
+                && vm.introState == .none
                 && (totalSessionCount ?? Int.max) == 0 {
                 EmptyChatDirectoryTimeline(onBrowse: { showFileBrowser = true })
                     .padding(.horizontal, 24)
+            }
+            // [T-ios-first-run-intro] Connecting / retry card for the first-run draft.
+            if vm.sessionId == nil
+                && vm.messages.isEmpty
+                && !vm.isLoadingSession
+                && (vm.introState == .connecting || vm.introState == .failed) {
+                IntroStatusCard(
+                    state: vm.introState,
+                    roleName: vm.speakerRole.metadata.name,
+                    onRetry: { vm.retryIntro() }
+                )
             }
         }
         .overlay(alignment: .bottom) {
@@ -3762,6 +3786,16 @@ struct AIChatView: View {
         vm.inputCaret = caret
     }
 
+    /// [T-ios-first-run-intro] Starter chips are offered only right after the
+    /// greeting: while it is the sole turn (no user message yet), nothing is
+    /// streaming, and the composer is empty — so they never clutter an ongoing
+    /// conversation. Mirrors Android ChatScreen.showIntroStarters.
+    private var showIntroStarters: Bool {
+        vm.introState == .sent && !vm.isProcessing && !vm.messages.isEmpty &&
+            !vm.messages.contains { $0.role == .user } &&
+            vm.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private var inputBar: some View {
         VStack(spacing: 0) {
             if vm.isSuspended {
@@ -3778,6 +3812,14 @@ struct AIChatView: View {
             }
 
             VStack(spacing: 5) {
+                // [T-ios-first-run-intro] Starter chips sit above everything else in the
+                // composer (they vanish on the first send).
+                if showIntroStarters {
+                    IntroStarterChips { text in
+                        vm.inputText = text
+                        vm.send()
+                    }
+                }
                 // Attachment preview chips — 3 per row
                 if !vm.attachments.isEmpty || vm.loadingVideoCount > 0 {
                     ScrollView(.vertical, showsIndicators: true) {
@@ -6422,6 +6464,100 @@ private struct EmptyChatDirectoryTimeline: View {
     }
 }
 
+
+// MARK: - [T-ios-first-run-intro] First-run greeting card + starter chips
+
+/// Connecting / failed card shown on the first-run draft while the gateway
+/// catalog has not landed yet. connecting = "waking up <role>"; failed = the
+/// offline welcome plus a Retry that re-runs the gateway sync
+/// (AIChatViewModel.retryIntro). The composer stays usable underneath either
+/// way. Mirrors Android ChatScreen.IntroStatusStrip.
+private struct IntroStatusCard: View {
+    var state: IntroState
+    var roleName: String
+    var onRetry: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if state == .connecting {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Waking up \(roleName)…")
+                    .font(.system(size: 13))
+                    .foregroundStyle(ChatColors.secondaryText)
+            } else {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Couldn't reach the model service")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(ChatColors.primaryText)
+                    Text("Check your connection and retry — \(roleName) will say hi once it's connected.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(ChatColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Button(action: onRetry) {
+                    Text("Retry")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.tint)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: 460, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(ChatColors.secondaryBg.opacity(0.6))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(ChatColors.toolBorder, lineWidth: 0.5)
+        )
+        .padding(.horizontal, 24)
+    }
+}
+
+/// Tappable example questions offered right after the greeting. Each tap is a
+/// normal send, so they are just a faster way to type the first message.
+/// Mirrors Android ChatScreen.IntroStarterRow.
+private struct IntroStarterChips: View {
+    var onPick: (String) -> Void
+
+    private var starters: [String] {
+        [
+            String(localized: "Who are you, and what can you do on this device?"),
+            String(localized: "Plan my day into a simple to-do list"),
+            String(localized: "Show me something you can do with the Linux shell"),
+        ]
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(starters.enumerated()), id: \.offset) { _, starter in
+                    Button { onPick(starter) } label: {
+                        Text(starter)
+                            .font(.system(size: 13))
+                            .foregroundStyle(ChatColors.primaryText)
+                            .lineLimit(1)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(Capsule().fill(ChatColors.secondaryBg))
+                            .overlay(Capsule().stroke(ChatColors.toolBorder, lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 8)
+        }
+    }
+}
 
 // MARK: - Session Loading Card
 

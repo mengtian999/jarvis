@@ -91,6 +91,21 @@ import java.io.ByteArrayOutputStream
 // [T-android-split-chat] StreamingDelta / ChatMessage / QueuedPrompt /
 // ToolBlockStatus / SlashCommand / AssistantBlock moved verbatim to ChatModels.kt.
 
+/**
+ * [T-android-first-run-intro] Lifecycle of the first-run greeting for ONE chat.
+ * Every chat that was not opened as the first-run draft stays [NONE].
+ */
+enum class IntroState {
+    /** Not a first-run chat (or the user took over before the model was ready). */
+    NONE,
+    /** Waiting for a usable model (gateway catalog / own provider) before greeting. */
+    CONNECTING,
+    /** No usable model within the timeout — offline welcome + Retry strip. */
+    FAILED,
+    /** Greeting dispatched; the loop streams like any other turn. */
+    SENT,
+}
+
 class ChatViewModel(
     internal val sessionId: String,
     private val chatRepository: ChatRepository,
@@ -103,6 +118,21 @@ class ChatViewModel(
 
     companion object {
         internal const val TAG = "ChatViewModel"
+
+        // ── [T-android-first-run-intro] ─────────────────────────────────────
+        /**
+         * Model-facing brief for the first-run greeting. English on purpose — it
+         * is not a UI string; the system prompt's runtime context carries the
+         * device locale and the brief itself asks for the user's language.
+         */
+        private const val INTRO_INSTRUCTION =
+            "The user has just installed this app and opened it for the first time. " +
+                "You are looking at an empty chat together. Open the conversation yourself, in your own voice: " +
+                "briefly introduce yourself and name the 3 most useful things you can do for the user on this device " +
+                "(for example running real Linux shell commands and code, browsing the web, working with files, " +
+                "or using device integrations), then end with 2-3 short example questions they could ask you next, " +
+                "as a compact list. Keep the whole reply under 150 words. Do not call any tools for this reply. " +
+                "Write in the user's device language."
 
         // ── [T-android-compact-runaway] Compaction budgets ──────────────
         //
@@ -777,6 +807,18 @@ class ChatViewModel(
 
     private val _isStreaming = MutableStateFlow(false)
     val isStreaming: StateFlow<Boolean> = _isStreaming.asStateFlow()
+
+    // ── [T-android-first-run-intro] ─────────────────────────────────────────
+    /** See [IntroState]. Drives the connecting / retry strip in ChatScreen. */
+    private val _introState = MutableStateFlow(IntroState.NONE)
+    val introState: StateFlow<IntroState> = _introState.asStateFlow()
+
+    /** The in-flight gateway wait; cancelled when the user retries or takes over. */
+    private var introWaitJob: Job? = null
+
+    /** True while the intro loop runs: there is no user turn to auto-title from. */
+    @Volatile
+    private var isIntroLoop = false
 
     /**
      * T261: tool detail sheet visibility, persistent across LazyColumn
@@ -6782,14 +6824,128 @@ class ChatViewModel(
             .filter { it.id in uiIds }
             .flatMap { msg -> msg.sourceDbIds.ifEmpty { listOf(msg.id) } }
 
+    // ── [T-android-first-run-intro] ─────────────────────────────────────────
+
+    /**
+     * Open the very first conversation on a fresh install: wait for a usable
+     * model (gateway catalog / the user's own provider), then have the session
+     * persona introduce itself through a normal agent loop.
+     *
+     * Dispatch-once is the persisted FirstRunIntro flag, so a Retry after a
+     * FAILED wait can never double the greeting. If the user starts typing or
+     * sends before the model is ready the intro stands down — what they typed
+     * outranks a canned greeting.
+     */
+    fun startIntro() {
+        if (com.jarvis.app.ui.onboarding.FirstRunIntro.isIntroDone(context)) {
+            _introState.value = IntroState.NONE
+            return
+        }
+        if (_introState.value == IntroState.CONNECTING || _introState.value == IntroState.SENT) return
+        runIntroWait()
+    }
+
+    /** Retry strip: re-run the gateway sync and resume waiting for a usable model. */
+    fun retryIntro() {
+        if (_introState.value == IntroState.SENT) return
+        com.jarvis.app.provider.gateway.GatewaySync.startSync(context, providerRepository)
+        runIntroWait()
+    }
+
+    private fun runIntroWait() {
+        introWaitJob?.cancel()
+        _introState.value = IntroState.CONNECTING
+        introWaitJob = viewModelScope.launch {
+            when (waitForIntroReadiness(com.jarvis.app.ui.onboarding.FirstRunIntro.READY_TIMEOUT_MS, failFast = true)) {
+                true -> sendIntro()
+                false -> {
+                    AppLogger.info(
+                        TAG,
+                        "[Intro] no usable model after ${com.jarvis.app.ui.onboarding.FirstRunIntro.READY_TIMEOUT_MS}ms — offline welcome",
+                    )
+                    _introState.value = IntroState.FAILED
+                    // [T-android-first-run-intro] Late grace: a slow gateway that lands
+                    // seconds after the timeout still gets its greeting — the FAILED
+                    // card is a stale snapshot, not a verdict. Gateway failures are
+                    // ignored here (the previous attempt's result is still parked in
+                    // sharedState); only the config becoming usable ends the wait.
+                    if (waitForIntroReadiness(
+                            com.jarvis.app.ui.onboarding.FirstRunIntro.LATE_GRACE_MS,
+                            failFast = false,
+                        ) == true
+                    ) {
+                        sendIntro()
+                    }
+                }
+                // null = the user took over; leave the chat to them.
+                else -> _introState.value = IntroState.NONE
+            }
+        }
+    }
+
+    /**
+     * Suspend until a usable model is configured.
+     *
+     * @param failFast end the wait as soon as the gateway reports a failure for
+     *   the current attempt. Off during the late grace, where the parked
+     *   failure of the previous attempt must not end the wait immediately.
+     * @return true = usable model configured; false = timed out (or the gateway
+     *   gave up, with [failFast]); null = the user typed or sent meanwhile — the
+     *   intro stands down.
+     */
+    private suspend fun waitForIntroReadiness(timeoutMs: Long, failFast: Boolean): Boolean? {
+        val config = providerRepository.config
+        fun usable(): Boolean = config.value.defaultPrimaryGroupId
+            ?.let { gid -> config.value.modelGroups.any { it.id == gid } } == true
+        if (!usable()) {
+            val outcome: Boolean? = withTimeoutOrNull(timeoutMs) {
+                combine(config, com.jarvis.app.provider.gateway.GatewaySync.sharedState) { _, gateway ->
+                    when {
+                        usable() -> true
+                        failFast && gateway?.ok == false -> false
+                        else -> null
+                    }
+                }.first { it != null }
+            }
+            if (outcome != true) {
+                if (userTookOverIntro()) return null
+                return false
+            }
+        }
+        return if (userTookOverIntro()) null else true
+    }
+
+    /** Explicit input outranks the canned greeting. */
+    private fun userTookOverIntro(): Boolean =
+        _inputText.value.isNotBlank() ||
+            _messages.value.any { it.role == "user" } ||
+            _isStreaming.value
+
+    private fun sendIntro() {
+        // Mark BEFORE launching: the greeting counts as sent once the loop is on
+        // its way, so a crash mid-stream must not replay it on the next launch.
+        com.jarvis.app.ui.onboarding.FirstRunIntro.markIntroDone(context)
+        _introState.value = IntroState.SENT
+        AppLogger.info(
+            TAG,
+            "[Intro] dispatching first-run greeting (sid=$activeSessionId role=${_sessionRole.value.roleId})",
+        )
+        respondToForwardedHistory(isIntro = true)
+    }
+
     /**
      * [T-role-forward] Auto-start the agent loop over the already-persisted
      * history WITHOUT appending a new user bubble. Called by ChatScreen when
      * it drains a [ChatViewModelStore.PendingForwardRespond] marker after a
      * forward. Waits for loadSession so the loop sees the forwarded rows.
+     *
+     * [T-android-first-run-intro] With [isIntro] the same scaffolding drives the
+     * first-run greeting on an empty draft: the session row is created first and
+     * an in-memory user brief (see [INTRO_INSTRUCTION]) carries the request.
      */
-    fun respondToForwardedHistory() {
+    fun respondToForwardedHistory(isIntro: Boolean = false) {
         if (_isStreaming.value || _isCompacting.value) return
+        if (isIntro) isIntroLoop = true
         // [T-forward-provider-race] currentProvider is NOT read here. On a
         // freshly-opened target session — the always-case after forward, since
         // existing targets are released so the next open reloads the forwarded
@@ -6825,7 +6981,14 @@ class ChatViewModel(
                 }
                 val initialProvider = currentProvider
                 if (initialProvider == null || ready == null) {
-                    _error.value = "No provider configured"
+                    if (isIntro) {
+                        // [T-android-first-run-intro] Keep the user on the retry
+                        // strip instead of a raw "No provider configured" bubble.
+                        AppLogger.info(TAG_STREAM, "[Intro] provider not resolved — FAILED (ready=$ready)")
+                        _introState.value = IntroState.FAILED
+                    } else {
+                        _error.value = "No provider configured"
+                    }
                     AppLogger.info(
                         TAG_STREAM,
                         "respondToForwardedHistory: provider not resolved " +
@@ -6835,6 +6998,20 @@ class ChatViewModel(
                 }
 
                 var provider: LLMProvider = initialProvider
+                // [T-android-first-run-intro] A loop needs a user turn: providers
+                // reject a system-only messages array, and a bare "go" yields an
+                // unpredictable reply. The greeting brief rides as an in-memory
+                // user turn — never persisted, never rendered — and is removed
+                // once the loop ends so in-memory history == DB history again.
+                // A first-run draft has no DB row yet, so promote it first
+                // (exactly what sendMessage does on the first message).
+                var introTurn: LLMMessage? = null
+                if (isIntro) {
+                    ensureSession()
+                    val turn = LLMMessage(role = LLMMessage.Role.USER, content = INTRO_INSTRUCTION)
+                    introTurn = turn
+                    agentHistory.add(turn)
+                }
                 val baseSystemPrompt = buildSystemPrompt()
                 val systemPrompt = if ((provider as? com.jarvis.app.provider.anthropic.AnthropicProvider)?.isOAuth == true) {
                     val prefix = com.jarvis.app.auth.ClaudeOAuthManager.ANTHROPIC_OAUTH_IDENTIFIER_PROMPT
@@ -6882,6 +7059,10 @@ class ChatViewModel(
                             setInlineError(e)
                             SessionActivityTracker.markStreamError(activeSessionId)
                         } finally {
+                            // [T-android-first-run-intro] Drop the in-memory greeting
+                            // brief so later turns send exactly the persisted history.
+                            introTurn?.let { agentHistory.remove(it) }
+                            isIntroLoop = false
                             publishOverlayReplyExcerpt(activeSessionId)
                             SessionActivityTracker.setInactive(activeSessionId)
                             SessionConcurrencyManager.releaseSlot(activeSessionId)
@@ -6897,6 +7078,7 @@ class ChatViewModel(
                 if (!streamLaunched) {
                     AppLogger.info(TAG_STREAM, "respondToForwardedHistory setup aborted, _isStreaming=false")
                     _isStreaming.value = false
+                    isIntroLoop = false
                 }
             }
         }
@@ -11876,6 +12058,12 @@ Scheduled tasks: crontab / at / nohup loops will stop when the app is suspended,
             "enter session=${realSessionId.ifEmpty { sessionId }} attempts=$titleGenerationAttempts/$TITLE_MAX_ATTEMPTS " +
                 "inFlight=$titleGenerationInFlight currentTitle='${_sessionTitle.value.take(200)}'",
         )
+        // [T-android-first-run-intro] The greeting loop has no user turn to
+        // title from — and must not burn one of the 3 attempts.
+        if (isIntroLoop) {
+            AppLogger.info("TitleGen", "skip guard=intro-loop")
+            return
+        }
         if (titleGenerationInFlight || titleGenerationAttempts >= TITLE_MAX_ATTEMPTS) {
             AppLogger.info(
                 "TitleGen",

@@ -1306,15 +1306,137 @@ extension AIChatViewModel {
         return String(collapsed.prefix(50)).isEmpty ? "Forwarded Chat" : String(collapsed.prefix(50))
     }
 
+    // MARK: - [T-ios-first-run-intro] First-run greeting
+
+    /// Model-facing brief for the first-run greeting. English on purpose — it is
+    /// not a UI string; the system prompt's runtime context carries the device
+    /// locale and the brief itself asks for the user's language. Mirrors Android
+    /// ChatViewModel.INTRO_INSTRUCTION.
+    static let introInstruction =
+        "The user has just installed this app and opened it for the first time. " +
+        "You are looking at an empty chat together. Open the conversation yourself, in your own voice: " +
+        "briefly introduce yourself and name the 3 most useful things you can do for the user on this device " +
+        "(for example running real Linux shell commands and code, browsing the web, working with files, " +
+        "or using device integrations), then end with 2-3 short example questions they could ask you next, " +
+        "as a compact list. Keep the whole reply under 150 words. Do not call any tools for this reply. " +
+        "Write in the user's device language."
+
+    /// Open the very first conversation on a fresh install: wait for a usable
+    /// model (gateway catalog / the user's own provider), then have the session
+    /// persona introduce itself through a normal agent loop.
+    ///
+    /// Dispatch-once is the persisted FirstRunIntro flag, so a Retry after a
+    /// failed wait can never double the greeting. If the user starts typing or
+    /// sends before the model is ready the intro stands down — what they typed
+    /// outranks a canned greeting.
+    func startIntro() {
+        if FirstRunIntro.isDone {
+            introState = .none
+            return
+        }
+        if introState == .connecting || introState == .sent { return }
+        runIntroWait()
+    }
+
+    /// Retry card: re-run the gateway sync and resume waiting for a usable model.
+    func retryIntro() {
+        guard introState != .sent else { return }
+        GatewaySync.startSync()
+        runIntroWait()
+    }
+
+    private func runIntroWait() {
+        introWaitTask?.cancel()
+        introState = .connecting
+        introWaitTask = Task { [weak self] in
+            guard let self else { return }
+            switch await self.waitForIntroReadiness(timeoutMs: FirstRunIntro.readyTimeoutMs, failFast: true) {
+            case .some(true):
+                self.sendIntro()
+            case .some(false):
+                logger.info("[Intro] no usable model after \(FirstRunIntro.readyTimeoutMs)ms — offline welcome")
+                self.introState = .failed
+                // Late grace: a slow gateway that lands seconds after the timeout still
+                // gets its greeting — the failed card is a stale snapshot, not a verdict.
+                // Gateway failures are ignored here (the previous attempt's result is
+                // still parked in lastResult); only the config becoming usable ends the wait.
+                if await self.waitForIntroReadiness(timeoutMs: FirstRunIntro.lateGraceMs, failFast: false) == .some(true) {
+                    self.sendIntro()
+                }
+            case .none:
+                // The user took over — or a newer wait superseded this one, in
+                // which case its state must not be clobbered. Leave the chat to them.
+                if !Task.isCancelled { self.introState = .none }
+            }
+        }
+    }
+
+    /// Suspend until a usable model is configured.
+    ///
+    /// - Parameter failFast: end the wait as soon as the gateway reports a failure
+    ///   for the current attempt. Off during the late grace, where the parked
+    ///   failure of the previous attempt must not end the wait immediately.
+    /// - Returns: true = usable model configured; false = timed out (or the gateway
+    ///   gave up, with `failFast`); nil = the user typed or sent meanwhile — the
+    ///   intro stands down.
+    private func waitForIntroReadiness(timeoutMs: Int, failFast: Bool) async -> Bool? {
+        let store = ProviderConfigStore.shared
+        func usable() -> Bool {
+            guard let gid = store.defaultPrimaryGroupId else { return false }
+            return store.modelGroups.contains { $0.id == gid }
+        }
+        let deadline = Date().addingTimeInterval(Double(timeoutMs) / 1000)
+        while !usable() {
+            if Task.isCancelled { return nil }
+            if failFast, let last = GatewaySync.lastResult, !last.ok {
+                return userTookOverIntro() ? nil : false
+            }
+            if Date() >= deadline {
+                return userTookOverIntro() ? nil : false
+            }
+            try? await Task.sleep(nanoseconds: 200_000_000)
+        }
+        return userTookOverIntro() ? nil : true
+    }
+
+    /// Explicit input outranks the canned greeting.
+    private func userTookOverIntro() -> Bool {
+        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            messages.contains { $0.role == .user } ||
+            isProcessing
+    }
+
+    private func sendIntro() {
+        // Mark BEFORE launching: the greeting counts as sent once the loop is on
+        // its way, so a crash mid-stream must not replay it on the next launch.
+        FirstRunIntro.markDone()
+        introState = .sent
+        logger.info("[Intro] dispatching first-run greeting (sid=\(sessionId?.prefix(8) ?? "draft") role=\(speakerRole.metadata.name))")
+        respondToForwardedHistory(isIntro: true)
+    }
+
     /// [T-role-forward] Auto-start the agent loop over the already-persisted
     /// forwarded history WITHOUT appending a user bubble. Called by
     /// AIChatView when it drains a `ViewModelCache.PendingForwardRespond`
     /// marker after a forward. Mirrors resume()'s loop-launch scaffolding;
     /// runAgentLoop() appends its own assistant placeholder (stamped with the
     /// session role).
-    func respondToForwardedHistory() {
+    ///
+    /// [T-ios-first-run-intro] With `isIntro` the same scaffolding drives the
+    /// first-run greeting on an empty draft: the session row is created first and
+    /// an in-memory user brief (see `introInstruction`) carries the request.
+    func respondToForwardedHistory(isIntro: Bool = false) {
         guard !isProcessing, !isCompacting else { return }
+        if isIntro { isIntroLoop = true }
         guard resolveCurrentEntry() != nil else {
+            if isIntro {
+                // [T-ios-first-run-intro] Keep the user on the retry card instead of
+                // a raw "No model configured" bubble.
+                logger.info("[Intro] resolveCurrentEntry=nil — FAILED")
+                introState = .failed
+                isIntroLoop = false
+                return
+            }
             errorMessage = String(localized: "No model configured. Add a provider in Settings.")
             return
         }
@@ -1328,6 +1450,18 @@ extension AIChatViewModel {
 
         currentTask = Task { [weak self] in
             guard let self else { return }
+            // [T-ios-first-run-intro] A loop needs a user turn: providers reject a
+            // system-only messages array, and a bare "go" yields an unpredictable
+            // reply. The greeting brief rides as an in-memory user turn — never
+            // persisted, never rendered — and is dropped once the loop ends so
+            // in-memory history == DB history again. A first-run draft has no DB
+            // row yet, so promote it first (exactly what send() does).
+            var introIdx: Int? = nil
+            if isIntro {
+                _ = await self.ensureSessionReturningId()
+                introIdx = self.agentHistory.count
+                self.agentHistory.append(AgentMessage(role: .user, parts: [.text(Self.introInstruction)]))
+            }
             while self.kernelStatus == .booting {
                 try? await Task.sleep(nanoseconds: 100_000_000)
             }
@@ -1335,6 +1469,7 @@ extension AIChatViewModel {
                 self.errorMessage = "Kernel not available: \(msg)"
                 self.isProcessing = false
                 self.endBackgroundProcessing()
+                self.isIntroLoop = false
                 return
             }
             let sid = self.sessionId ?? "unknown"
@@ -1368,6 +1503,13 @@ extension AIChatViewModel {
                     self.errorMessage = Self.friendlyErrorMessage(rawDesc)
                 }
             }
+            // [T-ios-first-run-intro] Drop the in-memory greeting brief so later
+            // turns send exactly the persisted history.
+            if let idx = introIdx, idx < self.agentHistory.count,
+               case .text(let t) = self.agentHistory[idx].parts.first, t == Self.introInstruction {
+                self.agentHistory.remove(at: idx)
+            }
+            self.isIntroLoop = false
             if self.userDidCancel { self.handleUserCancelledCleanup() }
             guard !Task.isCancelled else { return }
             await self.drainQueuedPrompts()

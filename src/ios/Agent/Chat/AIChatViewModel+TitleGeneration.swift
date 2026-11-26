@@ -36,6 +36,8 @@ extension AIChatViewModel {
     /// Retries up to 3 times across agent loop iterations if the title is still missing.
     /// Skips if a generation request is already in-flight to avoid wasting tokens.
     func generateSessionTitleIfNeeded(toolEntries: [(name: String, args: [String: Any])] = []) {
+        // [T-ios-first-run-intro] The greeting loop has no user turn to title from.
+        guard !isIntroLoop else { return }
         guard let sessionId, titleGenAttempts < 3, !isTitleGenerating else { return }
 
         let userMessages = messages.filter { $0.role == .user }

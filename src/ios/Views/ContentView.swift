@@ -1802,6 +1802,21 @@ struct ContentView: View {
                 // intent, and a stale crash flag must not swallow them.
                 CrashReporter.shared.clearCrashLoopFlag()
                 shareLog.warning("[Share] .task: crash-loop detected — skipping session restore, landing on the session list")
+            } else if sessions.isEmpty, !FirstRunIntro.isDone {
+                // [T-ios-first-run-intro] Fresh install (no session yet, greeting never
+                // dispatched): skip the empty Home entirely and land in a draft chat
+                // with the default role — the PendingIntro marker addresses the
+                // greeting to that draft and AIChatView drains it on appear. The chat
+                // itself owns the gateway wait (connecting card → greeting, or the
+                // offline welcome + Retry), so launch never blocks on the network.
+                // Shares / quick actions / notification taps were handled above, so
+                // the user's explicit intent always outranks the greeting.
+                let target = Self.makeNewSessionId()
+                ViewModelCache.shared.stashPendingIntro(draftId: target)
+                shareLog.info("[Intro] first run — opening draft \(target.prefix(12)) for the greeting")
+                var tx = Transaction()
+                tx.disablesAnimations = true
+                withTransaction(tx) { openSession(target) }
             } else {
                 // No share — normal launch screen behavior
                 switch launchScreen {
@@ -4113,144 +4128,44 @@ struct ContentView: View {
 
     // MARK: - Empty State
 
-    @StateObject private var providerStore = ProviderConfigStore.shared
-    @State private var showAddProvider = false
-    @State private var showSelectModels = false
-
+    // [T-ios-first-run-intro] Shown when the user has no sessions at all. The old
+    // 3-step setup landing (add a provider → select models → start) is gone: the
+    // gateway seeds both on every launch, and a fresh install now lands straight
+    // in the greeting chat (see the launch task above). What is left is a plain
+    // "nothing here yet" with the same start-a-conversation affordance as the FAB.
+    // Mirrors Android SessionListScreen.EmptySessionsLanding.
     private var emptyState: some View {
-        let hasProviders = !providerStore.instances.isEmpty
-        let hasGroups = !providerStore.modelGroups.isEmpty
-
-        return VStack(spacing: 32) {
+        VStack(spacing: 32) {
             Spacer()
             // App icon / hero
-            Image(systemName: "sparkles")
+            Image(systemName: "bubble.left.and.bubble.right")
                 .font(.system(size: 56))
                 .foregroundStyle(.tint)
                 .padding(.bottom, 4)
 
             VStack(spacing: 8) {
-                Text("Welcome to Jarvis")
+                Text("No conversations yet")
                     .font(.title2.bold())
-                Text("Your first On-Device Agent is almost ready.")
+                Text("Tap below to start a conversation with your on-device agent.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
-            // Setup steps
-            VStack(spacing: 16) {
-                // Step 1 – Add Provider
-                setupStep(
-                    number: 1,
-                    title: "Add a Provider",
-                    subtitle: hasProviders ? "Done" : "Configure an API key or sign in with OAuth",
-                    isDone: hasProviders
-                ) {
-                    if !hasProviders {
-                        showAddProvider = true
-                    }
-                }
-
-                // Step 2 – Select Models
-                setupStep(
-                    number: 2,
-                    title: "Select Models",
-                    subtitle: hasGroups ? "Done" : (hasProviders ? "Choose the models you want to use" : "Complete step 1 first"),
-                    isDone: hasGroups
-                ) {
-                    if hasProviders && !hasGroups {
-                        showSelectModels = true
-                    }
-                }
-
-                // Step 3 – Start chatting
-                setupStep(
-                    number: 3,
-                    title: "Start a Conversation",
-                    subtitle: hasGroups ? "Tap the button below to begin" : "Complete step 2 first",
-                    isDone: false
-                ) {
-                    if hasGroups {
-                        openSession(Self.makeNewSessionId())
-                    }
-                }
+            Button {
+                openSession(Self.makeNewSessionId())
+            } label: {
+                Text("Start a conversation")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: 280)
+                    .padding(.vertical, 6)
             }
-            .padding(.horizontal, 8)
-            .frame(maxWidth: 400)
+            .buttonStyle(.borderedProminent)
+
             Spacer()
         }
         .frame(maxHeight: .infinity)
         .padding(.horizontal, 32)
-        .sheet(isPresented: $showAddProvider) {
-            NavigationStack {
-                AddProviderView()
-            }
-        }
-        .sheet(isPresented: $showSelectModels) {
-            NavigationStack {
-                OnboardingModelSelectionView()
-            }
-        }
-    }
-
-    // title/subtitle must stay LocalizedStringKey, not String. A string literal at
-    // the call site localizes fine on its own, but routing it through a String
-    // parameter erases that: `Text(String)` stores the value verbatim and never
-    // consults the string table, so these steps rendered English even though
-    // Localizable.xcstrings has all 8 locales for these keys. Typing the parameter
-    // as LocalizedStringKey keeps the literals (both branches of the `isDone`
-    // ternaries included) resolving as keys.
-    private func setupStep(
-        number: Int,
-        title: LocalizedStringKey,
-        subtitle: LocalizedStringKey,
-        isDone: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                // Step indicator
-                ZStack {
-                    Circle()
-                        .fill(isDone ? Color.green : Color.accentColor)
-                        .frame(width: 32, height: 32)
-                    if isDone {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                    } else {
-                        Text("\(number)")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(isDone ? .secondary : .primary)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if !isDone {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-                }
-            }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(UIColor.secondarySystemGroupedBackground))
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(isDone)
     }
 
     // MARK: - Search Bar

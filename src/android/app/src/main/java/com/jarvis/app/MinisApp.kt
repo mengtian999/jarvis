@@ -1,4 +1,4 @@
-﻿package com.jarvis.app
+package com.jarvis.app
 
 import android.app.Activity
 import android.app.Application
@@ -747,13 +747,10 @@ class MinisApp : Application(), ImageLoaderFactory {
         // ⚡ Gateway model sync — background, non-blocking.
         // Registers anonymous device + pulls /v1/models for jarvis-gateway provider.
         // On failure, preserves existing config (no block, no clear).
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            try {
-                GatewaySync(this@MinisApp, providerRepository).sync()
-            } catch (e: Throwable) {
-                android.util.Log.w("GatewaySync", "sync failed: ${e.message}")
-            }
-        }
+        // [T-android-first-run-intro] Routed through GatewaySync.startSync so the
+        // outcome lands in the process-wide sharedState the first-run greeting
+        // waits on (the retry strip re-enters through the same door).
+        GatewaySync.startSync(this@MinisApp, providerRepository)
 
 
         // Propagate system timezone and HTTP-proxy changes into the sandbox.

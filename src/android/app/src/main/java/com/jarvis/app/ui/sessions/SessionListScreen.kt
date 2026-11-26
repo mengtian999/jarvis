@@ -50,8 +50,6 @@ import com.jarvis.app.im.ImFlutterActivity
 import com.jarvis.app.im.ImFlutterEngine
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -173,6 +171,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.jarvis.app.ui.components.MinisButton
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -467,8 +466,6 @@ fun SessionListScreen(
     onSessionClick: (String) -> Unit,
     onNewChat: (String) -> Unit,
     onSettingsClick: () -> Unit,
-    onAddProviderClick: () -> Unit = {},
-    onSelectModelsClick: () -> Unit = {},
     onTerminalClick: () -> Unit = {},
     onRootfsClick: () -> Unit = {},
     // [T-android-scheduled-tasks-design] Entry to the scheduled-tasks list.
@@ -553,13 +550,6 @@ fun SessionListScreen(
     val regeneratingIds by viewModel.regeneratingIds.collectAsState()
     val providerConfig by providerRepository.config.collectAsState()
     val hasProviders = providerConfig.instances.isNotEmpty()
-    val hasGroups = providerConfig.modelGroups.isNotEmpty()
-    // [T-android-startup-config-stall] Provider config now loads off-thread, so
-    // for a brief startup window `providerConfig` is the empty placeholder.
-    // Gate the onboarding/list render on this too (alongside the sessions
-    // initial-load flag) so an existing user with providers but zero sessions
-    // doesn't flash the "add a provider" onboarding before the real config emits.
-    val configLoaded by providerRepository.configLoaded.collectAsState()
     val scope = rememberCoroutineScope()
     val isDark = ChatColors.isDark
 
@@ -968,24 +958,15 @@ fun SessionListScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                    } else if (configLoaded) {
-                        // Show the 3-step onboarding whenever there are no sessions —
-                        // Step 3 (Start a Conversation) is the call-to-action after the
-                        // user finishes Steps 1 and 2, so we must keep the landing
-                        // visible even when hasProviders && hasGroups. Mirrors iOS
-                        // ContentView.emptyState.
-                        // [T-android-startup-config-stall] Gated on configLoaded so
-                        // hasProviders/hasGroups reflect the real persisted config —
-                        // otherwise a returning user with providers but no sessions
-                        // would briefly see the "add a provider" step before the
-                        // async config load emits. The list branch (sessions present)
-                        // is intentionally NOT gated, so users with history still see
-                        // it immediately without waiting on the config decode.
-                        OnboardingLanding(
-                            hasProviders = hasProviders,
-                            hasGroups = hasGroups,
-                            onAddProvider = onAddProviderClick,
-                            onSelectModels = onSelectModelsClick,
+                    } else {
+                        // [T-android-first-run-intro] No sessions: a plain empty
+                        // state. The old 3-step setup landing is gone — the gateway
+                        // seeds provider + default model group on every launch, and
+                        // a fresh install now lands straight in the greeting chat
+                        // (AppNavigation). Only users who deleted every session, or
+                        // backed out of a first-run draft before the gateway came
+                        // up, ever see this. Mirrors iOS ContentView.emptyState.
+                        EmptySessionsLanding(
                             onStartConversation = {
                                 scope.launch {
                                     val sessionId = viewModel.createNewSession()
@@ -3177,16 +3158,18 @@ private fun SessionBadgeOverlay(
     }
 }
 
-// ─── Onboarding Landing (iOS-style 3-step setup) ───────────────────────────
+// ─── Empty Sessions Landing ───────────────────────────────────────────────
 
+/**
+ * [T-android-first-run-intro] Shown when the user has no sessions at all.
+ * The old 3-step setup landing (add a provider → select models → start) is
+ * gone: the gateway seeds both on every launch, and a fresh install now lands
+ * straight in the greeting chat (see AppNavigation). What is left is a plain
+ * "nothing here yet" with the same start-a-conversation affordance as the FAB.
+ * Mirrors iOS ContentView.emptyState.
+ */
 @Composable
-private fun OnboardingLanding(
-    hasProviders: Boolean,
-    hasGroups: Boolean,
-    onAddProvider: () -> Unit,
-    onSelectModels: () -> Unit,
-    onStartConversation: () -> Unit,
-) {
+private fun EmptySessionsLanding(onStartConversation: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -3198,147 +3181,27 @@ private fun OnboardingLanding(
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            imageVector = Icons.Default.AutoAwesome,
+            imageVector = Icons.Outlined.Forum,
             contentDescription = null,
             modifier = Modifier.size(56.dp),
             tint = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.height(16.dp))
-
         Text(
-            text = stringResource(R.string.sessionlist_welcome_title),
+            text = stringResource(R.string.sessionlist_empty_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.sessionlist_welcome_subtitle),
+            text = stringResource(R.string.sessionlist_empty_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-
         Spacer(Modifier.height(32.dp))
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            SetupStepCard(
-                number = 1,
-                title = stringResource(R.string.sessionlist_welcome_step1_title),
-                subtitle = if (hasProviders) {
-                    stringResource(R.string.sessionlist_welcome_step_done)
-                } else {
-                    stringResource(R.string.sessionlist_welcome_step1_subtitle)
-                },
-                isDone = hasProviders,
-                isLocked = false,
-                onClick = { if (!hasProviders) onAddProvider() },
-            )
-
-            SetupStepCard(
-                number = 2,
-                title = stringResource(R.string.sessionlist_welcome_step2_title),
-                subtitle = when {
-                    hasGroups -> stringResource(R.string.sessionlist_welcome_step_done)
-                    hasProviders -> stringResource(R.string.sessionlist_welcome_step2_subtitle)
-                    else -> stringResource(R.string.sessionlist_welcome_step2_locked)
-                },
-                isDone = hasGroups,
-                isLocked = !hasProviders,
-                onClick = { if (hasProviders && !hasGroups) onSelectModels() },
-            )
-
-            SetupStepCard(
-                number = 3,
-                title = stringResource(R.string.sessionlist_welcome_step3_title),
-                subtitle = if (hasGroups) {
-                    stringResource(R.string.sessionlist_welcome_step3_subtitle)
-                } else {
-                    stringResource(R.string.sessionlist_welcome_step3_locked)
-                },
-                isDone = false,
-                isLocked = !hasGroups,
-                onClick = { if (hasGroups) onStartConversation() },
-            )
-        }
-    }
-}
-
-@Composable
-private fun SetupStepCard(
-    number: Int,
-    title: String,
-    subtitle: String,
-    isDone: Boolean,
-    isLocked: Boolean,
-    onClick: () -> Unit,
-) {
-    val isEnabled = !isDone && !isLocked
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-            )
-            .clickable(enabled = isEnabled, onClick = onClick)
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .background(
-                    color = if (isDone) Color(0xFF34C759) else MaterialTheme.colorScheme.primary,
-                    shape = CircleShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (isDone) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp),
-                )
-            } else {
-                Text(
-                    text = "$number",
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
-        }
-
-        Column(
-            modifier = Modifier.weight(1f).height(56.dp),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = if (isDone) MaterialTheme.colorScheme.onSurfaceVariant
-                else MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        if (!isDone && isEnabled) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            )
+        MinisButton(onClick = onStartConversation, modifier = Modifier.fillMaxWidth(0.6f)) {
+            Text(stringResource(R.string.sessionlist_empty_cta))
         }
     }
 }

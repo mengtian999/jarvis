@@ -41,9 +41,29 @@ enum GatewaySync {
 
     // MARK: - Sync
 
+    /// [T-ios-first-run-intro] Outcome of the latest sync attempt of this
+    /// process. nil until an attempt settles (or while a retry is in flight) —r
+    /// the first-run greeting (AIChatViewModel.startIntro) waits on it.
+    private(set) static var lastResult: GatewaySyncResult? = nil
+
+    /// [T-ios-first-run-intro] Launch a background catalog sync. Shared by
+    /// MinisApp (first attempt of the process) and the first-run Retry card so
+    /// both publish to [lastResult]. The previous result is cleared up front —
+    /// a retry must not be answered by the failure it is retrying.
+    static func startSync(client: GatewayClient = .shared) {
+        lastResult = nil
+        Task { _ = await sync(client: client) }
+    }
+
     /// Sync gateway models into ProviderConfigStore.
     /// Safe to call on every app launch — no-op if the gateway is unreachable.
     static func sync(client: GatewayClient = .shared) async -> GatewaySyncResult {
+        let result = await syncImpl(client: client)
+        lastResult = result
+        return result
+    }
+
+    private static func syncImpl(client: GatewayClient) async -> GatewaySyncResult {
         let identity: GatewayIdentity
         do {
             identity = try await client.ensureDevice()

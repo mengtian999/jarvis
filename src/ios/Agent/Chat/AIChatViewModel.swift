@@ -1884,6 +1884,14 @@ final class AIChatViewModel: ObservableObject, SpeechControlling {
     var baseSystemPromptOverride: String? = nil
     var groupEntryOverride: ModelEntry? = nil
 
+    // MARK: - [T-ios-first-run-intro] First-run greeting state
+    /// See `IntroState`. Drives the connecting / retry card in AIChatView.
+    @Published var introState: IntroState = .none
+    /// The in-flight gateway wait; cancelled when the user retries or takes over.
+    var introWaitTask: Task<Void, Never>? = nil
+    /// True while the intro loop runs: there is no user turn to auto-title from.
+    var isIntroLoop = false
+
     /// The effective base prompt: group-round override when set, else the
     /// session persona's core. All in-loop consumers read this.
     private var baseSystemPrompt: String { baseSystemPromptOverride ?? baseSystemPromptCore }

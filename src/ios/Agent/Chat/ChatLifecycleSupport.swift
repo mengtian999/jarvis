@@ -501,6 +501,38 @@ final class ViewModelCache {
         return true
     }
 
+    //
+    // [T-ios-first-run-intro] One-shot "greet first" request. The launch task
+    // stashes the draft id it is about to open; the draft's AIChatView drains it
+    // on appear and asks the persona to open the conversation. Same discipline
+    // as the forward-respond marker above: addressed to one draft id, TTL-bound,
+    // consumed exactly once.
+
+    private struct PendingIntro {
+        let draftId: String
+        let stashedAt = Date()
+    }
+    private var pendingIntro: PendingIntro?
+    private static let introTTL: TimeInterval = 300
+
+    func stashPendingIntro(draftId: String) {
+        pendingIntro = PendingIntro(draftId: draftId)
+        logger.info("[Intro] stash draft=\(draftId.prefix(12))")
+    }
+
+    /// Drain the intro slot exactly once, only for [draftId].
+    func consumePendingIntro(draftId: String) -> Bool {
+        guard let r = pendingIntro else { return false }
+        pendingIntro = nil
+        guard Date().timeIntervalSince(r.stashedAt) <= Self.introTTL,
+              r.draftId == draftId else {
+            logger.info("[Intro] drop stale/mismatched marker (target=\(r.draftId.prefix(12)))")
+            return false
+        }
+        logger.info("[Intro] consume draft=\(draftId.prefix(12))")
+        return true
+    }
+
     // MARK: - LRU eviction
 
     /// Mark a session as most-recently-used.
@@ -667,6 +699,49 @@ final class ViewModelCache {
             try? FileManager.default.removeItem(at: a.cacheURL)
         }
         logger.info("[MoveTo] Discarded pending transfer for target=\(transfer.targetId) reason=\(reason)")
+    }
+}
+
+// MARK: - [T-ios-first-run-intro] First-run greeting
+
+/// Lifecycle of the first-run greeting for ONE chat. Every chat that was not
+/// opened as the first-run draft stays `.none`. Mirrors Android IntroState.
+enum IntroState {
+    case none, connecting, failed, sent
+}
+
+/// First-run experience. The gateway registers the device and seeds a default
+/// model group on every launch (GatewaySync), which made the old 3-step
+/// "add a provider → select models → start" landing obsolete: steps 1 and 2
+/// were already "Done" the moment the user first saw them. A fresh install now
+/// lands directly in a draft chat with the default role, and the role opens the
+/// conversation itself (AIChatViewModel.startIntro).
+///
+/// Dispatch-once: `isDone` is persisted the moment the greeting loop is
+/// launched, so upgrades, "user deleted every session" and relaunches never
+/// re-trigger it. Only the launch task in ContentView hands out a target (via
+/// the PendingIntro marker in ViewModelCache), and AIChatView drains it on
+/// appear. Mirrors Android FirstRunIntro.
+@MainActor
+enum FirstRunIntro {
+    private static let doneKey = "first_run_intro_sent"
+
+    /// How long the first chat waits for a usable model before it falls back
+    /// to the offline welcome + Retry card. Long enough for a normal gateway
+    /// registration + /v1/models round trip (typically 1–3s).
+    static let readyTimeoutMs: Int = 8_000
+
+    /// After the wait above times out, keep watching a little longer: a slow
+    /// gateway that lands seconds late still gets its greeting instead of a
+    /// stale "couldn't connect" card. Nothing happens once the user has typed.
+    static let lateGraceMs: Int = 45_000
+
+    static var isDone: Bool {
+        UserDefaults.standard.bool(forKey: doneKey)
+    }
+
+    static func markDone() {
+        UserDefaults.standard.set(true, forKey: doneKey)
     }
 }
 

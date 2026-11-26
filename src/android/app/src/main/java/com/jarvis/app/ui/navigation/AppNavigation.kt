@@ -79,6 +79,7 @@ import com.jarvis.app.ui.settings.ShizukuPermissionScreen
 import com.jarvis.app.sandbox.RootfsManager
 import com.jarvis.app.sandbox.TerminalSession
 import com.jarvis.app.ui.terminal.TerminalScreen
+import com.jarvis.app.ui.onboarding.FirstRunIntro
 import com.jarvis.app.ui.onboarding.OnboardingModelSelectionScreen
 
 // T342: Material 3 motion easing curves. Compose-Material3 (1.3.x) ships
@@ -267,6 +268,13 @@ fun AppNavigation(
                 // restoreState=true preserves chat-screen state across the
                 // hop. When the synthesized deep-link is a no-op (chat
                 // already on top) launchSingleTop short-circuits.
+                // [T-android-first-run-intro] Process-death restore of the first-run
+                // draft: the in-memory stash died with the process, so re-address the
+                // greeting here — still gated on the persisted once-flag, so a
+                // restore after the greeting was dispatched never replays it.
+                if (initialDeepLink.sessionId.startsWith("__new__") && !FirstRunIntro.isIntroDone(context)) {
+                    FirstRunIntro.stash(initialDeepLink.sessionId)
+                }
                 navController.navigate(Routes.chat(initialDeepLink.sessionId)) {
                     popUpTo(Routes.SESSION_LIST) {
                         inclusive = false
@@ -375,11 +383,13 @@ fun AppNavigation(
         // SharedPreferences counter increments. Resets automatically the
         // moment the user has ANY non-crash_or_stall cycle (clean_exit /
         // silent_kill / first_launch) �?see LaunchCycleBeacon.lastRestartCount.
-        val mode = if (
+        // [T-android-first-run-intro] Hoisted so the first-run branch below can
+        // tell "user prefers Home" (rawMode 3) from "a breaker forced Home".
+        val homeForcedByBreaker =
             com.jarvis.app.diagnostics.HangDetector.shouldForceHomeOnLaunch(context) ||
             com.jarvis.app.crash.CrashFrequencyDetector.shouldForceHomeOnLaunch(context) ||
             com.jarvis.app.diagnostics.LaunchCycleBeacon.shouldForceHomeOnLaunch()
-        ) 3 else rawMode
+        val mode = if (homeForcedByBreaker) 3 else rawMode
         val autoThresholdMs = 15L * 60 * 1000
         // [T-android-first-launch-lands-home] Read once, before the mode
         // branches: "is this device set up at all?" is the question that
@@ -403,12 +413,30 @@ fun AppNavigation(
             // ChatScreen consumer never mounts and the buffer expires �?            // exactly the symptom from the bug report. Force a new draft
             // chat so the share lands in a composer.
             hasPendingShare && mode == 3 -> Routes.chat("__new__${java.util.UUID.randomUUID()}")
+            // [T-android-first-run-intro] Fresh install (no session yet, greeting
+            // never dispatched): skip the empty Home entirely and land in a draft
+            // chat with the default role — FirstRunIntro addresses the greeting to
+            // that draft and ChatScreen drains it on first composition. The chat
+            // itself owns the gateway wait (connecting strip → greeting, or the
+            // offline welcome + Retry), so navigation never blocks on the network.
+            // Not while a share is buffered (the user's explicit intent outranks a
+            // greeting) and not when a hang/crash breaker forced Home.
+            !hasAnySession && !hasPendingShare && !homeForcedByBreaker &&
+                !FirstRunIntro.isIntroDone(context) -> {
+                // [T-android-first-run-intro] Stash the BARE draft id, not the route
+                // string: ChatScreen receives the {sessionId} path argument
+                // ("__new__…") and consume() matches on it. Stashing
+                // Routes.chat("__new__…") = "chat/__new__…" never matches — the
+                // first shipped build landed in the chat but never greeted.
+                val draftId = "__new__${java.util.UUID.randomUUID()}"
+                FirstRunIntro.stash(draftId)
+                Routes.chat(draftId)
+            }
             // [T-android-first-launch-lands-home] Nothing configured AND no
             // history: land on Home whatever the mode says. Mode 2 ("always a
             // new chat") is a real preference, but on a device with no provider
-            // it opens a composer that cannot send — and hides the onboarding
-            // steps that explain why. Once the user has either a session or a
-            // provider, their preference is honoured again.
+            // it opens a composer that cannot send. Once the user has either a
+            // session or a provider, their preference is honoured again.
             !hasAnySession && !hasAnyProvider -> null
             mode == 1 -> chatRepository.dao.listSessions().firstOrNull()?.let { Routes.chat(it.id) }
             mode == 2 -> Routes.chat("__new__${java.util.UUID.randomUUID()}")

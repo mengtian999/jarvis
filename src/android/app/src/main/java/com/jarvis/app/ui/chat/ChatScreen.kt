@@ -605,6 +605,8 @@ fun ChatScreen(
     // the global current role (that only seeds NEW sessions).
     val sessionRole by viewModel.sessionRole.collectAsState()
     val isStreaming by viewModel.isStreaming.collectAsState()
+    // [T-android-first-run-intro] NONE for every chat except the first-run draft.
+    val introState by viewModel.introState.collectAsState()
     val canResume by viewModel.canResume.collectAsState()
     // [T-android-compact-progress] null when no compaction is running.
     val compactProgress by viewModel.compactProgress.collectAsState()
@@ -805,6 +807,15 @@ fun ChatScreen(
     androidx.compose.runtime.LaunchedEffect(sessionId) {
         if (ChatViewModelStore.consumePendingForwardRespond(sessionId)) {
             viewModel.respondToForwardedHistory()
+        }
+    }
+
+    // [T-android-first-run-intro] Drain the first-run greeting request stashed
+    // by the launch resolver: this draft is the very first chat on a fresh
+    // install. One-shot — a re-entry into the same draft never re-greets.
+    androidx.compose.runtime.LaunchedEffect(sessionId) {
+        if (com.jarvis.app.ui.onboarding.FirstRunIntro.consume(sessionId)) {
+            viewModel.startIntro()
         }
     }
 
@@ -3325,6 +3336,18 @@ fun ChatScreen(
                 }
             }
 
+            // [T-android-first-run-intro] First-run connecting / retry strip. Sits
+            // between the title bar and the message list — a thin row rather than
+            // an overlay, so it never fights the floating tool-status bar or the
+            // draft's composer. Gone the moment the greeting starts streaming.
+            if (introState == IntroState.CONNECTING || introState == IntroState.FAILED) {
+                IntroStatusStrip(
+                    state = introState,
+                    roleName = sessionRole.metadata.name,
+                    onRetry = { viewModel.retryIntro() },
+                )
+            }
+
             // Messages + scroll-to-bottom button
             Box(modifier = Modifier.weight(1f)) {
                 var toolBarHeightPx by remember { mutableStateOf(0) }
@@ -4859,6 +4882,14 @@ fun ChatScreen(
             // back by the slash / mention popups below so they line up with it.
             var composerWidthPx by remember { mutableStateOf(0) }
 
+            // [T-android-first-run-intro] Starter chips: offered only while the
+            // greeting is the sole turn (no user message yet), so they never
+            // clutter an ongoing conversation.
+            val showIntroStarters = introState == IntroState.SENT &&
+                !isStreaming && messages.isNotEmpty() &&
+                messages.none { it.role == "user" } &&
+                inputText.isBlank() && !forwardSelecting
+
             // ─── Input area (iOS-style: rounded box with text + buttons below) ───
             Column(
                 modifier = Modifier
@@ -4888,6 +4919,12 @@ fun ChatScreen(
                     .padding(horizontal = 12.dp)
                     .padding(top = 2.dp, bottom = 8.dp),
             ) {
+                // [T-android-first-run-intro] Starter chips sit above everything
+                // else in the composer column (they vanish on the first send).
+                if (showIntroStarters) {
+                    IntroStarterRow(onPick = { viewModel.sendMessage(it) })
+                }
+
                 // [T-role-forward] Selection-mode action bar. Sits above the
                 // composer while multi-select is active: count + Forward
                 // (opens the role/target sheet) + Cancel. Empty selection
@@ -7979,6 +8016,89 @@ fun ChatScreen(
  * enclosing subtitle Column — see the call site for the full gesture-separation
  * rationale.
  */
+// ─── [T-android-first-run-intro] First-run greeting UI ────────────────────────
+
+/**
+ * Connecting / failed strip shown on the first-run draft while the gateway
+ * catalog has not landed yet. CONNECTING = spinner + "waking up <role>";
+ * FAILED = the offline welcome plus a Retry that re-runs the gateway sync
+ * (ChatViewModel.retryIntro). The composer stays usable underneath either way.
+ */
+@Composable
+private fun IntroStatusStrip(
+    state: IntroState,
+    roleName: String,
+    onRetry: () -> Unit,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (state == IntroState.CONNECTING) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = stringResource(R.string.chat_intro_connecting, roleName),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.chat_intro_failed_title),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = stringResource(R.string.chat_intro_failed_hint, roleName),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                MinisTextButton(onClick = onRetry) {
+                    Text(stringResource(R.string.chat_intro_retry))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Tappable example questions offered right after the greeting. Each tap is a
+ * normal send, so the chips are just a faster way to type the first message.
+ */
+@Composable
+private fun IntroStarterRow(onPick: (String) -> Unit) {
+    val starters = listOf(
+        stringResource(R.string.chat_intro_starter_1),
+        stringResource(R.string.chat_intro_starter_2),
+        stringResource(R.string.chat_intro_starter_3),
+    )
+    LazyRow(
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(starters) { starter ->
+            androidx.compose.material3.AssistChip(
+                onClick = { onPick(starter) },
+                label = {
+                    Text(
+                        text = starter,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                    )
+                },
+            )
+        }
+    }
+    Spacer(Modifier.height(6.dp))
+}
+
 @Composable
 private fun ThinkingLevelBadge(
     level: com.jarvis.app.data.model.ThinkingLevel,

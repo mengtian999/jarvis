@@ -401,17 +401,8 @@
     <string name="common_close">Close</string>
     <string name="common_skip">Skip</string>
     <string name="common_next">Next</string>
-    <string name="onboarding_welcome_title">Welcome to Jarvis</string>
-    <string name="onboarding_welcome_subtitle">Your Jarvis Agent with terminal, browser, and native device access.</string>
-    <string name="onboarding_get_started">Get Started</string>
-    <string name="onboarding_provider_title">Add a Provider</string>
-    <string name="onboarding_provider_subtitle">Enter an API key for at least one provider to get started.</string>
-    <string name="onboarding_provider_api_key_label">%1$s API Key</string>
-    <string name="onboarding_save_api_key">Save API Key</string>
-    <string name="onboarding_saved">Saved</string>
     <string name="onboarding_select_models_title">Select Models</string>
     <string name="onboarding_select_models_subtitle">Choose up to 3 models for your default group.</string>
-    <string name="onboarding_search_models">Search models</string>
     <string name="onboarding_filter_models">Filter models</string>
     <string name="onboarding_done_count">Done (%1$d/3)</string>
     <string name="onboarding_loading_models">Loading models…</string>
@@ -1735,18 +1726,6 @@
     <string name="a11y_service_summary">UI-layer automation backend for Jarvis</string>
     <string name="back">Back</string>
 
-    <!-- Welcome / onboarding (T332) -->
-    <string name="sessionlist_welcome_title">Welcome to Jarvis</string>
-    <string name="sessionlist_welcome_subtitle">Your first On-Device Agent is almost ready.</string>
-    <string name="sessionlist_welcome_step1_title">Add a Provider</string>
-    <string name="sessionlist_welcome_step1_subtitle">Configure an API key or sign in with OAuth</string>
-    <string name="sessionlist_welcome_step2_title">Select Models</string>
-    <string name="sessionlist_welcome_step2_subtitle">Choose the models you want to use</string>
-    <string name="sessionlist_welcome_step2_locked">Complete step 1 first</string>
-    <string name="sessionlist_welcome_step3_title">Start a Conversation</string>
-    <string name="sessionlist_welcome_step3_subtitle">Tap to begin</string>
-    <string name="sessionlist_welcome_step3_locked">Complete step 2 first</string>
-    <string name="sessionlist_welcome_step_done">Done</string>
 
     <!-- T-pwa-1: WebApp shortcut foundation (renamed from PWA) -->
     <string name="webapp_activity_label">Jarvis Web App</string>
@@ -2044,4 +2023,16 @@
     <string name="provider_detail_managed_gateway_url">Jarvis Intelligent Routing (Encrypted)</string>
     <string name="provider_detail_managed_api_key">●●●●●●●● (System Cloud Managed)</string>
     <string name="provider_detail_managed_export_not_supported">Built-in system providers cannot be exported.</string>
+    <!-- [T-android-first-run-intro] First-run greeting: connecting / retry strip + starter chips (ChatScreen) -->
+    <string name="chat_intro_connecting">Waking up %1$s…</string>
+    <string name="chat_intro_failed_title">Couldn\'t reach the model service</string>
+    <string name="chat_intro_failed_hint">Check your connection and retry — %1$s will say hi once it\'s connected.</string>
+    <string name="chat_intro_retry">Retry</string>
+    <string name="chat_intro_starter_1">Who are you, and what can you do on this device?</string>
+    <string name="chat_intro_starter_2">Plan my day into a simple to-do list</string>
+    <string name="chat_intro_starter_3">Show me something you can do with the Linux shell</string>
+    <!-- Empty session list (every session deleted / backed out of the first-run draft) -->
+    <string name="sessionlist_empty_title">No conversations yet</string>
+    <string name="sessionlist_empty_subtitle">Tap below to start a conversation with your on-device agent.</string>
+    <string name="sessionlist_empty_cta">Start a conversation</string>
 </resources>

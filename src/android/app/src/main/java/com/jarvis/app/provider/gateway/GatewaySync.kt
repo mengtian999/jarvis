@@ -10,6 +10,7 @@ import com.jarvis.app.data.repository.ProviderRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /** Gateway model catalog sync — mirrors iOS GatewaySync.swift and desktop gateway-sync.ts. */
@@ -25,6 +26,37 @@ class GatewaySync(
         const val PROVIDER_NAME = "Jarvis Cloud"
         private const val PREFS_NAME = "gateway_sync_prefs"
         private const val KEY_AGENT_LOOP_MEDIA_SEEDED = "agent_loop_media_models_seeded"
+
+        // ── [T-android-first-run-intro] Process-wide sync outcome ──────────
+        //
+        // syncState on the instance is useless to the UI: MinisApp creates a
+        // throwaway GatewaySync per attempt, so nothing outside can observe
+        // whether the gateway is usable yet. The first-run greeting (see
+        // ChatViewModel.startIntro) needs exactly that signal, so the latest
+        // result is mirrored here. null = no result for the current attempt
+        // (never attempted in this process, or a retry is in flight).
+        private val _sharedState = MutableStateFlow<SyncResult?>(null)
+
+        /** Latest sync result of the current attempt; null while none has settled. */
+        val sharedState: StateFlow<SyncResult?> = _sharedState.asStateFlow()
+
+        /**
+         * Launch a background catalog sync. Shared by MinisApp.onCreate (first
+         * attempt of the process) and the first-run Retry strip, so both paths
+         * publish to [sharedState]. The previous result is cleared up front —
+         * a retry must not be answered by the failure it is retrying.
+         */
+        fun startSync(context: android.content.Context, repository: ProviderRepository) {
+            _sharedState.value = null
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                try {
+                    GatewaySync(context, repository).sync()
+                } catch (e: Throwable) {
+                    Log.w(TAG, "sync failed: ${e.message}")
+                    _sharedState.value = SyncResult.notReached
+                }
+            }
+        }
 
         fun isOfficeTier(entry: com.jarvis.app.data.model.ModelEntry): Boolean {
             val id = entry.baseModel.id
@@ -140,13 +172,19 @@ class GatewaySync(
     private val _syncState = MutableStateFlow<SyncResult?>(null)
     val syncState: StateFlow<SyncResult?> = _syncState.asStateFlow()
 
+    /** Publish to both the instance flow and the process-wide mirror. */
+    private fun publish(result: SyncResult) {
+        _syncState.value = result
+        _sharedState.value = result
+    }
+
     suspend fun sync(): SyncResult {
         val identity = try {
             client.ensureDevice()
         } catch (e: Exception) {
             Log.w(TAG, "Device registration failed: ${e.message}")
             val r = SyncResult.notReached
-            _syncState.value = r
+            publish(r)
             return r
         }
 
@@ -155,9 +193,8 @@ class GatewaySync(
         } catch (e: Exception) {
             Log.w(TAG, "Model list fetch failed: ${e.message}")
             val r = SyncResult.notReached
-            _syncState.value = r
-            return r
-        }
+            publish(r)
+            return r        }
 
         val chatEntries = parseModels(modelsJSON, "chat")
         val imageEntries = parseModels(modelsJSON, "image")
@@ -166,7 +203,7 @@ class GatewaySync(
         if (chatEntries.isEmpty()) {
             Log.w(TAG, "Gateway model list is empty")
             val result = SyncResult(ok = false, deviceId = identity.deviceId, error = "Gateway model list is empty")
-            _syncState.value = result
+            publish(result)
             return result
         }
 
@@ -247,7 +284,7 @@ class GatewaySync(
             defaultModelId = defaultModelId,
             deviceId = identity.deviceId,
         )
-        _syncState.value = result
+        publish(result)
         return result
     }
 

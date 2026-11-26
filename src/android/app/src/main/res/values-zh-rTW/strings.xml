@@ -349,17 +349,8 @@
     <string name="common_close">關閉</string>
     <string name="common_skip">跳過</string>
     <string name="common_next">下一步</string>
-    <string name="onboarding_welcome_title">歡迎使用 賈維斯</string>
-    <string name="onboarding_welcome_subtitle">集終端、瀏覽器與裝置本機存取於一身的 AI 助手。</string>
-    <string name="onboarding_get_started">開始使用</string>
-    <string name="onboarding_provider_title">新增提供方</string>
-    <string name="onboarding_provider_subtitle">請至少為一個提供方輸入 API 金鑰以開始使用。</string>
-    <string name="onboarding_provider_api_key_label">%1$s API 金鑰</string>
-    <string name="onboarding_save_api_key">儲存 API 金鑰</string>
-    <string name="onboarding_saved">已儲存</string>
     <string name="onboarding_select_models_title">選擇模型</string>
     <string name="onboarding_select_models_subtitle">為預設模型組選擇最多 3 個模型。</string>
-    <string name="onboarding_search_models">搜尋模型</string>
     <string name="onboarding_filter_models">篩選模型</string>
     <string name="onboarding_done_count">完成 (%1$d/3)</string>
     <string name="onboarding_loading_models">正在載入模型…</string>
@@ -1557,8 +1548,6 @@
     <string name="logs_config_time_hr_ago">%1$d 小時前</string>
     <string name="logs_config_time_yesterday">昨天</string>
 
-    <!-- Welcome / onboarding (T332) -->
-    <string name="sessionlist_welcome_title">歡迎使用 賈維斯</string>
     <string name="system_permissions_title">系統權限</string>
     <string name="system_permissions_subtitle">在系統設定中授予的作業系統層級權限</string>
     <string name="system_permissions_section_a11y">無障礙</string>
@@ -1584,16 +1573,6 @@
     <string name="a11y_service_description">讓 贾维斯 代表呼叫 android-a11y-cli 的 Agent 讀取螢幕上的 UI 結構、執行點擊與手勢，並接收系統事件。</string>
     <string name="a11y_service_summary">贾维斯 的 UI 層自動化後端</string>
     <string name="back">返回</string>
-    <string name="sessionlist_welcome_subtitle">你的第一個端側 Agent 即將就緒。</string>
-    <string name="sessionlist_welcome_step1_title">新增供應商</string>
-    <string name="sessionlist_welcome_step1_subtitle">設定 API Key 或使用 OAuth 登入</string>
-    <string name="sessionlist_welcome_step2_title">選擇模型</string>
-    <string name="sessionlist_welcome_step2_subtitle">選擇你想使用的模型</string>
-    <string name="sessionlist_welcome_step2_locked">請先完成第 1 步</string>
-    <string name="sessionlist_welcome_step3_title">開始對話</string>
-    <string name="sessionlist_welcome_step3_subtitle">點擊開始</string>
-    <string name="sessionlist_welcome_step3_locked">請先完成第 2 步</string>
-    <string name="sessionlist_welcome_step_done">已完成</string>
     <string name="webapp_activity_label">贾维斯 WebApp</string>
     <string name="webapp_source_missing">來源檔案已不存在。</string>
     <string name="webapp_external_nav_blocked">已封鎖外部導覽。</string>
@@ -1783,4 +1762,16 @@
     <string name="provider_detail_managed_gateway_url">Jarvis智慧路由（已加密傳輸）</string>
     <string name="provider_detail_managed_api_key">●●●●●●●●（系統雲端自動託管）</string>
     <string name="provider_detail_managed_export_not_supported">系統內置供應商不支援匯出。</string>
+    <!-- [T-android-first-run-intro] 首次啟動問候：連線/重試狀態條 + 示例問題（ChatScreen） -->
+    <string name="chat_intro_connecting">正在喚醒 %1$s…</string>
+    <string name="chat_intro_failed_title">暫時連不上模型服務</string>
+    <string name="chat_intro_failed_hint">請檢查網路後重試，連上後 %1$s 會主動跟你打招呼。</string>
+    <string name="chat_intro_retry">重試</string>
+    <string name="chat_intro_starter_1">你是誰？在這台裝置上能幫我做什麼？</string>
+    <string name="chat_intro_starter_2">幫我把今天要做的事整理成一份清單</string>
+    <string name="chat_intro_starter_3">用 Linux 沙盒演示一個你的拿手活</string>
+    <!-- 會話列表為空（刪光了會話 / 首啟草稿中退出） -->
+    <string name="sessionlist_empty_title">還沒有對話</string>
+    <string name="sessionlist_empty_subtitle">點擊下方按鈕，和你的端側智慧體開始第一段對話。</string>
+    <string name="sessionlist_empty_cta">開始對話</string>
 </resources>

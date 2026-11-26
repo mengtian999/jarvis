@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 import ObjectiveC
 import FileProvider
 import UserNotifications
@@ -391,7 +391,10 @@ struct MinisApp: App {
                     // ⚡ Gateway model sync — background, non-blocking.
                     // Registers anonymous device + pulls /v1/models for jarvis-gateway provider.
                     // On failure, preserves existing config (no block, no clear).
-                    Task { await GatewaySync.sync() }
+                    // [T-ios-first-run-intro] Routed through startSync so the outcome
+                    // lands in GatewaySync.lastResult, which the first-run greeting
+                    // waits on (the retry card re-enters through the same door).
+                    GatewaySync.startSync()
                     shareLog.info("[Share] onAppear — checking for pending share")
                     shareCoordinator.checkForPendingShare()
                     // Set up background keep-alive manager
